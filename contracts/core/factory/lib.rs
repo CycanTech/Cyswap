@@ -30,7 +30,7 @@ mod uniswap_v3_factory {
         #[ink(message)]
         pub fn get_pool(&self,token0:AccountId, token1:AccountId, fee:u32)->AccountId{
             let key = (token0,token1,fee);
-            self.pool.get(key).unwrap_or_else(||[0u8;32].into())
+            self.pool.get(key).unwrap_or([0u8;32].into())
         }
     }
 
