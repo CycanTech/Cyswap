@@ -34,19 +34,22 @@ use sp_core::U256;
 //     // ) external payable returns (address pool);
 // }
 
+static ADDRESS0:[u8;32] = [0;32]; 
+
 #[ink::contract]
 mod pool_initializer {
+    use factory::UniswapV3FactoryRef;
     #[ink(storage)]
     pub struct PoolInitializer {
         /// @inheritdoc IPeripheryImmutableState
-        pub factory: u32,
+        pub factory: UniswapV3FactoryRef,
         /// @inheritdoc IPeripheryImmutableState
         pub weth9: u32,
     }
 
     impl PoolInitializer {
         #[ink(constructor)]
-        pub fn new(factory: u32, weth9: u32) -> Self {
+        pub fn new(factory: UniswapV3FactoryRef, weth9: u32) -> Self {
             let instance = Self { factory, weth9 };
             instance
         }
@@ -54,12 +57,29 @@ mod pool_initializer {
         /// @inheritdoc IPoolInitializer
         #[ink(message, payable)]
         pub fn create_and_initialize_pool_if_necessary(
-            &self,
-            token0: Hash,
-            address: Hash,
+            &mut self,
+            token0: AccountId,
+            token1: AccountId,
             fee: u32,
             sqrtPriceX96: sp_core::U256,
         ) -> u32 {
+            let accumulator = UniswapV3FactoryRef::new()
+                .endowment(100 / 4)
+                .code_hash(Default::default())
+                .salt_bytes([0;32])
+                .instantiate()
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "failed at instantiating the Accumulator contract: {:?}",
+                        error
+                    )
+                });
+
+            assert!(token0<token1);
+            let pool = self.factory.get_pool(token0,token1,fee);
+            if pool == crate::ADDRESS0.into(){
+                self.factory.create_pool(token0,token1,fee);
+            }
             // require(token0 < token1);
             // pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
 
@@ -72,7 +92,7 @@ mod pool_initializer {
             //         IUniswapV3Pool(pool).initialize(sqrtPriceX96);
             //     }
             // }
-            self.factory
+            0u32
         }
     }
 }

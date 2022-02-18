@@ -1,5 +1,5 @@
 [package]
-name = "factory"
+name = "pool"
 version = "3.0.0-rc8"
 authors = ["Parity Technologies <cloudweisz@gmail.com>"]
 edition = "2021"
@@ -21,7 +21,7 @@ tag = 'devhub/latest'
 version = '4.0.0-dev'
 
 [lib]
-name = "factory"
+name = "pool"
 path = "lib.rs"
 crate-type = ["cdylib","rlib",]
 
