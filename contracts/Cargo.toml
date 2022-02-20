@@ -45,5 +45,5 @@ ink-experimental-engine = ["ink_env/ink-experimental-engine"]
 members = [
     "periphery/poolInitialize",
     "core/factory",
-
+    "core/pool",
 ]

@@ -13,7 +13,7 @@ ink_lang = { version = "3.0.0-rc8", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "2.1", default-features = false, features = ["derive"] }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"], optional = true }
-
+pool = {version = "3.0.0-rc8",path="../../core/pool", default-features = false,features = ["ink-as-dependency"]}
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -38,6 +38,7 @@ std = [
     "scale-info",
     "scale-info/std",
     "sp-core/std",
+    "pool/std",
 ]
 ink-as-dependency = []
 ink-experimental-engine = ["ink_env/ink-experimental-engine"]
