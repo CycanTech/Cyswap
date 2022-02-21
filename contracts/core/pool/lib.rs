@@ -13,64 +13,14 @@ mod uniswap_v3_pool {
     };
     use scale::{Decode, Encode, WrapperTypeEncode};
     use sp_core::U256;
-
+    use primitives::WrapperU256;
+    #[cfg(feature = "std")]
     use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
 
     type Address = AccountId;
     type Uint24 = u32;
     type Int24 = i32;
-    type Uint160 = WrapperU256;
-
-    #[derive(Debug, PartialEq, Eq, Encode, Decode)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-    pub struct WrapperU256 {
-        value: U256,
-    }
-
-    impl SpreadLayout for WrapperU256 {
-        const FOOTPRINT: u64 = 4;
-
-        const REQUIRES_DEEP_CLEAN_UP: bool = true;
-
-        fn pull_spread(ptr: &mut ink_primitives::KeyPtr) -> Self {
-            let slice: [u64; 4] = SpreadLayout::pull_spread(ptr);
-            Self { value: U256(slice) }
-        }
-
-        fn push_spread(&self, ptr: &mut ink_primitives::KeyPtr) {
-            SpreadLayout::push_spread(&self.value.0, ptr);
-        }
-
-        fn clear_spread(&self, ptr: &mut ink_primitives::KeyPtr) {
-            SpreadLayout::clear_spread(&self.value.0, ptr);
-        }
-    }
-
-    impl PackedLayout for WrapperU256 {
-        fn pull_packed(&mut self, at: &ink_primitives::Key) {
-            self.value.0.pull_packed(at);
-        }
-
-        fn push_packed(&self, at: &ink_primitives::Key) {
-            self.value.0.push_packed(at);
-        }
-
-        fn clear_packed(&self, at: &ink_primitives::Key) {
-            self.clear_packed(at);
-        }
-    }
-
-    impl StorageLayout for WrapperU256 {
-        fn layout(key_ptr: &mut ink_primitives::KeyPtr) -> Layout {
-            Layout::Struct(StructLayout::new([
-                FieldLayout::new(
-                    "len",
-                    <ink_storage::Lazy<[u32; 4]> as StorageLayout>::layout(key_ptr),
-                ),
-                FieldLayout::new("elems", <[u32; 6] as StorageLayout>::layout(key_ptr)),
-            ]))
-        }
-    }
+    type Uint160 = primitives::WrapperU256;
 
     #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
@@ -114,12 +64,12 @@ mod uniswap_v3_pool {
         pub token0: Address,
         pub token1: Address,
         pub fee: Uint24,
-        pub tickSpacing: Int24,
-        pub maxLiquidityPerTick: u128,
+        pub tick_spacing: Int24,
+        pub max_liquidity_per_tick: u128,
         // pub slot0: Slot0,
 
-        pub feeGrowthGlobal0X128: Uint160,
-        pub feeGrowthGlobal1X128: Uint160,
+        pub fee_growth_global0_x128: Uint160,
+        pub fee_growth_global1_x128: Uint160,
 
         // pub protocolFees: ProtocolFees,
 
@@ -138,10 +88,10 @@ mod uniswap_v3_pool {
                 token0: Default::default(),
                 token1: Default::default(),
                 fee: Default::default(),
-                tickSpacing: Default::default(),
-                maxLiquidityPerTick: Default::default(),
-                feeGrowthGlobal0X128: WrapperU256{value:U256([0u64;4])},
-                feeGrowthGlobal1X128: WrapperU256{value:U256([0u64;4])},
+                tick_spacing: Default::default(),
+                max_liquidity_per_tick: Default::default(),
+                fee_growth_global0_x128: WrapperU256{value:U256([0u64;4])},
+                fee_growth_global1_x128: WrapperU256{value:U256([0u64;4])},
                 // protocolFees: WrapperU256{value:U256([0u64;4])},
                 liquidity: Default::default(),
             }
@@ -150,9 +100,23 @@ mod uniswap_v3_pool {
 
     impl UniswapV3Pool {
         #[ink(constructor)]
-        pub fn new() -> Self {
-            let i = [3u8; 20];
-            let instance = Default::default();
+        pub fn new(factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24) -> Self {
+            // (factory, token0, token1, fee, _tickSpacing) = IUniswapV3PoolDeployer(msg.sender).parameters();
+            // tickSpacing = _tickSpacing;
+            // maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
+
+            let instance = Self{
+                factory,
+                token0,
+                token1,
+                fee,
+                tick_spacing,
+                max_liquidity_per_tick: Default::default(),
+                fee_growth_global0_x128: WrapperU256{value:U256([0u64;4])},
+                fee_growth_global1_x128: WrapperU256{value:U256([0u64;4])},
+                // protocolFees: WrapperU256{value:U256([0u64;4])},
+                liquidity: Default::default(),
+            };
             instance
         }
 

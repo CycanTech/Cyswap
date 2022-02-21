@@ -121,7 +121,7 @@ mod uniswap_v3_factory {
             let encodable = (address_this, token0, token1,fee); // Implements `scale::Encode`
             let mut salt = <Sha2x256 as HashOutput>::Type::default(); // 256-bit buffer
             ink_env::hash_encoded::<Sha2x256, _>(&encodable, &mut salt);
-            let pool_address = UniswapV3PoolRef::new()
+            let pool_address = UniswapV3PoolRef::new(address_this,token0, token1, fee, tick_spacing)
                     .endowment(total_balance / 4)
                     .code_hash(accumulator_code_hash.into())
                     .salt_bytes(salt)
