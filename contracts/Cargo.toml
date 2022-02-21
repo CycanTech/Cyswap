@@ -43,7 +43,7 @@ ink-as-dependency = []
 ink-experimental-engine = ["ink_env/ink-experimental-engine"]
 [workspace]
 members = [
-    "periphery/poolInitialize",
-    "core/factory",
     "core/pool",
+    "core/factory",
+    "periphery/poolInitialize",
 ]
