@@ -16,12 +16,12 @@ mod uniswap_v3_factory {
     use scale::{Encode, Decode};
 
     use pool::UniswapV3PoolRef;
+    use primitives::Address;
+    use primitives::Uint24;
+    use primitives::Int24;
+    use primitives::ADDRESS0;
 
-    type Address = AccountId;
-    type Uint24 = u32;
-    type Int24 = i32;
-
-    static  accumulator_code_hash:[u8;32] = [0;32];
+    static  accumulator_code_hash:&str = "e75946fda0c1754737f4dcaec9abb2fe32589caa1e8fb3deb81ee749c1fc189b";
     #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
     pub struct Parameters {
@@ -46,7 +46,7 @@ mod uniswap_v3_factory {
 
     #[ink(storage)]
     pub struct UniswapV3Factory {
-
+        pub owner:primitives::Address,
         // mapping(uint24 => int24) public override feeAmountTickSpacing;
         pub fee_amount_tick_spacing:Mapping<u32,Int24>,
 
@@ -56,40 +56,97 @@ mod uniswap_v3_factory {
         pub parameters:Parameters,
     }
 
-    // emit PoolCreated(token0, token1, fee, tickSpacing, pool);
+
+    /// @notice Emitted when the owner of the factory is changed
+    /// @param oldOwner The owner before the owner was changed
+    /// @param newOwner The owner after the owner was changed
+    #[ink(event)]
+    pub struct OwnerChanged{
+        #[ink(topic)]
+        old_owner:Address, 
+        #[ink(topic)]
+        new_owner:Address,
+    }
+
+    /// @notice Emitted when a pool is created
+    /// @param token0 The first token of the pool by address sort order
+    /// @param token1 The second token of the pool by address sort order
+    /// @param fee The fee collected upon every swap in the pool, denominated in hundredths of a bip
+    /// @param tickSpacing The minimum number of ticks between initialized ticks
+    /// @param pool The address of the created pool
     #[ink(event)]
     pub struct PoolCreated{
         #[ink(topic)]
         token0:Address,
         #[ink(topic)]
         token1:Address,
+        #[ink(topic)]
         fee:Uint24,
         tick_spacing:Int24,
+        pool:Address,
+    }
+
+    /// @notice Emitted when a new fee amount is enabled for pool creation via the factory
+    /// @param fee The enabled fee, denominated in hundredths of a bip
+    /// @param tickSpacing The minimum number of ticks between initialized ticks for pools created with the given fee
+    #[ink(event)]
+    pub struct FeeAmountEnabled{
         #[ink(topic)]
-        pool:AccountId,
+        fee:Uint24, 
+        #[ink(topic)]
+        tick_spacing:Int24,
     }
 
     impl UniswapV3Factory {
         #[ink(constructor)]
         pub fn new() -> Self {
-            let instance = Self {
+            let owner = Self::env().caller();
+            Self::env().emit_event(OwnerChanged{
+                old_owner:ADDRESS0.into(),
+                new_owner:owner
+            });
+            // emit FeeAmountEnabled(500, 10);
+            // feeAmountTickSpacing[3000] = 60;
+            // emit FeeAmountEnabled(3000, 60);
+            // feeAmountTickSpacing[10000] = 200;
+            // emit FeeAmountEnabled(10000, 200);
+            let mut instance = Self {
+                owner,
                 fee_amount_tick_spacing:Default::default(),
                 pool_map:Default::default(),
                 parameters:Default::default(),
             };
+            instance.fee_amount_tick_spacing.insert(500,&10);
+            Self::env().emit_event(FeeAmountEnabled{
+                fee:500,
+                tick_spacing:10,
+            });
+            instance.fee_amount_tick_spacing.insert(3000,&60);
+            Self::env().emit_event(FeeAmountEnabled{
+                fee:3000,
+                tick_spacing:60,
+            });
+            instance.fee_amount_tick_spacing.insert(10000,&200);
+            Self::env().emit_event(FeeAmountEnabled{
+                fee:10000,
+                tick_spacing:200,
+            });
+
             instance
         }
 
         
         #[ink(message)]
         pub fn get_pool(&self,token0:AccountId, token1:AccountId, fee:u32)->AccountId{
+            ink_env::debug_println!("start create pool:{:?}",token0);
             let key = (token0,token1,fee);
-            self.pool_map.get(key).unwrap_or([0u8;32].into())
+            self.pool_map.get(key).unwrap_or(ADDRESS0.into())
         }
 
         /// @inheritdoc IUniswapV3Factory
         #[ink(message)]
         pub fn create_pool(&mut self,tokenA:Address,tokenB:Address,fee:u32)->AccountId{
+            ink_env::debug_println!("start create pool:{:?}",tokenB);
             assert!(tokenA!=tokenB,"token A should not equals token B");
             let (token0,token1);
             if tokenA < tokenB {
@@ -123,7 +180,7 @@ mod uniswap_v3_factory {
             ink_env::hash_encoded::<Sha2x256, _>(&encodable, &mut salt);
             let pool_address = UniswapV3PoolRef::new(address_this,token0, token1, fee, tick_spacing)
                     .endowment(total_balance / 4)
-                    .code_hash(accumulator_code_hash.into())
+                    .code_hash(ink_env::Hash::try_from(hex::decode(accumulator_code_hash).unwrap().as_ref()).unwrap())
                     .salt_bytes(salt)
                     .instantiate()
                     .unwrap_or_else(|error| {

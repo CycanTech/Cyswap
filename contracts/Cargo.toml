@@ -43,8 +43,9 @@ ink-as-dependency = []
 ink-experimental-engine = ["ink_env/ink-experimental-engine"]
 [workspace]
 members = [
+    "primitives/",
     "core/pool",
     "core/factory",
     "periphery/poolInitialize",
-    "primitives/",
+    "base/erc20/",
 ]
