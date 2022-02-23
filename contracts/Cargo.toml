@@ -46,4 +46,5 @@ members = [
     "core/pool",
     "core/factory",
     "periphery/poolInitialize",
+    "primitives/",
 ]
