@@ -1,24 +1,19 @@
 [package]
 name = "uniswapv3"
-version = "3.0.0-rc8"
+version = "3.0.0-rc9"
 authors = ["Parity Technologies <cloudweisz@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-ink_primitives = { version = "3.0.0-rc8", default-features = false }
-ink_metadata = { version = "3.0.0-rc8", default-features = false, features = ["derive"], optional = true }
-ink_env = { version = "3.0.0-rc8", default-features = false }
-ink_storage = { version = "3.0.0-rc8", default-features = false }
-ink_lang = { version = "3.0.0-rc8", default-features = false }
+ink_primitives = { version = "3.0.0-rc9", default-features = false }
+ink_metadata = { version = "3.0.0-rc9", default-features = false, features = ["derive"], optional = true }
+ink_env = { version = "3.0.0-rc9", default-features = false }
+ink_storage = { version = "3.0.0-rc9", default-features = false }
+ink_lang = { version = "3.0.0-rc9", default-features = false }
 
-scale = { package = "parity-scale-codec", version = "2.1", default-features = false, features = ["derive"] }
-scale-info = { version = "1.0.0", default-features = false, features = ["derive"], optional = true }
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 
-[dependencies.sp-core]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'devhub/latest'
-version = '4.0.0-dev'
 
 [lib]
 name = "uniswapv3"
@@ -37,7 +32,6 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
-    "sp-core/std",
 ]
 ink-as-dependency = []
 ink-experimental-engine = ["ink_env/ink-experimental-engine"]

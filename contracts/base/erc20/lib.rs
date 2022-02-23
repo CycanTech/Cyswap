@@ -5,11 +5,8 @@ use ink_lang as ink;
 #[ink::contract]
 mod erc20 {
     use ink_storage::{
-        lazy::{
-            Lazy,
-            Mapping,
-        },
         traits::SpreadAllocate,
+        Mapping,
     };
 
     /// A simple ERC-20 contract.
@@ -17,7 +14,7 @@ mod erc20 {
     #[derive(SpreadAllocate)]
     pub struct Erc20 {
         /// Total token supply.
-        total_supply: Lazy<Balance>,
+        total_supply: Balance,
         /// Mapping from owner to number of owned token.
         balances: Mapping<AccountId, Balance>,
         /// Mapping of the token amount which an account is allowed to withdraw
@@ -63,7 +60,9 @@ mod erc20 {
         /// Creates a new ERC-20 contract with the specified initial supply.
         #[ink(constructor)]
         pub fn new(initial_supply: Balance) -> Self {
-            ink_lang::codegen::initialize_contract(|contract| {
+            // This call is required in order to correctly initialize the
+            // `Mapping`s of our contract.
+            ink_lang::utils::initialize_contract(|contract| {
                 Self::new_init(contract, initial_supply)
             })
         }
@@ -72,7 +71,7 @@ mod erc20 {
         fn new_init(&mut self, initial_supply: Balance) {
             let caller = Self::env().caller();
             self.balances.insert(&caller, &initial_supply);
-            Lazy::set(&mut self.total_supply, initial_supply);
+            self.total_supply = initial_supply;
             Self::env().emit_event(Transfer {
                 from: None,
                 to: Some(caller),
@@ -83,7 +82,7 @@ mod erc20 {
         /// Returns the total token supply.
         #[ink(message)]
         pub fn total_supply(&self) -> Balance {
-            *self.total_supply
+            self.total_supply
         }
 
         /// Returns the account balance for the specified `owner`.
@@ -328,7 +327,7 @@ mod erc20 {
             let accounts =
                 ink_env::test::default_accounts::<ink_env::DefaultEnvironment>()
                     .expect("Cannot get accounts");
-            // Alice owns all the tokens on deployment
+            // Alice owns all the tokens on contract instantiation
             assert_eq!(erc20.balance_of(accounts.alice), 100);
             // Bob does not owns tokens
             assert_eq!(erc20.balance_of(accounts.bob), 0);
@@ -649,7 +648,7 @@ mod erc20 {
             );
             let accounts =
                 ink_env::test::default_accounts::<ink_env::DefaultEnvironment>();
-            // Alice owns all the tokens on deployment
+            // Alice owns all the tokens on contract instantiation
             assert_eq!(erc20.balance_of(accounts.alice), 100);
             // Bob does not owns tokens
             assert_eq!(erc20.balance_of(accounts.bob), 0);

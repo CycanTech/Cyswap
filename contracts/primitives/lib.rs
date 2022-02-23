@@ -64,7 +64,7 @@ impl StorageLayout for WrapperU256 {
         Layout::Struct(StructLayout::new([
             FieldLayout::new(
                 "len",
-                <ink_storage::Lazy<[u32; 4]> as StorageLayout>::layout(key_ptr),
+                <[u32; 4] as StorageLayout>::layout(key_ptr),
             ),
             FieldLayout::new("elems", <[u32; 6] as StorageLayout>::layout(key_ptr)),
         ]))
