@@ -13,14 +13,13 @@ mod uniswap_v3_pool {
     };
     use scale::{Decode, Encode, WrapperTypeEncode};
     use sp_core::U256;
-    use primitives::WrapperU256;
+    use primitives::Uint160;
     #[cfg(feature = "std")]
     use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
 
     type Address = AccountId;
     type Uint24 = u32;
     type Int24 = i32;
-    type Uint160 = primitives::WrapperU256;
 
     #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
@@ -90,8 +89,8 @@ mod uniswap_v3_pool {
                 fee: Default::default(),
                 tick_spacing: Default::default(),
                 max_liquidity_per_tick: Default::default(),
-                fee_growth_global0_x128: WrapperU256{value:U256([0u64;4])},
-                fee_growth_global1_x128: WrapperU256{value:U256([0u64;4])},
+                fee_growth_global0_x128: Uint160{value:U256([0u64;4])},
+                fee_growth_global1_x128: Uint160{value:U256([0u64;4])},
                 // protocolFees: WrapperU256{value:U256([0u64;4])},
                 liquidity: Default::default(),
             }
@@ -112,8 +111,8 @@ mod uniswap_v3_pool {
                 fee,
                 tick_spacing,
                 max_liquidity_per_tick: Default::default(),
-                fee_growth_global0_x128: WrapperU256{value:U256([0u64;4])},
-                fee_growth_global1_x128: WrapperU256{value:U256([0u64;4])},
+                fee_growth_global0_x128: Uint160{value:U256([0u64;4])},
+                fee_growth_global1_x128: Uint160{value:U256([0u64;4])},
                 // protocolFees: WrapperU256{value:U256([0u64;4])},
                 liquidity: Default::default(),
             };
