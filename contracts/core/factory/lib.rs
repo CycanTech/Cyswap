@@ -12,16 +12,15 @@ pub use self::uniswap_v3_factory::{
 mod uniswap_v3_factory {
     use ink_env::hash::{Sha2x256, HashOutput};
     use ink_lang::ToAccountId;
-    use ink_storage::{lazy::Mapping, traits::{SpreadLayout, PackedLayout, StorageLayout}};
+    use ink_storage::{Mapping, traits::{SpreadLayout, PackedLayout, StorageLayout}};
     use scale::{Encode, Decode};
 
     use pool::UniswapV3PoolRef;
-    use primitives::Address;
+    use primitives::{Address, Int24};
     use primitives::Uint24;
-    use primitives::Int24;
     use primitives::ADDRESS0;
 
-    static  accumulator_code_hash:&str = "e75946fda0c1754737f4dcaec9abb2fe32589caa1e8fb3deb81ee749c1fc189b";
+    static  accumulator_code_hash:&str = "52ea1e3471f4d4b8e41c34dfbb79db8b899a3f93be7bcb53cc16f011b81d3ffb";
     #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
     pub struct Parameters {
@@ -110,53 +109,73 @@ mod uniswap_v3_factory {
             // emit FeeAmountEnabled(3000, 60);
             // feeAmountTickSpacing[10000] = 200;
             // emit FeeAmountEnabled(10000, 200);
-            let mut instance = Self {
+            let instance = Self {
                 owner,
                 fee_amount_tick_spacing:Default::default(),
                 pool_map:Default::default(),
                 parameters:Default::default(),
             };
-            instance.fee_amount_tick_spacing.insert(500,&10);
-            Self::env().emit_event(FeeAmountEnabled{
-                fee:500,
-                tick_spacing:10,
-            });
-            instance.fee_amount_tick_spacing.insert(3000,&60);
-            Self::env().emit_event(FeeAmountEnabled{
-                fee:3000,
-                tick_spacing:60,
-            });
-            instance.fee_amount_tick_spacing.insert(10000,&200);
-            Self::env().emit_event(FeeAmountEnabled{
-                fee:10000,
-                tick_spacing:200,
-            });
-
+            
             instance
         }
 
         
         #[ink(message)]
-        pub fn get_pool(&self,token0:AccountId, token1:AccountId, fee:u32)->AccountId{
-            ink_env::debug_println!("start create pool:{:?}",token0);
+        pub fn get_pool(&self,fee:u32,token0:AccountId, token1:AccountId)->AccountId{
+            ink_env::debug_println!("get_pool fee is:{:?}",fee);
             let key = (token0,token1,fee);
             self.pool_map.get(key).unwrap_or(ADDRESS0.into())
         }
 
+        #[ink(message)]
+        pub fn init(&mut self){
+            // check the owner is the caller
+            let caller = Self::env().caller();
+            assert!(caller==self.owner,"caller is not the owner");
+            self.fee_amount_tick_spacing.insert(500,&10);
+            Self::env().emit_event(FeeAmountEnabled{
+                fee:500,
+                tick_spacing:10,
+            });
+            self.fee_amount_tick_spacing.insert(3000,&60);
+            Self::env().emit_event(FeeAmountEnabled{
+                fee:3000,
+                tick_spacing:60,
+            });
+            self.fee_amount_tick_spacing.insert(10000,&200);
+            Self::env().emit_event(FeeAmountEnabled{
+                fee:10000,
+                tick_spacing:200,
+            });
+        }
+
+        #[ink(message)]
+        pub fn get_owner(&self)->Address{
+            self.owner
+        }
+
+        #[ink(message)]
+        pub fn get_fee_amount_tick_spacing(&self,key:u32)->Int24{
+            ink_env::debug_println!("fee_amount_tick_spacing is:{:?}",self.fee_amount_tick_spacing);
+            self.fee_amount_tick_spacing.get(key).unwrap()
+        }
+
         /// @inheritdoc IUniswapV3Factory
         #[ink(message)]
-        pub fn create_pool(&mut self,tokenA:Address,tokenB:Address,fee:u32)->AccountId{
-            ink_env::debug_println!("start create pool:{:?}",tokenB);
-            assert!(tokenA!=tokenB,"token A should not equals token B");
+        pub fn create_pool(&mut self,fee:u32,token_a:Address,token_b:Address)->AccountId{
+            assert!(token_a!=token_b,"token A should not equals token B");
             let (token0,token1);
-            if tokenA < tokenB {
-                token0 = tokenA;
-                token1 = tokenB;
+            if token_a < token_b {
+                token0 = token_a;
+                token1 = token_b;
             }else{
-                token0 = tokenB;
-                token1 = tokenA;
+                token0 = token_b;
+                token1 = token_a;
             }
-            let tick_spacing = self.fee_amount_tick_spacing.get(fee).unwrap_or(0);
+            ink_env::debug_println!("input fee is:{}",fee);
+            let fee_amount_tick_spacing_option = self.fee_amount_tick_spacing.get(fee);
+            ink_env::debug_println!("fee_amount_tick_spacing:{:?}",fee_amount_tick_spacing_option);
+            let tick_spacing = fee_amount_tick_spacing_option.unwrap_or(0);
             assert!(tick_spacing!=0,"tick spacing should not be zero!");
             assert!(self.pool_map.get((token0,token1,fee)).is_none(),"pool have been exist!");
             let address_this = self.env().account_id();
@@ -172,6 +191,7 @@ mod uniswap_v3_factory {
             });
             pool
         }
+
 
         fn deploy(&mut self,address_this: Address, token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24) -> UniswapV3PoolRef {
             let total_balance = Self::env().balance();

@@ -8,11 +8,10 @@ pub use self::uniswap_v3_pool::{UniswapV3Pool, UniswapV3PoolRef};
 #[ink::contract]
 mod uniswap_v3_pool {
     use ink_storage::{
-        lazy::Mapping,
+        Mapping,
         traits::{PackedLayout, SpreadLayout, StorageLayout},
     };
     use scale::{Decode, Encode, WrapperTypeEncode};
-    use sp_core::U256;
     use primitives::Uint160;
     #[cfg(feature = "std")]
     use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
@@ -89,8 +88,8 @@ mod uniswap_v3_pool {
                 fee: Default::default(),
                 tick_spacing: Default::default(),
                 max_liquidity_per_tick: Default::default(),
-                fee_growth_global0_x128: Uint160{value:U256([0u64;4])},
-                fee_growth_global1_x128: Uint160{value:U256([0u64;4])},
+                fee_growth_global0_x128: Uint160{value:0},
+                fee_growth_global1_x128: Uint160{value:0},
                 // protocolFees: WrapperU256{value:U256([0u64;4])},
                 liquidity: Default::default(),
             }
@@ -111,8 +110,8 @@ mod uniswap_v3_pool {
                 fee,
                 tick_spacing,
                 max_liquidity_per_tick: Default::default(),
-                fee_growth_global0_x128: Uint160{value:U256([0u64;4])},
-                fee_growth_global1_x128: Uint160{value:U256([0u64;4])},
+                fee_growth_global0_x128: Uint160{value:0},
+                fee_growth_global1_x128: Uint160{value:0},
                 // protocolFees: WrapperU256{value:U256([0u64;4])},
                 liquidity: Default::default(),
             };

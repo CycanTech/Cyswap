@@ -16,10 +16,10 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 
 
 
-[dependencies.sp-core]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-version = '5.0.0'
+# [dependencies.sp-core]
+# default-features = false
+# git = 'https://github.com/paritytech/substrate.git'
+# version = '5.0.0'
 
 [lib]
 name = "primitives"
@@ -38,7 +38,7 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
-    "sp-core/std",
+    # "sp-core/std",
 ]
 ink-as-dependency = []
 ink-experimental-engine = ["ink_env/ink-experimental-engine"]

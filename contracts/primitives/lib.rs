@@ -7,7 +7,7 @@ use ink_storage::{
     traits::{PackedLayout, SpreadLayout, StorageLayout},
 };
 use scale::{Decode, Encode};
-use sp_core::U256;
+// use sp_core::U256;
 
 #[cfg(feature = "std")]
 use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
@@ -19,57 +19,57 @@ pub type Uint160 = WrapperU256;
 
 pub static ADDRESS0:[u8;32] = [0u8;32];
 
-#[derive(Debug, PartialEq, Eq, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+#[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
 pub struct WrapperU256 {
-    pub value: U256,
+    pub value: u128,
 }
 
-impl SpreadLayout for WrapperU256 {
-    const FOOTPRINT: u64 = 4;
+// impl SpreadLayout for WrapperU256 {
+//     const FOOTPRINT: u64 = 4;
 
-    const REQUIRES_DEEP_CLEAN_UP: bool = true;
+//     const REQUIRES_DEEP_CLEAN_UP: bool = true;
 
-    fn pull_spread(ptr: &mut ink_primitives::KeyPtr) -> Self {
-        let slice: [u64; 4] = SpreadLayout::pull_spread(ptr);
-        Self { value: U256(slice) }
-    }
+//     fn pull_spread(ptr: &mut ink_primitives::KeyPtr) -> Self {
+//         let slice: [u64; 4] = SpreadLayout::pull_spread(ptr);
+//         Self { value: U256(slice) }
+//     }
 
-    fn push_spread(&self, ptr: &mut ink_primitives::KeyPtr) {
-        SpreadLayout::push_spread(&self.value.0, ptr);
-    }
+//     fn push_spread(&self, ptr: &mut ink_primitives::KeyPtr) {
+//         SpreadLayout::push_spread(&self.value.0, ptr);
+//     }
 
-    fn clear_spread(&self, ptr: &mut ink_primitives::KeyPtr) {
-        SpreadLayout::clear_spread(&self.value.0, ptr);
-    }
-}
+//     fn clear_spread(&self, ptr: &mut ink_primitives::KeyPtr) {
+//         SpreadLayout::clear_spread(&self.value.0, ptr);
+//     }
+// }
 
-impl PackedLayout for WrapperU256 {
-    fn pull_packed(&mut self, at: &ink_primitives::Key) {
-        self.value.0.pull_packed(at);
-    }
+// impl PackedLayout for WrapperU256 {
+//     fn pull_packed(&mut self, at: &ink_primitives::Key) {
+//         self.value.0.pull_packed(at);
+//     }
 
-    fn push_packed(&self, at: &ink_primitives::Key) {
-        self.value.0.push_packed(at);
-    }
+//     fn push_packed(&self, at: &ink_primitives::Key) {
+//         self.value.0.push_packed(at);
+//     }
 
-    fn clear_packed(&self, at: &ink_primitives::Key) {
-        self.value.0.clear_packed(at);
-    }
-}
+//     fn clear_packed(&self, at: &ink_primitives::Key) {
+//         self.value.0.clear_packed(at);
+//     }
+// }
 
-#[cfg(feature = "std")]
-impl StorageLayout for WrapperU256 {
-    fn layout(key_ptr: &mut ink_primitives::KeyPtr) -> Layout {
-        Layout::Struct(StructLayout::new([
-            FieldLayout::new(
-                "len",
-                <[u32; 4] as StorageLayout>::layout(key_ptr),
-            ),
-            FieldLayout::new("elems", <[u32; 6] as StorageLayout>::layout(key_ptr)),
-        ]))
-    }
-}
+// #[cfg(feature = "std")]
+// impl StorageLayout for WrapperU256 {
+//     fn layout(key_ptr: &mut ink_primitives::KeyPtr) -> Layout {
+//         Layout::Struct(StructLayout::new([
+//             FieldLayout::new(
+//                 "len",
+//                 <[u32; 4] as StorageLayout>::layout(key_ptr),
+//             ),
+//             FieldLayout::new("elems", <[u32; 6] as StorageLayout>::layout(key_ptr)),
+//         ]))
+//     }
+// }
 
 // #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
 // #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]

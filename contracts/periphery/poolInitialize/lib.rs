@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 use ink_env::AccountId;
 use ink_lang as ink;
-use sp_core::U256;
 // pub type U256 = [u8; 32];
 /// @title Creates and initializes V3 Pools
 /// @notice Provides a method for creating and initializing a pool, if necessary, for bundling with other methods that
@@ -61,7 +60,7 @@ mod pool_initializer {
             token0: AccountId,
             token1: AccountId,
             fee: u32,
-            sqrtPriceX96: sp_core::U256,
+            sqrtPriceX96: u128,
         ) -> u32 {
             let accumulator = UniswapV3FactoryRef::new()
                 .endowment(100 / 4)
@@ -76,9 +75,9 @@ mod pool_initializer {
                 });
 
             assert!(token0<token1);
-            let pool = self.factory.get_pool(token0,token1,fee);
+            let pool = self.factory.get_pool(fee,token0,token1,);
             if pool == crate::ADDRESS0.into(){
-                self.factory.create_pool(token0,token1,fee);
+                self.factory.create_pool(fee,token0,token1,);
             }
             // require(token0 < token1);
             // pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
