@@ -1,14 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![feature(min_specialization)]
 // SPDX-License-Identifier: GPL-2.0-or-later
-use ink_lang as ink;
+// use ink_lang as ink;
 
 pub use self::uniswap_v3_factory::{
     UniswapV3Factory,
     UniswapV3FactoryRef,
 };
 
-#[ink::contract]
+#[brush::contract]
 mod uniswap_v3_factory {
     use ink_env::hash::{Sha2x256, HashOutput};
     use ink_lang::ToAccountId;
@@ -19,6 +19,13 @@ mod uniswap_v3_factory {
     use primitives::{Address, Int24};
     use primitives::Uint24;
     use primitives::ADDRESS0;
+
+    use brush::contracts::{
+        // ownable::*,
+        psp34::*,
+    };
+
+    use brush::modifiers;
 
     static  accumulator_code_hash:&str = "52ea1e3471f4d4b8e41c34dfbb79db8b899a3f93be7bcb53cc16f011b81d3ffb";
     #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
@@ -44,6 +51,7 @@ mod uniswap_v3_factory {
     }
 
     #[ink(storage)]
+    #[derive(Default, PSP34Storage)]
     pub struct UniswapV3Factory {
         pub owner:primitives::Address,
         // mapping(uint24 => int24) public override feeAmountTickSpacing;
@@ -53,6 +61,9 @@ mod uniswap_v3_factory {
         /// @inheritdoc IPeripheryImmutableState
         pub pool_map: Mapping<(AccountId,AccountId,u32),AccountId>,
         pub parameters:Parameters,
+        #[PSP34StorageField]
+        psp34: PSP34Data,
+        next_id: u8,
     }
 
 
@@ -96,6 +107,8 @@ mod uniswap_v3_factory {
         tick_spacing:Int24,
     }
 
+    impl PSP34 for UniswapV3Factory {}
+
     impl UniswapV3Factory {
         #[ink(constructor)]
         pub fn new() -> Self {
@@ -114,6 +127,8 @@ mod uniswap_v3_factory {
                 fee_amount_tick_spacing:Default::default(),
                 pool_map:Default::default(),
                 parameters:Default::default(),
+                psp34:Default::default(),
+                next_id:0,
             };
             
             instance
@@ -147,6 +162,13 @@ mod uniswap_v3_factory {
                 fee:10000,
                 tick_spacing:200,
             });
+        }
+
+        #[ink(message)]
+        pub fn mint_token(&mut self) -> Result<(), PSP34Error> {
+            self._mint(Id::U8(self.next_id))?;
+            self.next_id += 1;
+            Ok(())
         }
 
         #[ink(message)]
