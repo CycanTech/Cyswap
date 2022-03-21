@@ -3,19 +3,19 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // use ink_lang as ink;
 
-pub use self::uniswap_v3_factory::{
-    UniswapV3Factory,
-    UniswapV3FactoryRef,
-};
+// pub use self::uniswap_v3_factory::{
+//     UniswapV3Factory,
+//     UniswapV3FactoryRef,
+// };
 
 #[brush::contract]
-mod uniswap_v3_factory {
+pub mod uniswap_v3_factory {
     use ink_env::hash::{Sha2x256, HashOutput};
     use ink_lang::ToAccountId;
     use ink_storage::{Mapping, traits::{SpreadLayout, PackedLayout, StorageLayout}};
     use scale::{Encode, Decode};
 
-    use pool::UniswapV3PoolRef;
+    use pool::uniswap_v3_pool::UniswapV3PoolRef;
     use primitives::{Address, Int24};
     use primitives::Uint24;
     use primitives::ADDRESS0;
@@ -51,7 +51,7 @@ mod uniswap_v3_factory {
     }
 
     #[ink(storage)]
-    #[derive(Default, PSP34Storage)]
+    #[derive(Default,PSP34Storage)]
     pub struct UniswapV3Factory {
         pub owner:primitives::Address,
         // mapping(uint24 => int24) public override feeAmountTickSpacing;
@@ -130,7 +130,6 @@ mod uniswap_v3_factory {
                 psp34:Default::default(),
                 next_id:0,
             };
-            
             instance
         }
 
@@ -166,7 +165,7 @@ mod uniswap_v3_factory {
 
         #[ink(message)]
         pub fn mint_token(&mut self) -> Result<(), PSP34Error> {
-            self._mint(Id::U8(self.next_id))?;
+            self._mint_to(Self::env().caller(), Id::U8(self.next_id))?;
             self.next_id += 1;
             Ok(())
         }

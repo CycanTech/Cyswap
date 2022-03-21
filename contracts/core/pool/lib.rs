@@ -1,12 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // SPDX-License-Identifier: GPL-2.0-or-later
-use ink_lang as ink;
+// use ink_lang as ink;
 
-pub use self::uniswap_v3_pool::{UniswapV3Pool, UniswapV3PoolRef};
 
-#[ink::contract]
-mod uniswap_v3_pool {
+#[brush::contract]
+pub mod uniswap_v3_pool {
     use ink_storage::{
         Mapping,
         traits::{PackedLayout, SpreadLayout, StorageLayout},

@@ -35,9 +35,9 @@ use ink_lang as ink;
 
 static ADDRESS0:[u8;32] = [0;32]; 
 
-#[ink::contract]
+#[brush::contract]
 mod pool_initializer {
-    use factory::UniswapV3FactoryRef;
+    use factory::uniswap_v3_factory::UniswapV3FactoryRef;
     #[ink(storage)]
     pub struct PoolInitializer {
         /// @inheritdoc IPeripheryImmutableState
