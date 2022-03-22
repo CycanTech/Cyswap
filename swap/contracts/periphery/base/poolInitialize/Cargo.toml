@@ -1,5 +1,5 @@
 [package]
-name = "factory"
+name = "poolInitialize"
 version = "3.0.0-rc9"
 authors = ["Parity Technologies <cloudweisz@gmail.com>"]
 edition = "2021"
@@ -12,19 +12,19 @@ ink_storage = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", defau
 ink_lang = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
 ink_prelude = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
 
-brush = { tag = "v1.5.0", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false, features = ["psp34"] }
+brush = { tag = "v1.5.0", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false}
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-hex = { version = "0.4", default-features = false,features = ["alloc"]}
-pool = {version = "3.0.0-rc9",path="../../core/pool", default-features = false,features = ["ink-as-dependency"]}
-primitives = {version = "3.0.0-rc9",path="../../primitives/", default-features = false}
 
+
+# factory = {version = "3.0.0-rc9",path="../../../core/factory", default-features = false,features = ["ink-as-dependency"]}
+crabswap = {version = "3.0.0-rc9",path="/", default-features = false}
 
 [lib]
-name = "factory"
+name = "poolInitialize"
 path = "lib.rs"
-crate-type = ["cdylib","rlib",]
+crate-type = ["cdylib"]
 
 [features]
 default = ["std"]
@@ -38,16 +38,6 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
-    "pool/std",
-    "hex/std",
-    "primitives/std",
-    "brush/std",
+    # "factory/std",
 ]
 ink-as-dependency = []
-
-[profile.dev]
-codegen-units = 16
-overflow-checks = false
-
-[profile.release]
-overflow-checks = false

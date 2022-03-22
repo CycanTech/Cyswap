@@ -1,5 +1,5 @@
 [package]
-name = "uniswapv3"
+name = "crabswap"
 version = "3.0.0-rc9"
 authors = ["Parity Technologies <cloudweisz@gmail.com>"]
 edition = "2021"
@@ -14,10 +14,10 @@ ink_prelude = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", defau
 brush = { tag = "v1.5.0", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false}
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-
+swap_project_derive = { path = "derive" }
 
 [lib]
-name = "uniswapv3"
+name = "crabswap"
 path = "lib.rs"
 crate-type = ["cdylib"]
 
@@ -39,9 +39,8 @@ ink-as-dependency = []
 [workspace]
 members = [
     "primitives/",
-    "core/pool/",
-    "core/factory/",
-    "periphery/poolInitialize/",
-    # "psp34",
-
+    "contracts/core/pool/",
+    "contracts/core/factory/",
+    "contracts/periphery/NonfungiblePositionManager/",
+    "derive/"
 ]
