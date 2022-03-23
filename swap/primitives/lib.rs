@@ -17,7 +17,7 @@ pub type Uint24 = u32;
 pub type Int24 = i32;
 pub type Uint160 = WrapperU256;
 
-pub static ADDRESS0:[u8;32] = [0u8;32];
+pub const ADDRESS0:[u8;32] = [0u8;32];
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]

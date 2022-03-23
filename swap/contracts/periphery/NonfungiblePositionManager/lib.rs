@@ -4,7 +4,10 @@
 #[brush::contract]
 pub mod position_manager {
     use ink_storage::traits::SpreadAllocate;
-    use crabswap::impls::pool_initialize::*;
+    use crabswap::impls::pool_initialize::PoolInitializeStorage;
+    use crabswap::impls::pool_initialize::PoolInitializeData;
+    use crabswap::impls::pool_initialize::Initializer;
+    use crabswap::impls::pool_initialize::initializer_external;
     #[ink(storage)]
     #[derive(Default, SpreadAllocate, PoolInitializeStorage)]
     pub struct PositionManger {
