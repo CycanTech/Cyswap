@@ -18,8 +18,8 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 
 
-factory = {version = "3.0.0-rc9",path="../../core/factory", default-features = false,features = ["ink-as-dependency"]}
-
+# factory = {version = "3.0.0-rc9",path="../../core/factory", default-features = false,features = ["ink-as-dependency"]}
+crabswap = { path = "../../../", default-features = false }
 
 [lib]
 name = "NonfungiblePositionManager"
@@ -38,6 +38,6 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
-    "factory/std",
+    "crabswap/std",
 ]
 ink-as-dependency = []

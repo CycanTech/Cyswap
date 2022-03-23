@@ -4,7 +4,6 @@ pub use crate::traits::pool_initialize::*;
 use brush::{
     contracts::{
         traits::{
-            psp22::PSP22Ref,
             psp34::Id,
         },
     },

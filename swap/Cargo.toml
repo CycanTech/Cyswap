@@ -19,7 +19,9 @@ swap_project_derive = { path = "derive" }
 [lib]
 name = "crabswap"
 path = "lib.rs"
-crate-type = ["cdylib"]
+crate-type = [
+    "rlib",
+]
 
 [features]
 default = ["std"]
