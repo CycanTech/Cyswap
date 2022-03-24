@@ -11,7 +11,7 @@ ink_env = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-f
 ink_storage = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
 ink_lang = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
 ink_prelude = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
-primitive-types = { tag="uint-v0.9.3", git = "https://github.com/paritytech/parity-common", default-features = false,features = ["scale-info"] }
+# primitive-types = { tag="uint-v0.9.3", git = "https://github.com/paritytech/parity-common", default-features = false,features = ["scale-info"] }
 
 
 brush = { tag = "v1.5.0", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false}
@@ -41,7 +41,7 @@ std = [
     "scale-info/std",
     "primitives/std",
     "brush/std",
-    "primitive-types/std",
+    # "primitive-types/std",
 ]
 ink-as-dependency = []
 [profile.dev]

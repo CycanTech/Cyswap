@@ -17,25 +17,6 @@ pub mod uniswap_v3_pool {
     type Uint24 = u32;
     type Int24 = i32;
 
-    #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
-    struct Slot0 {
-        // the current price
-        sqrtPriceX96: Uint160,
-        // the current tick
-        tick: Int24,
-        // the most-recently updated index of the observations array
-        observationIndex: u16,
-        // the current maximum number of observations that are being stored
-        observationCardinality: u16,
-        // the next maximum number of observations to store, triggered in observations.write
-        observationCardinalityNext: u16,
-        // the current protocol fee as a percentage of the swap fee taken on withdrawal
-        // represented as an integer denominator (1/x)%
-        feeProtocol: u8,
-        // whether the pool is locked
-        unlocked: bool,
-    }
 
     // accumulated protocol fees in token0/token1 units
     #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
@@ -85,8 +66,8 @@ pub mod uniswap_v3_pool {
                 fee: Default::default(),
                 tick_spacing: Default::default(),
                 max_liquidity_per_tick: Default::default(),
-                fee_growth_global0_x128: Uint160{value:0},
-                fee_growth_global1_x128: Uint160{value:0},
+                fee_growth_global0_x128: Uint160::new([0u64;4]),
+                fee_growth_global1_x128: Uint160::new([0u64;4]),
                 // protocolFees: WrapperU256{value:U256([0u64;4])},
                 liquidity: Default::default(),
             }
@@ -107,8 +88,8 @@ pub mod uniswap_v3_pool {
                 fee,
                 tick_spacing,
                 max_liquidity_per_tick: Default::default(),
-                fee_growth_global0_x128: Uint160{value:0},
-                fee_growth_global1_x128: Uint160{value:0},
+                fee_growth_global0_x128: Uint160::new([0u64;4]),
+                fee_growth_global1_x128: Uint160::new([0u64;4]),
                 // protocolFees: WrapperU256{value:U256([0u64;4])},
                 liquidity: Default::default(),
             };

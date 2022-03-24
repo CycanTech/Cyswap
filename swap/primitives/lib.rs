@@ -1,6 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use std::str::FromStr;
 
 use ink_env::AccountId;
 // SPDX-License-Identifier: GPL-2.0-or-later
@@ -9,12 +8,15 @@ use ink_storage::{
     traits::{PackedLayout, SpreadLayout, StorageLayout},
 };
 use primitive_types::U256;
-use scale::{Decode, Encode};
+// use primitive_types::U256;
+use scale::{Decode, Encode, WrapperTypeEncode};
 // use sp_core::U256;
 
 #[cfg(feature = "std")]
 use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
-use scale_info::TypeInfo;
+#[cfg(feature = "std")]
+use scale_info::{TypeInfo, Type};
+// use sp_core::U256;
 pub type Address = AccountId;
 pub type Uint24 = u32;
 pub type Int24 = i32;
@@ -23,18 +25,44 @@ pub type Uint160 = WrapperU256;
 pub const ADDRESS0:[u8;32] = [0u8;32];
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(TypeInfo))]
+// #[cfg_attr(feature = "std", derive(TypeInfo))]
 pub struct WrapperU256 {
     pub value: U256,
 }
 
-// fn test()->u64{
-//     let s:U256 = U256::from_str("100").unwrap();
-//     s.add
-//     0u64
+impl WrapperU256{
+    pub fn new(v:[u64;4])->Self{
+        WrapperU256{
+            value:U256(v),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl TypeInfo for WrapperU256
+{
+    type Identity = [u64];
+
+    fn type_info() -> Type {
+        Self::Identity::type_info()
+    }
+}
+
+// impl WrapperTypeEncode for WrapperU256{
+    
 // }
 
+impl Deref for WrapperU256{
+    type Target=[u64];
+
+    fn deref(&self) -> &Self::Target {
+        self.value.as_ref()
+    }
+}
+
 impl SpreadLayout for WrapperU256 {
+    const FOOTPRINT: u64 = 4;
+    const REQUIRES_DEEP_CLEAN_UP: bool = true;
     fn pull_spread(ptr: &mut ink_primitives::KeyPtr) -> Self {
         let slice: [u64; 4] = SpreadLayout::pull_spread(ptr);
         Self { value: U256(slice) }
