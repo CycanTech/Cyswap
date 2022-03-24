@@ -15,17 +15,17 @@ ink_prelude = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", defau
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 
+# primitive-types = { tag="uint-v0.9.3", git = "https://github.com/paritytech/parity-common", default-features = false}
 
-
-# [dependencies.sp-core]
-# default-features = false
-# git = 'https://github.com/paritytech/substrate.git'
-# version = '5.0.0'
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+version = '5.0.0'
 
 [lib]
 name = "primitives"
 path = "lib.rs"
-crate-type = ["cdylib","rlib",]
+crate-type = ["rlib",]
 
 [features]
 default = ["std"]
@@ -39,6 +39,7 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
-    # "sp-core/std",
+    "primitive-types/std",
+    "sp-core/std",
 ]
 ink-as-dependency = []
