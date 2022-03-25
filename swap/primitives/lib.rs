@@ -1,5 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "std")]
+use std::ops::Deref;
 
 use ink_env::AccountId;
 // SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,7 +14,7 @@ use primitive_types::U256;
 use scale::{Decode, Encode, WrapperTypeEncode};
 // use sp_core::U256;
 
-#[cfg(feature = "std")]
+
 use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
 #[cfg(feature = "std")]
 use scale_info::{TypeInfo, Type};
@@ -24,7 +26,7 @@ pub type Uint160 = WrapperU256;
 
 pub const ADDRESS0:[u8;32] = [0u8;32];
 
-#[derive(Debug, PartialEq, Eq, Encode, Decode)]
+#[derive(Debug, PartialEq, Eq,Encode, Decode)]
 // #[cfg_attr(feature = "std", derive(TypeInfo))]
 pub struct WrapperU256 {
     pub value: U256,
@@ -48,17 +50,19 @@ impl TypeInfo for WrapperU256
     }
 }
 
+// #[cfg(feature = "std")]
 // impl WrapperTypeEncode for WrapperU256{
     
 // }
 
-impl Deref for WrapperU256{
-    type Target=[u64];
+// #[cfg(feature = "std")]
+// impl Deref for WrapperU256{
+//     type Target=[u64];
 
-    fn deref(&self) -> &Self::Target {
-        self.value.as_ref()
-    }
-}
+//     fn deref(&self) -> &Self::Target {
+//         self.value.as_ref()
+//     }
+// }
 
 impl SpreadLayout for WrapperU256 {
     const FOOTPRINT: u64 = 4;
