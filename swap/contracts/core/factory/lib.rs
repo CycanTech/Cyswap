@@ -13,6 +13,7 @@ pub mod uniswap_v3_factory {
     use ink_env::hash::{Sha2x256, HashOutput};
     use ink_lang::ToAccountId;
     use ink_storage::{Mapping, traits::{SpreadLayout, PackedLayout, StorageLayout}};
+    use ink_storage::traits::SpreadAllocate;
     use scale::{Encode, Decode};
 
     use pool::uniswap_v3_pool::UniswapV3PoolRef;
@@ -21,14 +22,14 @@ pub mod uniswap_v3_factory {
     use primitives::ADDRESS0;
 
     use brush::contracts::{
-        // ownable::*,
+        ownable::*,
         psp34::*,
     };
 
     use brush::modifiers;
 
-    static  accumulator_code_hash:&str = "52ea1e3471f4d4b8e41c34dfbb79db8b899a3f93be7bcb53cc16f011b81d3ffb";
-    #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
+    const  ACCUMULATOR_CODE_HASH:&str = "52ea1e3471f4d4b8e41c34dfbb79db8b899a3f93be7bcb53cc16f011b81d3ffb";
+    #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout,SpreadAllocate)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
     pub struct Parameters {
         factory:Address,
@@ -51,9 +52,9 @@ pub mod uniswap_v3_factory {
     }
 
     #[ink(storage)]
-    #[derive(Default,PSP34Storage)]
+    #[derive(Default,SpreadAllocate,PSP34Storage,OwnableStorage)]
     pub struct UniswapV3Factory {
-        pub owner:primitives::Address,
+        // pub owner:primitives::Address,
         // mapping(uint24 => int24) public override feeAmountTickSpacing;
         pub fee_amount_tick_spacing:Mapping<u32,Int24>,
 
@@ -63,6 +64,8 @@ pub mod uniswap_v3_factory {
         pub parameters:Parameters,
         #[PSP34StorageField]
         psp34: PSP34Data,
+        #[OwnableStorageField]
+        ownable: OwnableData,
         next_id: u8,
     }
 
@@ -109,7 +112,32 @@ pub mod uniswap_v3_factory {
 
     impl PSP34 for UniswapV3Factory {}
 
+    impl Ownable for UniswapV3Factory{}
+
+    impl OwnableInternal for UniswapV3Factory {
+        fn _emit_ownership_transferred_event(&self, previous_owner: Option<AccountId>, new_owner: Option<AccountId>) {
+            self.env().emit_event(OwnerChanged{
+                old_owner:previous_owner.unwrap(),
+                new_owner:new_owner.unwrap(),
+            })
+        }
+    }
+
     impl UniswapV3Factory {
+
+        // constructor() {
+        //     owner = msg.sender;
+        //     emit OwnerChanged(address(0), msg.sender);
+    
+        //     feeAmountTickSpacing[500] = 10;
+        //     emit FeeAmountEnabled(500, 10);
+        //     feeAmountTickSpacing[3000] = 60;
+        //     emit FeeAmountEnabled(3000, 60);
+        //     feeAmountTickSpacing[10000] = 200;
+        //     emit FeeAmountEnabled(10000, 200);
+        // }
+
+
         #[ink(constructor)]
         pub fn new() -> Self {
             let owner = Self::env().caller();
@@ -117,20 +145,29 @@ pub mod uniswap_v3_factory {
                 old_owner:ADDRESS0.into(),
                 new_owner:owner
             });
-            // emit FeeAmountEnabled(500, 10);
-            // feeAmountTickSpacing[3000] = 60;
-            // emit FeeAmountEnabled(3000, 60);
-            // feeAmountTickSpacing[10000] = 200;
-            // emit FeeAmountEnabled(10000, 200);
-            let instance = Self {
-                owner,
-                fee_amount_tick_spacing:Default::default(),
-                pool_map:Default::default(),
-                parameters:Default::default(),
-                psp34:Default::default(),
-                next_id:0,
-            };
-            instance
+
+            ink_lang::codegen::initialize_contract(|instance: &mut Self| {
+                let caller = instance.env().caller();
+                instance._init_with_owner(caller);
+                instance.fee_amount_tick_spacing.insert(500,&10);
+                instance.env().emit_event(FeeAmountEnabled{
+                    fee:500,
+                    tick_spacing:10,
+                });
+                instance.fee_amount_tick_spacing.insert(3000,&60);
+                instance.env().emit_event(FeeAmountEnabled{
+                    fee:3000,
+                    tick_spacing:60,
+                });
+                instance.fee_amount_tick_spacing.insert(10000,&200);
+                instance.env().emit_event(FeeAmountEnabled{
+                    fee:10000,
+                    tick_spacing:200,
+                });
+                // pool_map:Default::default(),
+                // parameters:Default::default(),
+                // psp34:Default::default(),
+            })
         }
 
         
@@ -141,27 +178,7 @@ pub mod uniswap_v3_factory {
             self.pool_map.get(key).unwrap_or(ADDRESS0.into())
         }
 
-        #[ink(message)]
-        pub fn init(&mut self){
-            // check the owner is the caller
-            let caller = Self::env().caller();
-            assert!(caller==self.owner,"caller is not the owner");
-            self.fee_amount_tick_spacing.insert(500,&10);
-            Self::env().emit_event(FeeAmountEnabled{
-                fee:500,
-                tick_spacing:10,
-            });
-            self.fee_amount_tick_spacing.insert(3000,&60);
-            Self::env().emit_event(FeeAmountEnabled{
-                fee:3000,
-                tick_spacing:60,
-            });
-            self.fee_amount_tick_spacing.insert(10000,&200);
-            Self::env().emit_event(FeeAmountEnabled{
-                fee:10000,
-                tick_spacing:200,
-            });
-        }
+        
 
         #[ink(message)]
         pub fn mint_token(&mut self) -> Result<(), PSP34Error> {
@@ -170,10 +187,10 @@ pub mod uniswap_v3_factory {
             Ok(())
         }
 
-        #[ink(message)]
-        pub fn get_owner(&self)->Address{
-            self.owner
-        }
+        // #[ink(message)]
+        // pub fn get_owner(&self)->Address{
+        //     self.owner
+        // }
 
         #[ink(message)]
         pub fn get_fee_amount_tick_spacing(&self,key:u32)->Int24{
@@ -181,7 +198,7 @@ pub mod uniswap_v3_factory {
             self.fee_amount_tick_spacing.get(key).unwrap()
         }
 
-        /// @inheritdoc IUniswapV3Factory
+        //此处原有modifier,限制不可以使用delegateCall的方式调用该方法,因为ink!中没有delegate call 调用,所以按时不使用NoDelegateCall
         #[ink(message)]
         pub fn create_pool(&mut self,fee:u32,token_a:Address,token_b:Address)->AccountId{
             assert!(token_a!=token_b,"token A should not equals token B");
@@ -221,7 +238,7 @@ pub mod uniswap_v3_factory {
             ink_env::hash_encoded::<Sha2x256, _>(&encodable, &mut salt);
             let pool_address = UniswapV3PoolRef::new(address_this,token0, token1, fee, tick_spacing)
                     .endowment(total_balance / 4)
-                    .code_hash(ink_env::Hash::try_from(hex::decode(accumulator_code_hash).unwrap().as_ref()).unwrap())
+                    .code_hash(ink_env::Hash::try_from(hex::decode(ACCUMULATOR_CODE_HASH).unwrap().as_ref()).unwrap())
                     .salt_bytes(salt)
                     .instantiate()
                     .unwrap_or_else(|error| {
