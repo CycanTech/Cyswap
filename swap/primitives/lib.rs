@@ -1,24 +1,21 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(feature = "std")]
-use std::ops::Deref;
 
 use ink_env::AccountId;
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#[cfg(feature = "std")]
+use ink_metadata::layout::{StructLayout, Layout, FieldLayout};
 use ink_storage::{
     traits::{PackedLayout, SpreadLayout, StorageLayout},
 };
-use primitive_types::U256;
 // use primitive_types::U256;
-use scale::{Decode, Encode, WrapperTypeEncode};
-// use sp_core::U256;
+use scale::{Decode, Encode};
 
 
-use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
 #[cfg(feature = "std")]
 use scale_info::{TypeInfo, Type};
-// use sp_core::U256;
+use sp_core::U256;
 pub type Address = AccountId;
 pub type Uint24 = u32;
 pub type Int24 = i32;
@@ -37,6 +34,13 @@ impl WrapperU256{
         WrapperU256{
             value:U256(v),
         }
+    }
+}
+
+impl AsRef<U256> for WrapperU256 {
+    #[inline]
+    fn as_ref(&self) ->  &U256{
+      &self.value
     }
 }
 
