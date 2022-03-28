@@ -1,7 +1,7 @@
 [package]
-name = "crabswap"
-version = "3.0.0-rc9"
-authors = ["Parity Technologies <cloudweisz@gmail.com>"]
+name = "my_psp22"
+version = "1.5.0"
+authors = ["Supercolony <green.baneling@supercolony.net>"]
 edition = "2021"
 
 [dependencies]
@@ -11,16 +11,19 @@ ink_env = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-f
 ink_storage = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
 ink_lang = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
 ink_prelude = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
-brush = { tag = "v1.5.0", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false}
+
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-swap_project_derive = { path = "derive" }
-primitives = {version = "3.0.0-rc9",path="./primitives/", default-features = false}
+
+# These dependencies
+brush = { tag = "v1.5.0", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false, features = ["psp22"] }
+
 [lib]
-name = "crabswap"
+name = "my_psp22"
 path = "lib.rs"
 crate-type = [
-    "rlib",
+    # Used for normal contract Wasm blobs.
+    "cdylib",
 ]
 
 [features]
@@ -35,16 +38,15 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
+
+    # These dependencies
     "brush/std",
-    "primitives/std",
 ]
 ink-as-dependency = []
-[workspace]
-members = [
-    "primitives/",
-    "contracts/core/base/psp22",
-    "contracts/core/pool/",
-    "contracts/core/factory/",
-    "contracts/periphery/NonfungiblePositionManager/",
-    "derive/"
-]
+
+[profile.dev]
+codegen-units = 16
+overflow-checks = false
+
+[profile.release]
+overflow-checks = false

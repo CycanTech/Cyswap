@@ -20,6 +20,8 @@ pub mod uniswap_v3_factory {
     use primitives::{Address, Int24};
     use primitives::Uint24;
     use primitives::ADDRESS0;
+    use ink_lang::codegen::Env;
+    use ink_lang::codegen::EmitEvent;
 
     use brush::contracts::{
         ownable::*,
@@ -76,9 +78,9 @@ pub mod uniswap_v3_factory {
     #[ink(event)]
     pub struct OwnerChanged{
         #[ink(topic)]
-        old_owner:Address, 
+        old_owner:Option<Address>, 
         #[ink(topic)]
-        new_owner:Address,
+        new_owner:Option<Address>,
     }
 
     /// @notice Emitted when a pool is created
@@ -114,39 +116,21 @@ pub mod uniswap_v3_factory {
 
     impl Ownable for UniswapV3Factory{}
 
+    type Event = <UniswapV3Factory as ::ink_lang::reflect::ContractEventBase>::Type;
+
     impl OwnableInternal for UniswapV3Factory {
         fn _emit_ownership_transferred_event(&self, previous_owner: Option<AccountId>, new_owner: Option<AccountId>) {
             self.env().emit_event(OwnerChanged{
-                old_owner:previous_owner.unwrap(),
-                new_owner:new_owner.unwrap(),
+                old_owner:previous_owner,
+                new_owner:new_owner,
             })
         }
     }
 
     impl UniswapV3Factory {
-
-        // constructor() {
-        //     owner = msg.sender;
-        //     emit OwnerChanged(address(0), msg.sender);
-    
-        //     feeAmountTickSpacing[500] = 10;
-        //     emit FeeAmountEnabled(500, 10);
-        //     feeAmountTickSpacing[3000] = 60;
-        //     emit FeeAmountEnabled(3000, 60);
-        //     feeAmountTickSpacing[10000] = 200;
-        //     emit FeeAmountEnabled(10000, 200);
-        // }
-
-
         #[ink(constructor)]
         pub fn new() -> Self {
-            let owner = Self::env().caller();
-            Self::env().emit_event(OwnerChanged{
-                old_owner:ADDRESS0.into(),
-                new_owner:owner
-            });
-
-            ink_lang::codegen::initialize_contract(|instance: &mut Self| {
+            ink_lang::utils::initialize_contract(|instance: &mut Self| {
                 let caller = instance.env().caller();
                 instance._init_with_owner(caller);
                 instance.fee_amount_tick_spacing.insert(500,&10);
@@ -164,9 +148,6 @@ pub mod uniswap_v3_factory {
                     fee:10000,
                     tick_spacing:200,
                 });
-                // pool_map:Default::default(),
-                // parameters:Default::default(),
-                // psp34:Default::default(),
             })
         }
 
@@ -175,6 +156,7 @@ pub mod uniswap_v3_factory {
         pub fn get_pool(&self,fee:u32,token0:AccountId, token1:AccountId)->AccountId{
             ink_env::debug_println!("get_pool fee is:{:?}",fee);
             let key = (token0,token1,fee);
+            self.env().caller();
             self.pool_map.get(key).unwrap_or(ADDRESS0.into())
         }
 
@@ -187,10 +169,10 @@ pub mod uniswap_v3_factory {
             Ok(())
         }
 
-        // #[ink(message)]
-        // pub fn get_owner(&self)->Address{
-        //     self.owner
-        // }
+        #[ink(message)]
+        pub fn get_owner(&self)->Address{
+            self.ownable.owner
+        }
 
         #[ink(message)]
         pub fn get_fee_amount_tick_spacing(&self,key:u32)->Int24{

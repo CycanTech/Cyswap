@@ -99,6 +99,7 @@ pub mod uniswap_v3_pool {
         /// @inheritdoc IUniswapV3Factory
         #[ink(message)]
         pub fn create_pool(&mut self, tokenA: Address, tokenB: Address, fee: u32) -> AccountId {
+            self.env().caller();
             [0; 32].into()
         }
     }
