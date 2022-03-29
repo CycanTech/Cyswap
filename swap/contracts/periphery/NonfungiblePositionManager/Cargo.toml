@@ -19,7 +19,7 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 
 
 # factory = {version = "3.0.0-rc9",path="../../core/factory", default-features = false,features = ["ink-as-dependency"]}
-crabswap = { path = "../../../", default-features = false }
+crabswap = { path = "../../../", default-features = false,features=["pool_initial","erc721_permit"]}
 
 [lib]
 name = "NonfungiblePositionManager"

@@ -23,3 +23,5 @@ proc-macro = true
 [features]
 default = ["std"]
 std = []
+pool_initial = []
+erc721_permit = []

@@ -2,9 +2,13 @@
     "cSpell.words": [
         "crabswap",
         "encodable",
+        "IERC",
         "inheritdoc",
         "patract",
         "polkadot",
-        "redspot"
+        "redspot",
+        "secp",
+        "seperator",
+        "TYPEHASH"
     ]
 }

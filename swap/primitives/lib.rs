@@ -15,11 +15,12 @@ use scale::{Decode, Encode};
 
 #[cfg(feature = "std")]
 use scale_info::{TypeInfo, Type};
-use sp_core::U256;
+pub use sp_core::U256;
 pub type Address = AccountId;
 pub type Uint24 = u32;
 pub type Int24 = i32;
 pub type Uint160 = WrapperU256;
+pub type Uint256 = WrapperU256;
 
 pub const ADDRESS0:[u8;32] = [0u8;32];
 
