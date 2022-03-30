@@ -1,2 +1,3 @@
 pub mod pool_initialize;
 pub mod erc721_permit;
+pub mod psp34_base;

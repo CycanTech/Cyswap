@@ -49,6 +49,10 @@ pool_initial = [
     "swap_project_derive/pool_initial",
 ]
 
+psp34_base = [
+    "swap_project_derive/psp34_base",
+]
+
 ink-as-dependency = []
 [workspace]
 members = [
@@ -59,3 +63,10 @@ members = [
     "contracts/periphery/NonfungiblePositionManager/",
     "derive/"
 ]
+
+[profile.dev]
+codegen-units = 16
+overflow-checks = false
+
+[profile.release]
+overflow-checks = false

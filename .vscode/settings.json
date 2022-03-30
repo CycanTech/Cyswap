@@ -4,6 +4,7 @@
         "encodable",
         "IERC",
         "inheritdoc",
+        "Mintable",
         "patract",
         "polkadot",
         "redspot",

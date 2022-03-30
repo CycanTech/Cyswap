@@ -1,56 +1,44 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(min_specialization)]
 
+/// This is a simple `PSP-22` which will be used as a stable coin and a collateral token in our lending contract
 #[brush::contract]
-pub mod my_psp22 {
-    use brush::contracts::psp22::*;
+pub mod token {
+    use brush::contracts::psp22::extensions::metadata::*;
     use ink_prelude::string::String;
+    // use lending_project::traits::stable_coin::*;
     use ink_storage::traits::SpreadAllocate;
 
+    /// Define the storage for PSP22 data and Metadata data
     #[ink(storage)]
-    #[derive(Default, SpreadAllocate, PSP22Storage)]
-    pub struct MyPSP22 {
+    #[derive(Default, SpreadAllocate, PSP22Storage, PSP22MetadataStorage)]
+    pub struct StableCoinContract {
         #[PSP22StorageField]
         psp22: PSP22Data,
-        // fields for hater logic
-        hated_account: AccountId,
+        #[PSP22MetadataStorageField]
+        metadata: PSP22MetadataData,
     }
 
-    impl PSP22Internal for MyPSP22 {
-        // Let's override method to reject transactions to bad account
-        fn _before_token_transfer(
-            &mut self,
-            _from: Option<&AccountId>,
-            to: Option<&AccountId>,
-            _amount: &Balance,
-        ) -> Result<(), PSP22Error> {
-            if to == Some(&self.hated_account) {
-                return Err(PSP22Error::Custom(String::from("I hate this account!")))
-            }
-            Ok(())
-        }
-    }
+    /// implement PSP22 Trait for our coin
+    impl PSP22 for StableCoinContract {}
 
-    impl PSP22 for MyPSP22 {}
+    /// implement PSP22Metadata Trait for our coin
+    impl PSP22Metadata for StableCoinContract {}
 
-    impl MyPSP22 {
+    // It forces the compiler to check that you implemented all super traits
+    // impl StableCoin for StableCoinContract {}
+
+    impl StableCoinContract {
+        /// constructor with name and symbol
         #[ink(constructor)]
-        pub fn new(total_supply: Balance) -> Self {
-            ink_lang::codegen::initialize_contract(|instance: &mut MyPSP22| {
-                instance
-                    ._mint(instance.env().caller(), total_supply)
-                    .expect("Should mint");
+        pub fn new(name: Option<String>, symbol: Option<String>) -> Self {
+            ink_lang::codegen::initialize_contract(|instance: &mut StableCoinContract| {
+                instance.metadata.name = name;
+                instance.metadata.symbol = symbol;
+                instance.metadata.decimals = 18;
+                let total_supply = 1_000_000 * 10_u128.pow(18);
+                assert!(instance._mint(instance.env().caller(), total_supply).is_ok());
             })
-        }
-
-        #[ink(message)]
-        pub fn set_hated_account(&mut self, hated: AccountId) {
-            self.hated_account = hated;
-        }
-
-        #[ink(message)]
-        pub fn get_hated_account(&self) -> AccountId {
-            self.hated_account.clone()
         }
     }
 }

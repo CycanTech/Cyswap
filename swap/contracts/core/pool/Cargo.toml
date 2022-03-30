@@ -44,9 +44,9 @@ std = [
     # "primitive-types/std",
 ]
 ink-as-dependency = []
-[profile.dev]
-codegen-units = 16
-overflow-checks = false
+# [profile.dev]
+# codegen-units = 16
+# overflow-checks = false
 
-[profile.release]
-overflow-checks = false
+# [profile.release]
+# overflow-checks = false

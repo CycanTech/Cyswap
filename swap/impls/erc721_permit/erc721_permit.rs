@@ -16,7 +16,7 @@ use brush::{
         ZERO_ADDRESS,
     },
 };
-use ink_env::DefaultEnvironment;
+use ink_env::{DefaultEnvironment, hash::Blake2x256,hash::CryptoHash};
 use primitives::U256;
 use scale::Encode;
 use ink_prelude::string::String;
@@ -51,9 +51,8 @@ impl<T:ERC721PermitStorage> IERC721Permit for T{
         s_vec.append(&mut chain_id_vec);
         s_vec.append(&mut address_vec);
         let mut result = [0u8;32];
-        // TODO make the blace2x256 correct
-        // result = ink_lang::blake2x256!(&s_vec);
-        // ink_lang_ir::blake2b_256(&s_vec,&mut result);
+
+        Blake2x256::hash(&s_vec,&mut result);
         result
     }
 
