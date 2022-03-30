@@ -5,10 +5,7 @@
 pub mod position_manager {
     use brush::contracts::psp34::PSP34Data;
     use ink_storage::traits::SpreadAllocate;
-    use crabswap::impls::pool_initialize::PoolInitializeStorage;
-    use crabswap::impls::pool_initialize::PoolInitializeData;
-    use crabswap::impls::pool_initialize::Initializer;
-    use crabswap::impls::pool_initialize::initializer_external;
+    use crabswap::impls::pool_initialize::*;
     use crabswap::impls::erc721_permit::*;
     use crabswap::impls::psp34_base::*;
     use brush::contracts::psp34::*;
