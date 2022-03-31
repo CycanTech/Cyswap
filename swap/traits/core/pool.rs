@@ -3,12 +3,13 @@ use brush::{
         AccountId,
     },
 };
-use ink_storage::traits::{SpreadLayout, PackedLayout};
+use ink_storage::traits::{SpreadLayout, PackedLayout, SpreadAllocate};
 #[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
 use scale::{Encode, Decode};
-use primitives::Uint160;
+use primitives::{Uint160, Uint16};
 use primitives::Int24;
+use primitives::Uint8;
 
 
 #[brush::wrapper]
@@ -16,30 +17,31 @@ pub type PoolRef = dyn Pool;
 
 
 
-#[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
+#[derive(Default,Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout,SpreadAllocate)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
-struct Slot0 {
+pub struct Slot0 {
     // the current price
     sqrtPriceX96: Uint160,
     // the current tick
     tick: Int24,
     // the most-recently updated index of the observations array
-    observationIndex: u16,
+    observationIndex: Uint16,
     // the current maximum number of observations that are being stored
-    observationCardinality: u16,
+    observationCardinality: Uint16,
     // the next maximum number of observations to store, triggered in observations.write
-    observationCardinalityNext: u16,
+    observationCardinalityNext: Uint16,
     // the current protocol fee as a percentage of the swap fee taken on withdrawal
     // represented as an integer denominator (1/x)%
-    feeProtocol: u8,
+    feeProtocol: Uint8,
     // whether the pool is locked
     unlocked: bool,
 }
 
 #[brush::trait_definition]
 pub trait Pool{
+
+    /// @inheritdoc IUniswapV3PoolActions
+    /// @dev not locked because it initializes unlocked
     #[ink(message, payable)]
-    fn test(
-        &mut self        
-    ) -> u32;
+    fn initialize(&mut self,sqrtPriceX96:Uint160);
 }

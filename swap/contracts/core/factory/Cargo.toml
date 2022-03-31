@@ -17,9 +17,9 @@ brush = { tag = "v1.5.0", git = "https://github.com/Supercolony-net/openbrush-co
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 hex = { version = "0.4", default-features = false,features = ["alloc"]}
-pool = {version = "3.0.0-rc9",path="../../core/pool", default-features = false,features = ["ink-as-dependency"]}
+pool = {version = "3.0.0-rc9",path="../pool", default-features = false,features = ["ink-as-dependency"]}
 primitives = {version = "3.0.0-rc9",path="../../../primitives/", default-features = false}
-
+crabswap = { path = "../../../", default-features = false}
 
 [lib]
 name = "factory"
@@ -42,6 +42,7 @@ std = [
     "hex/std",
     "primitives/std",
     "brush/std",
+    "crabswap/std",
 ]
 ink-as-dependency = []
 

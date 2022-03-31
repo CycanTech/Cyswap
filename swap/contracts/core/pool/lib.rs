@@ -3,7 +3,7 @@
 
 
 #[brush::contract]
-pub mod uniswap_v3_pool {
+pub mod crab_swap_pool {
     use ink_storage::{
         Mapping,
         traits::{PackedLayout, SpreadLayout, StorageLayout},
@@ -12,7 +12,8 @@ pub mod uniswap_v3_pool {
     use primitives::Uint160;
     #[cfg(feature = "std")]
     use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
-
+    use ink_storage::traits::SpreadAllocate;
+    use crabswap::traits::core::pool::*;
     type Address = AccountId;
     type Uint24 = u32;
     type Int24 = i32;
@@ -27,7 +28,8 @@ pub mod uniswap_v3_pool {
     }
 
     #[ink(storage)]
-    pub struct UniswapV3Pool {
+    #[derive(Default,SpreadAllocate)]
+    pub struct PoolContract {
         // address public immutable override factory;
         // address public immutable override token0;
         // address public immutable override token1;
@@ -42,7 +44,7 @@ pub mod uniswap_v3_pool {
         pub fee: Uint24,
         pub tick_spacing: Int24,
         pub max_liquidity_per_tick: u128,
-        // pub slot0: Slot0,
+        pub slot0: Slot0,
 
         pub fee_growth_global0_x128: Uint160,
         pub fee_growth_global1_x128: Uint160,
@@ -57,43 +59,44 @@ pub mod uniswap_v3_pool {
         // mapping(bytes32 => Position.Info) public override positions;
     }
 
-    impl Default for UniswapV3Pool {
-        fn default() -> Self {
-            Self {
-                factory: Default::default(),
-                token0: Default::default(),
-                token1: Default::default(),
-                fee: Default::default(),
-                tick_spacing: Default::default(),
-                max_liquidity_per_tick: Default::default(),
-                fee_growth_global0_x128: Uint160::new([0u64;4]),
-                fee_growth_global1_x128: Uint160::new([0u64;4]),
-                // protocolFees: WrapperU256{value:U256([0u64;4])},
-                liquidity: Default::default(),
-            }
+    impl Pool for PoolContract{
+        /// @inheritdoc IUniswapV3PoolActions
+        /// @dev not locked because it initializes unlocked
+        #[ink(message, payable)]
+        fn initialize(&mut self,sqrtPriceX96:Uint160){
+            // require(slot0.sqrtPriceX96 == 0, 'AI');
+            // int24 tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+            // (uint16 cardinality, uint16 cardinalityNext) = observations.initialize(_blockTimestamp());
+            // slot0 = Slot0({
+            //     sqrtPriceX96: sqrtPriceX96,
+            //     tick: tick,
+            //     observationIndex: 0,
+            //     observationCardinality: cardinality,
+            //     observationCardinalityNext: cardinalityNext,
+            //     feeProtocol: 0,
+            //     unlocked: true
+            // });
+            // emit Initialize(sqrtPriceX96, tick);
         }
     }
 
-    impl UniswapV3Pool {
+    impl PoolContract {
         #[ink(constructor)]
         pub fn new(factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24) -> Self {
             // (factory, token0, token1, fee, _tickSpacing) = IUniswapV3PoolDeployer(msg.sender).parameters();
             // tickSpacing = _tickSpacing;
             // maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
-
-            let instance = Self{
-                factory,
-                token0,
-                token1,
-                fee,
-                tick_spacing,
-                max_liquidity_per_tick: Default::default(),
-                fee_growth_global0_x128: Uint160::new([0u64;4]),
-                fee_growth_global1_x128: Uint160::new([0u64;4]),
-                // protocolFees: WrapperU256{value:U256([0u64;4])},
-                liquidity: Default::default(),
-            };
-            instance
+            ink_lang::utils::initialize_contract(|instance:&mut Self|{
+                instance.factory = factory;
+                instance.token0 = token0;
+                instance.token1 = token1;
+                instance.fee = fee;
+                instance.tick_spacing = tick_spacing;
+                instance.max_liquidity_per_tick = Default::default();
+                instance.fee_growth_global0_x128 = Default::default();
+                instance.fee_growth_global1_x128=Uint160::new([0u64;4]);
+                instance.liquidity = Default::default();
+            })
         }
 
         /// @inheritdoc IUniswapV3Factory
@@ -102,5 +105,6 @@ pub mod uniswap_v3_pool {
             self.env().caller();
             [0; 32].into()
         }
+       
     }
 }

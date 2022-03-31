@@ -7,7 +7,7 @@ use ink_env::AccountId;
 #[cfg(feature = "std")]
 use ink_metadata::layout::{StructLayout, Layout, FieldLayout};
 use ink_storage::{
-    traits::{PackedLayout, SpreadLayout, StorageLayout},
+    traits::{PackedLayout, SpreadLayout, StorageLayout, SpreadAllocate,ExtKeyPtr},
 };
 // use primitive_types::U256;
 use scale::{Decode, Encode};
@@ -18,13 +18,15 @@ use scale_info::{TypeInfo, Type};
 pub use sp_core::U256;
 pub type Address = AccountId;
 pub type Uint24 = u32;
+pub type Uint16 = u16;
 pub type Int24 = i32;
+pub type Uint8 = u8;
 pub type Uint160 = WrapperU256;
 pub type Uint256 = WrapperU256;
 
 pub const ADDRESS0:[u8;32] = [0u8;32];
 
-#[derive(Debug, PartialEq, Eq,Encode, Decode)]
+#[derive(Default,Debug, PartialEq, Eq,Encode, Decode)]
 // #[cfg_attr(feature = "std", derive(TypeInfo))]
 pub struct WrapperU256 {
     pub value: U256,
@@ -97,6 +99,14 @@ impl PackedLayout for WrapperU256 {
 
     fn clear_packed(&self, at: &ink_primitives::Key) {
         self.value.0.clear_packed(at);
+    }
+}
+
+impl SpreadAllocate for WrapperU256{
+    fn allocate_spread(ptr: &mut ink_primitives::KeyPtr) -> Self {
+        ptr.next_for::<WrapperU256>();
+        // Id::U8(0)
+        WrapperU256::new([0u64;4])
     }
 }
 

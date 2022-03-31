@@ -3,6 +3,7 @@ use brush::{
         AccountId,
     },
 };
+use primitives::Uint160;
 
 #[brush::wrapper]
 pub type InitializerRef = dyn Initializer;
@@ -26,6 +27,6 @@ pub trait Initializer{
         token0: AccountId,
         token1: AccountId,
         fee: u32,
-        sqrtPriceX96: u128,
+        sqrtPriceX96: Uint160,
     ) -> u32;
 }

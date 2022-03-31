@@ -1,5 +1,5 @@
 pub use super::data::*;
-pub use crate::traits::psp34_base::*;
+pub use crate::traits::periphery::psp34_base::*;
 
 use ink_prelude::string::String;
 

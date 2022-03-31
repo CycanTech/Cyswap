@@ -1,5 +1,5 @@
 pub use super::data::*;
-pub use crate::traits::erc721_permit::*;
+pub use crate::traits::periphery::erc721_permit::*;
 
 use brush::{
     contracts::{

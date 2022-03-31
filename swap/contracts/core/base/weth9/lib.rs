@@ -39,8 +39,8 @@ pub mod weth9 {
                 instance.metadata.name = name;
                 instance.metadata.symbol = symbol;
                 instance.metadata.decimals = 12;
-                let total_supply = 1_000_000 * 10_u128.pow(18);
-                assert!(instance._mint(instance.env().caller(), total_supply).is_ok());
+                // let total_supply = 1_000_000 * 10_u128.pow(12);
+                // assert!(instance._mint(instance.env().caller(), total_supply).is_ok());
             })
         }
     }
