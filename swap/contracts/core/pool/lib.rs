@@ -80,12 +80,12 @@ pub mod crab_swap_pool {
         }
     }
 
-    impl PoolContract {
+    impl  PoolContract {
         #[ink(constructor)]
         pub fn new(factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24) -> Self {
             // (factory, token0, token1, fee, _tickSpacing) = IUniswapV3PoolDeployer(msg.sender).parameters();
             // tickSpacing = _tickSpacing;
-            // maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
+            // TODO maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
             ink_lang::utils::initialize_contract(|instance:&mut Self|{
                 instance.factory = factory;
                 instance.token0 = token0;
@@ -98,7 +98,6 @@ pub mod crab_swap_pool {
                 instance.liquidity = Default::default();
             })
         }
-
         /// @inheritdoc IUniswapV3Factory
         #[ink(message)]
         pub fn create_pool(&mut self, tokenA: Address, tokenB: Address, fee: u32) -> AccountId {

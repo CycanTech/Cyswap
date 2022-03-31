@@ -26,31 +26,7 @@ pub mod crab_swap_factory {
         ownable::*,
         psp34::*,
     };
-
-    use brush::modifiers;
-
-    const  ACCUMULATOR_CODE_HASH:&str = "52ea1e3471f4d4b8e41c34dfbb79db8b899a3f93be7bcb53cc16f011b81d3ffb";
-    #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout,SpreadAllocate)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
-    pub struct Parameters {
-        factory:Address,
-        token0:Address,
-        token1:Address,
-        fee:Uint24,
-        tick_spacing:Int24,
-    }
-
-    impl Default for Parameters{
-        fn default() -> Self {
-            Self { 
-                factory: Default::default(), 
-                token0: Default::default(), 
-                token1: Default::default(), 
-                fee: Default::default(), 
-                tick_spacing: Default::default(),
-            }
-        }
-    }
+    pub const  ACCUMULATOR_CODE_HASH:&str = "52ea1e3471f4d4b8e41c34dfbb79db8b899a3f93be7bcb53cc16f011b81d3ffb";
 
     #[ink(storage)]
     #[derive(Default,SpreadAllocate,PSP34Storage,OwnableStorage)]
@@ -62,7 +38,6 @@ pub mod crab_swap_factory {
         // mapping(address => mapping(address => mapping(uint24 => address))) public override getPool;
         /// @inheritdoc IPeripheryImmutableState
         pub pool_map: Mapping<(AccountId,AccountId,u32),AccountId>,
-        pub parameters:Parameters,
         #[PSP34StorageField]
         psp34: PSP34Data,
         #[OwnableStorageField]
@@ -155,8 +130,10 @@ pub mod crab_swap_factory {
             assert!(self.pool_map.get((token0,token1,fee)).is_none(),"pool have been exist!");
             let address_this = self.env().account_id();
 
+            //because the contract deploy difference with solidity,so cancel the deployer contract.
             //start deploy the pool contract and initial.
             let pool = self.deploy(address_this,token0,token1,fee,tick_spacing).to_account_id();
+            self.pool_map.insert((token0,token1,fee),&pool);
             self.env().emit_event(PoolCreated {
                 token0,
                 token1,
@@ -229,7 +206,6 @@ pub mod crab_swap_factory {
                             error
                         )
                     });
-            self.pool_map.insert((token0,token1,fee),&pool_address.to_account_id());
             pool_address
         }
 

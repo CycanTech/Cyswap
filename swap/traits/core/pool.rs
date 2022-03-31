@@ -1,21 +1,14 @@
-use brush::{
-    traits::{
-        AccountId,
-    },
-};
 use ink_storage::traits::{SpreadLayout, PackedLayout, SpreadAllocate};
 #[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
 use scale::{Encode, Decode};
-use primitives::{Uint160, Uint16};
+use primitives::{Uint160, Uint16, Address, Uint24};
 use primitives::Int24;
 use primitives::Uint8;
 
 
 #[brush::wrapper]
 pub type PoolRef = dyn Pool;
-
-
 
 #[derive(Default,Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout,SpreadAllocate)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
@@ -40,6 +33,7 @@ pub struct Slot0 {
 #[brush::trait_definition]
 pub trait Pool{
 
+    // fn new(factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24) -> Self;
     /// @inheritdoc IUniswapV3PoolActions
     /// @dev not locked because it initializes unlocked
     #[ink(message, payable)]

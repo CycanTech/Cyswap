@@ -17,6 +17,7 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 swap_project_derive = { path = "derive" }
 primitives = {version = "3.0.0-rc9",path="./primitives/", default-features = false}
+hex = { version = "0.4", default-features = false,features = ["alloc"]}
 [lib]
 name = "crabswap"
 path = "lib.rs"
@@ -39,6 +40,7 @@ std = [
     "scale-info/std",
     "brush/std",
     "primitives/std",
+    "hex/std",
 ]
 
 erc721_permit = [
@@ -51,6 +53,10 @@ pool_initial = [
 
 psp34_base = [
     "swap_project_derive/psp34_base",
+]
+
+pool_deployer = [
+    "swap_project_derive/pool_deployer",
 ]
 
 ink-as-dependency = []
