@@ -1,6 +1,6 @@
 [package]
-name = "primitives"
-version = "3.0.0-rc9"
+name = "libs"
+version = "3.0.0"
 authors = ["Parity Technologies <cloudweisz@gmail.com>"]
 edition = "2021"
 
@@ -16,14 +16,14 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 
 # primitive-types = { git = "https://github.com/paritytech/parity-common", default-features = false}
-
+primitives = {version = "3.0.0-rc9",path="../primitives/", default-features = false}
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 version = '6.0.0'
 
 [lib]
-name = "primitives"
+name = "libs"
 # path = "lib.rs"
 crate-type = ["rlib",]
 
@@ -41,5 +41,6 @@ std = [
     "scale-info/std",
     # "primitive-types/std",
     "sp-core/std",
+    "primitives/std",
 ]
 ink-as-dependency = []

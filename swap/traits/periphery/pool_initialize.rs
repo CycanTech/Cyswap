@@ -27,6 +27,6 @@ pub trait Initializer{
         token0: AccountId,
         token1: AccountId,
         fee: u32,
-        sqrtPriceX96: Uint160,
+        sqrt_price_x96: Uint160,
     ) -> u32;
 }

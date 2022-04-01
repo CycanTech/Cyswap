@@ -33,6 +33,7 @@ pub mod crab_swap_factory {
     pub struct FactoryContract {
         // pub owner:primitives::Address,
         // mapping(uint24 => int24) public override feeAmountTickSpacing;
+        // key:fee,value:tick space
         pub fee_amount_tick_spacing:Mapping<u32,Int24>,
 
         // mapping(address => mapping(address => mapping(uint24 => address))) public override getPool;
@@ -106,7 +107,6 @@ pub mod crab_swap_factory {
         fn get_pool(&self,fee:u32,token0:AccountId, token1:AccountId)->AccountId{
             ink_env::debug_println!("get_pool fee is:{:?}",fee);
             let key = (token0,token1,fee);
-            self.env().caller();
             self.pool_map.get(key).unwrap_or(ADDRESS0.into())
         }
 

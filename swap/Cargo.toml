@@ -63,6 +63,7 @@ ink-as-dependency = []
 [workspace]
 members = [
     "primitives/",
+    "libs/",
     "contracts/core/base/psp22",
     "contracts/core/base/weth9",
     "contracts/core/pool/",

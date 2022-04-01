@@ -96,8 +96,10 @@ pub mod crab_swap_pool {
                 instance.fee_growth_global0_x128 = Default::default();
                 instance.fee_growth_global1_x128=Uint160::new([0u64;4]);
                 instance.liquidity = Default::default();
+                instance.max_liquidity_per_tick = libs::tick_spacing_to_max_liquidity_per_tick(tick_spacing);
             })
         }
+        
         /// @inheritdoc IUniswapV3Factory
         #[ink(message)]
         pub fn create_pool(&mut self, tokenA: Address, tokenB: Address, fee: u32) -> AccountId {

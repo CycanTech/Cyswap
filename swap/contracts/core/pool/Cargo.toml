@@ -19,6 +19,7 @@ brush = { tag = "v1.5.0", git = "https://github.com/Supercolony-net/openbrush-co
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 primitives = {version = "3.0.0-rc9",path="../../../primitives/", default-features = false}
+libs = {version = "3.0.0",path="../../../libs/", default-features = false}
 crabswap = { path = "../../../", default-features = false}
 
 
@@ -40,6 +41,7 @@ std = [
     "scale-info",
     "scale-info/std",
     "primitives/std",
+    "libs/std",
     "brush/std",
     "crabswap/std",
 ]

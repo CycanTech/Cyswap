@@ -16,7 +16,7 @@ impl<T:PoolInitializeStorage> Initializer for T{
         token0: AccountId,
         token1: AccountId,
         fee: u32,
-        sqrtPriceX96: Uint160,
+        sqrt_price_x96: Uint160,
     ) -> u32 {
         // require(token0 < token1);
         // pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
@@ -38,7 +38,7 @@ impl<T:PoolInitializeStorage> Initializer for T{
         let mut pool_address = FactoryRef::get_pool(&factory_address,fee,token0,token1);
         if pool_address == ADDRESS0.into() {
             pool_address = FactoryRef::create_pool(&factory_address,fee,token0,token1);
-            PoolRef::initialize(&mut pool_address,sqrtPriceX96);
+            PoolRef::initialize(&mut pool_address,sqrt_price_x96);
         }
         // let accumulator = UniswapV3FactoryRef::new()
         //     .endowment(100 / 4)
