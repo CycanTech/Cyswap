@@ -10,11 +10,11 @@ use primitives::Uint8;
 #[brush::wrapper]
 pub type PoolRef = dyn Pool;
 
-#[derive(Default,Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout,SpreadAllocate)]
+#[derive(Default,Debug,Clone, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout,SpreadAllocate)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
 pub struct Slot0 {
     // the current price
-    sqrtPriceX96: Uint160,
+    pub sqrtPriceX96: Uint160,
     // the current tick
     tick: Int24,
     // the most-recently updated index of the observations array
@@ -38,4 +38,7 @@ pub trait Pool{
     /// @dev not locked because it initializes unlocked
     #[ink(message, payable)]
     fn initialize(&mut self,sqrtPriceX96:Uint160);
+
+    #[ink(message)]
+    fn slot0(&self)->Slot0;
 }

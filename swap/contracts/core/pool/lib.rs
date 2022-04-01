@@ -8,6 +8,7 @@ pub mod crab_swap_pool {
         Mapping,
         traits::{PackedLayout, SpreadLayout, StorageLayout},
     };
+    use libs::core::tick_math;
     use scale::{Decode, Encode, WrapperTypeEncode};
     use primitives::Uint160;
     #[cfg(feature = "std")]
@@ -77,6 +78,13 @@ pub mod crab_swap_pool {
             //     unlocked: true
             // });
             // emit Initialize(sqrtPriceX96, tick);
+            assert!(self.slot0.sqrtPriceX96.value.is_zero(), "AI");
+            // let tick:Int24 = tick_math::getTickAtSqrtRatio(sqrtPriceX96);
+        }
+
+        #[ink(message)]
+        fn slot0(&self)->Slot0{
+            self.slot0.clone()
         }
     }
 
@@ -99,7 +107,7 @@ pub mod crab_swap_pool {
                 instance.max_liquidity_per_tick = libs::tick_spacing_to_max_liquidity_per_tick(tick_spacing);
             })
         }
-        
+
         /// @inheritdoc IUniswapV3Factory
         #[ink(message)]
         pub fn create_pool(&mut self, tokenA: Address, tokenB: Address, fee: u32) -> AccountId {

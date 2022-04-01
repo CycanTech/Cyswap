@@ -16,6 +16,7 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 
 # primitive-types = { git = "https://github.com/paritytech/parity-common", default-features = false}
+hex = { version = "0.4", default-features = false,features = ["alloc"]}
 primitives = {version = "3.0.0-rc9",path="../primitives/", default-features = false}
 [dependencies.sp-core]
 default-features = false
@@ -42,5 +43,6 @@ std = [
     # "primitive-types/std",
     "sp-core/std",
     "primitives/std",
+    "hex/std",
 ]
 ink-as-dependency = []
