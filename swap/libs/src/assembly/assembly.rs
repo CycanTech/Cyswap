@@ -4,11 +4,11 @@ use primitives::U256;
 
 use super::{gt, shl, or, shr, mul};
 
-pub fn cal_ratio(msb:&U256,r:&U256,o:&U256,v:&str)->(U256,U256){
+pub fn cal_ratio(msb:&U256,r:&U256,o:&U256,v:&'static str)->(U256,U256){
     // let f := shl(7, gt(r, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))
     //         msb := or(msb, f)
     //         r := shr(f, r)
-    let v = U256::from_big_endian(&hex::decode(v).unwrap());
+    let v = U256::from(v);
     let f = shl(o,&gt(r,&v));
     let msb = or(msb,&f);
     let r = shr(&f,r); 
@@ -20,8 +20,8 @@ pub fn cal_log(r:&U256,log_2:&U256,w:&U256)->(U256,U256){
     //         let f := shr(128, r)
     //         log_2 := or(log_2, shl(63, f))
     //         r := shr(f, r)
-    let r = shr(&U256::from("127"),&mul(r,r));
-    let f = shr(&U256::from("128"),&r);
+    let r = shr(&U256::from("7F"),&mul(r,r));
+    let f = shr(&U256::from("80"),&r);
     let log_2 = or(&log_2,&shl(w, &f));
     let r = shr(&f,&r);
     (log_2,r)
@@ -36,20 +36,25 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let s = U256::from_big_endian(&[255u8;16]);
-        println!("test result is:{:?}",s.to_string());
-        let s = U256::from_little_endian(&[255u8;16]);
+        let s = U256::from("FF");
         println!("test result is:{:?}",s.to_string());
         println!("test hex result is:{:?}",hex::decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
     }
 
     #[test]
     fn test_result() {
-        let mut r = U256::from("1");
-        let mut msb = U256::from("0");
-        let o =U256::from("7");
-        let v ="FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+        let mut r = U256::from("11");
+        let mut msb = U256::from("22");
+        let o =U256::from("2");
+        let v ="0xF";
         (msb,r) = cal_ratio(&r,&msb,&o,v);
-        println!("test result is2:{:?}",msb.to_string());
+        println!("test msb is:{:?}",msb.to_string());
+        println!("test r is:{:?}",r.to_string());
+    }
+
+    #[test]
+    fn it_work(){
+        let result = U256::from("0xfffd8963efd20000000000000000000000000000");
+        println!("result is:{:?}",result);
     }
 }
