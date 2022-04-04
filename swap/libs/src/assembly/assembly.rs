@@ -54,7 +54,7 @@ mod tests {
 
     #[test]
     fn it_work(){
-        let result = U256::from("0xfffd8963efd20000000000000000000000000000");
+        let result = U256::from_dec_str("1461446703485210103287273052203988822378723970342");
         println!("result is:{:?}",result);
     }
 }
