@@ -54,5 +54,13 @@ mod tests {
     fn it_work(){
         let result = U256::from_dec_str("100").unwrap();
         println!("result is:{:?}",result);
+        let u1:u32 = 12345;
+        let u2:u32=45678;
+        let u3:u32 = u1|u2;
+        println!("result is:{:?}",u3);
+        let i1:i32 = 12345;
+        let i2:i32 = 45678;
+        let i3:i32 = i1|i2;
+        println!("result is:{:?}",i3);
     }
 }
