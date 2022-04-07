@@ -1,7 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use std::ops::Sub;
-
 use primitives::{Int24, Uint160, U160, U256, I256};
 
 use crate::{cal_ratio, assembly::{gt, or}};
@@ -81,7 +79,7 @@ fn getTickAtSqrtRatio(sqrt_price_x96:U160)->Int24{
     // if (msb >= 128) r = ratio >> (msb - 127);
     // else r = ratio << (127 - msb);
     if msb.ge(&U256::from_dec_str("128").unwrap()){
-        r = ratio >> (msb.sub(&U256::from_dec_str("127").unwrap()));
+        r = ratio >> (msb.checked_sub(U256::from_dec_str("127").unwrap()).unwrap());
     }else{
         r = ratio << (U256::from_dec_str("127").unwrap()-msb);
     }

@@ -52,7 +52,7 @@ mod tests {
 
     #[test]
     fn it_work(){
-        let result = U256::from_dec_str("1461446703485210103287273052203988822378723970342");
+        let result = U256::from_dec_str("100").unwrap();
         println!("result is:{:?}",result);
     }
 }
