@@ -24,7 +24,7 @@ version = '6.0.0'
 
 [lib]
 name = "primitives"
-# path = "lib.rs"
+path = "lib.rs"
 crate-type = ["rlib",]
 
 [features]
