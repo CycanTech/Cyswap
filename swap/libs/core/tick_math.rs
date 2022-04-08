@@ -22,7 +22,7 @@ fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
     // require(sqrtPriceX96 >= MIN_SQRT_RATIO && sqrtPriceX96 < MAX_SQRT_RATIO, 'R');
     // uint256 ratio = uint256(sqrtPriceX96) << 32;
     assert!(sqrt_price_x96.ge(&U160::from_dec_str(MIN_SQRT_RATIO).unwrap())&&sqrt_price_x96.le(&U160::from_dec_str(MAX_SQRT_RATIO).unwrap()),"R");
-    let ratio:U256 = sqrt_price_x96 << U256::from("0x20");
+    let ratio:U256 = sqrt_price_x96 << 32;
     
     // uint256 r = ratio;
     // uint256 msb = 0;
@@ -34,43 +34,43 @@ fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
     //     msb := or(msb, f)
     //     r := shr(f, r)
     // }
-    let (msb,r) = cal_ratio(&msb,&r,&U256::from_dec_str("7").unwrap(),"0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+    let (msb,r) = cal_ratio(&msb,&r,&U256::from(7),"0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
     // assembly {
     //     let f := shl(6, gt(r, 0xFFFFFFFFFFFFFFFF))
     //     msb := or(msb, f)
     //     r := shr(f, r)
     // }
-    let (msb,r) = cal_ratio(&msb,&r,&U256::from_dec_str("6").unwrap(),"0xFFFFFFFFFFFFFFFF");
+    let (msb,r) = cal_ratio(&msb,&r,&U256::from(6),"0xFFFFFFFFFFFFFFFF");
     // assembly {
     //     let f := shl(5, gt(r, 0xFFFFFFFF))
     //     msb := or(msb, f)
     //     r := shr(f, r)
     // }
-    let (msb,r) = cal_ratio(&msb,&r,&U256::from_dec_str("5").unwrap(),"0xFFFFFFFF");
+    let (msb,r) = cal_ratio(&msb,&r,&U256::from(5),"0xFFFFFFFF");
     // assembly {
     //     let f := shl(4, gt(r, 0xFFFF))
     //     msb := or(msb, f)
     //     r := shr(f, r)
     // }
-    let (msb,r) = cal_ratio(&msb,&r,&U256::from_dec_str("4").unwrap(),"0xFFFF");
+    let (msb,r) = cal_ratio(&msb,&r,&U256::from(4),"0xFFFF");
     // assembly {
     //     let f := shl(3, gt(r, 0xFF))
     //     msb := or(msb, f)
     //     r := shr(f, r)
     // }
-    let (msb,r) = cal_ratio(&msb,&r,&U256::from_dec_str("3").unwrap(),"0xFF");
+    let (msb,r) = cal_ratio(&msb,&r,&U256::from(3),"0xFF");
     // assembly {
     //     let f := shl(2, gt(r, 0xF))
     //     msb := or(msb, f)
     //     r := shr(f, r)
     // }
-    let (msb,r) = cal_ratio(&msb,&r,&U256::from_dec_str("2").unwrap(),"0xF");
+    let (msb,r) = cal_ratio(&msb,&r,&U256::from(2),"0xF");
     // assembly {
     //     let f := shl(1, gt(r, 0x3))
     //     msb := or(msb, f)
     //     r := shr(f, r)
     // }
-    let (msb,mut r) = cal_ratio(&msb,&r,&U256::from_dec_str("1").unwrap(),"0x3");
+    let (msb,mut r) = cal_ratio(&msb,&r,&U256::from(1),"0x3");
     // assembly {
     //     let f := gt(r, 0x1)
     //     msb := or(msb, f)
@@ -80,21 +80,21 @@ fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
 
     // if (msb >= 128) r = ratio >> (msb - 127);
     // else r = ratio << (127 - msb);
-    if msb.ge(&U256::from_dec_str("128").unwrap()){
-        r = ratio >> (msb.checked_sub(U256::from_dec_str("127").unwrap()).unwrap());
+    if msb.ge(&U256::from(128)){
+        r = ratio >> (msb.saturating_sub(U256::from(127)));
     }else{
-        r = ratio << (U256::from_dec_str("127").unwrap()-msb);
+        r = ratio << (U256::from(127).saturating_sub(msb));
     }
 
     
     // int256 log_2 = (int256(msb) - 128) << 64;
-    let log_2:U256;
+    let mut log_2:U256;
     let log_2_is_position:bool;
-    if msb.ge(&U256::from(128u32)){
-        log_2= msb.saturating_sub(U256::from(128u32))<<U256::from(64u32);
+    if msb.ge(&U256::from(128)){
+        log_2= msb.saturating_sub(U256::from(128u32))<<64;
         log_2_is_position = true;
     }else{
-        log_2= U256::from(128u32).saturating_sub(msb)<<U256::from(64u32);
+        log_2= U256::from(128u32).saturating_sub(msb)<<64;
         log_2_is_position = false;
     }
 
@@ -105,7 +105,7 @@ fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
     //     log_2 := or(log_2, shl(63, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(63u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(63u32),log_2_is_position);
     
     // assembly {
     //     r := shr(127, mul(r, r))
@@ -113,90 +113,92 @@ fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
     //     log_2 := or(log_2, shl(62, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(62u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(62u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(61, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(61u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(61u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(60, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(60u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(60u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(59, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(59u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(59u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(58, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(58u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(58u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(57, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(57u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(57u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(56, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(57u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(56u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(55, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(55u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(55u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(54, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(54u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(54u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(53, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(53u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(53u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(52, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(52u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(52u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(51, f))
     //     r := shr(f, r)
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(51u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(51u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(50, f))
     // }
-    let (log_2,r) = cal_log(&r,&log_2,&U256::from(50u32));
+    (log_2,r) = cal_log(&mut r,log_2,&U256::from(50u32),log_2_is_position);
+    //20220409 check point
+
     // int256 log_sqrt10001 = log_2 * 255738958999603826347141; // 128.128 number
     let log_sqrt10001 = log_2.saturating_mul(U256::from_dec_str("255738958999603826347141").unwrap());
     // int24 tickLow = int24((log_sqrt10001 - 3402992956809132418596140100660247210) >> 128);
@@ -221,16 +223,16 @@ fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
     let tick_hi:Int24;
     let log_sqrt10001_temp:U256;
     if log_2_is_position{
-        log_sqrt10001_temp = log_sqrt10001.saturating_add(tick_const)>>U256::from(128u32);
+        log_sqrt10001_temp = log_sqrt10001.saturating_add(tick_const)>>128u32;
         tick_hi = Int24::try_from(log_sqrt10001_temp.as_u32()).unwrap();
 
     }else{
         if log_sqrt10001.ge(&tick_const){
-            log_sqrt10001_temp = log_sqrt10001.saturating_sub(tick_const)>>U256::from(128u32);
+            log_sqrt10001_temp = log_sqrt10001.saturating_sub(tick_const)>>128u32;
             tick_hi = -Int24::try_from(log_sqrt10001_temp.as_u32()).unwrap();
         }else{
-            log_sqrt10001_temp = tick_const.saturating_sub(log_sqrt10001)>>U256::from(128u32);
-            tick_hi = -Int24::try_from(log_sqrt10001_temp.as_u32()).unwrap();
+            log_sqrt10001_temp = tick_const.saturating_sub(log_sqrt10001)>>128u32;
+            tick_hi = Int24::try_from(log_sqrt10001_temp.as_u32()).unwrap();
         }
     }
     // tick = tickLow == tickHi ? tickLow : getSqrtRatioAtTick(tickHi) <= sqrtPriceX96 ? tickHi : tickLow;
@@ -369,7 +371,6 @@ pub fn get_sqrt_ratio_at_tick(tick:Int24) -> U160 {
 #[cfg(test)]
 mod tests {
     use primitives::U256;
-    use primitives::Int24;
     use crate::{core::tick_math::get_tick_at_sqrt_ratio, get_sqrt_ratio_at_tick};
 
     #[test]
@@ -399,12 +400,12 @@ mod tests {
     fn it_work(){
         let (a,b) = U256::from(5).div_mod(U256::from(1u64<<32u64));
         println!("a value is:{},b value is:{}",a,b);
-        let i1 = -100i64;
+        let i1 = -150i64;
         println!("-100 is:{}",i1);
         let i2 = 123i64;
         let i3 = i1|i2;
         println!("i3 is:{}",i3);
-        let mut i4:U256 = U256::from(100u32);
+        let mut i4:U256 = U256::from(150u32);
 
         let i5:U256 = U256::from(123u32);
         i4 = !i4;

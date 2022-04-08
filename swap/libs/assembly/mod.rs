@@ -8,7 +8,7 @@ pub fn shl(o:&U256,v:&U256)->U256{
 }
 
 pub fn gt(o:&U256,v:&U256)->U256{
-    if o.ge(v){
+    if o.gt(v){
         U256::from("1")
     }else{
         U256::from("0")

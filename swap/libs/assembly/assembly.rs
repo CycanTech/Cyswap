@@ -13,16 +13,34 @@ pub fn cal_ratio(msb:&U256,r:&U256,o:&U256,v:&'static str)->(U256,U256){
     (msb,r)
 }
 
-pub fn cal_log(r:&U256,log_2:&U256,w:&U256)->(U256,U256){
+
+
+pub fn cal_log(r:&mut U256,log_2:U256,w:&U256,log_2_is_position:bool)->(U256,U256){
     // r := shr(127, mul(r, r))
     //         let f := shr(128, r)
     //         log_2 := or(log_2, shl(63, f))
     //         r := shr(f, r)
-    let r = shr(&U256::from("7F"),&mul(r,r));
-    let f = shr(&U256::from("80"),&r);
-    let log_2 = or(&log_2,&shl(w, &f));
-    let r = shr(&f,&r);
-    (log_2,r)
+    let r = shr(&U256::from(127),&mul(r,r));
+    let f = shr(&U256::from(128),&r);
+    
+    if log_2_is_position{
+        let log_2 = or(&log_2,&shl(w, &f));
+        let r = shr(&f,&r);
+        return (log_2,r);
+    }else{
+        // let i5:U256 = U256::from(123u32);
+        // i4 = !i4;
+        // i4 = i4.saturating_add(U256::from(1));
+        // let mut i6:U256 = i4|i5;
+        // i6= U256::from_big_endian(&[0xff_u8;32]).saturating_sub(i6).saturating_add(U256::from(1));
+        let log_2 = !log_2;
+        let log_2 = log_2.saturating_add(U256::from(1u32));
+        let log_2 = or(&log_2,&shl(w, &f));
+        let r = shr(&f,&r);
+        return (log_2,r);
+    }
+
+    
 }
 
 
@@ -62,5 +80,11 @@ mod tests {
         let i2:i32 = 45678;
         let i3:i32 = i1|i2;
         println!("result is:{:?}",i3);
+    }
+
+    #[test]
+    fn my_temp_test(){
+        let result = U256::from("ff");
+        println!("result is:{:?}",result);
     }
 }
