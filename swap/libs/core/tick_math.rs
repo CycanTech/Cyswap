@@ -21,7 +21,7 @@ fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
     // second inequality must be < because the price can never reach the price at the max tick
     // require(sqrtPriceX96 >= MIN_SQRT_RATIO && sqrtPriceX96 < MAX_SQRT_RATIO, 'R');
     // uint256 ratio = uint256(sqrtPriceX96) << 32;
-    assert!(sqrt_price_x96.ge(&U160::from_dec_str(MIN_SQRT_RATIO).unwrap())&&sqrt_price_x96.lt(&U160::from_dec_str(MAX_SQRT_RATIO).unwrap()),"R");
+    assert!(sqrt_price_x96.ge(&U160::from_dec_str(MIN_SQRT_RATIO).unwrap())&&sqrt_price_x96.le(&U160::from_dec_str(MAX_SQRT_RATIO).unwrap()),"R");
     let ratio:U256 = sqrt_price_x96 << U256::from("0x20");
     
     // uint256 r = ratio;
@@ -348,7 +348,7 @@ pub fn get_sqrt_ratio_at_tick(tick:Int24) -> U160 {
 
     // if (tick > 0) ratio = type(uint256).max / ratio;
     if tick>0 {
-        ratio = U256::from_big_endian(&[0xffu8;32]).checked_div(ratio).unwrap();
+        ratio = U256::from_big_endian(&[0xff_u8;32]).checked_div(ratio).unwrap();
     }
 
     // // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
@@ -369,16 +369,48 @@ pub fn get_sqrt_ratio_at_tick(tick:Int24) -> U160 {
 #[cfg(test)]
 mod tests {
     use primitives::U256;
-    use crate::core::tick_math::get_tick_at_sqrt_ratio;
+    use primitives::Int24;
+    use crate::{core::tick_math::get_tick_at_sqrt_ratio, get_sqrt_ratio_at_tick};
 
     #[test]
     fn it_get_tick_at_sqrt_ratio(){
         let result = get_tick_at_sqrt_ratio(U256::from(0x429511231231231231231228739fu128));
+        println!("result is:{}",result);
+        // pub const MIN_SQRT_RATIO:&str = "4295128739";//4295128739;
+        // pub const MAX_SQRT_RATIO:&str = "1461446703485210103287273052203988822378723970342"
+        let result = get_tick_at_sqrt_ratio(U256::from_dec_str("4295128739").unwrap());
+        assert_eq!(result,-887272);
+        println!("result is:{}",result);
+        let result = get_tick_at_sqrt_ratio(U256::from_dec_str("1461446703485210103287273052203988822378723970342").unwrap());
+        assert_eq!(result,887272);
+        println!("result is:{}",result);
+    }
+    
+    #[test]
+    fn it_get_sqrt_ratio_at_tick(){
+        // pub const MIN_SQRT_RATIO:&str = "4295128739";//4295128739;
+        // pub const MAX_SQRT_RATIO:&str = "1461446703485210103287273052203988822378723970342"
+        let result = get_sqrt_ratio_at_tick(887272_i32);
+        println!("result is:{}",result);
+        let result = get_sqrt_ratio_at_tick(-887272_i32);
         println!("result is:{}",result);
     }
     #[test]
     fn it_work(){
         let (a,b) = U256::from(5).div_mod(U256::from(1u64<<32u64));
         println!("a value is:{},b value is:{}",a,b);
+        let i1 = -100i64;
+        println!("-100 is:{}",i1);
+        let i2 = 123i64;
+        let i3 = i1|i2;
+        println!("i3 is:{}",i3);
+        let mut i4:U256 = U256::from(100u32);
+
+        let i5:U256 = U256::from(123u32);
+        i4 = !i4;
+        i4 = i4.saturating_add(U256::from(1));
+        let mut i6:U256 = i4|i5;
+        i6= U256::from_big_endian(&[0xff_u8;32]).saturating_sub(i6).saturating_add(U256::from(1));
+        println!("i6 is:{}",i6);
     }
 }
