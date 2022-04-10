@@ -15,7 +15,7 @@ pub fn cal_ratio(msb:&U256,r:&U256,o:&U256,v:&'static str)->(U256,U256){
 
 
 
-pub fn cal_log(r:&mut U256,log_2:U256,w:&U256,log_2_is_position:bool)->(U256,U256){
+pub fn cal_log(r:&U256,log_2:U256,w:&U256,log_2_is_position:bool)->(U256,U256){
     // r := shr(127, mul(r, r))
     //         let f := shr(128, r)
     //         log_2 := or(log_2, shl(63, f))

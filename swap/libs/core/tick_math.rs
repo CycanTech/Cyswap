@@ -1,6 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-
 use primitives::{Int24, U160, U256};
 use core::str::FromStr;
 
@@ -16,7 +15,7 @@ pub const MIN_SQRT_RATIO:&str = "4295128739";//4295128739;
 /// @dev The maximum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MAX_TICK)
 pub const MAX_SQRT_RATIO:&str = "1461446703485210103287273052203988822378723970342";//1461446703485210103287273052203988822378723970342;
 
-fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
+pub fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
     // second inequality must be < because the price can never reach the price at the max tick
     // require(sqrtPriceX96 >= MIN_SQRT_RATIO && sqrtPriceX96 < MAX_SQRT_RATIO, 'R');
     // uint256 ratio = uint256(sqrtPriceX96) << 32;
@@ -104,7 +103,7 @@ fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
     //     log_2 := or(log_2, shl(63, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(63u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(63u32),log_2_is_position);
     
     // assembly {
     //     r := shr(127, mul(r, r))
@@ -112,90 +111,90 @@ fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
     //     log_2 := or(log_2, shl(62, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(62u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(62u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(61, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(61u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(61u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(60, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(60u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(60u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(59, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(59u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(59u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(58, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(58u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(58u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(57, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(57u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(57u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(56, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(56u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(56u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(55, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(55u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(55u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(54, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(54u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(54u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(53, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(53u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(53u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(52, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(52u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(52u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(51, f))
     //     r := shr(f, r)
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(51u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(51u32),log_2_is_position);
     // assembly {
     //     r := shr(127, mul(r, r))
     //     let f := shr(128, r)
     //     log_2 := or(log_2, shl(50, f))
     // }
-    (log_2,r) = cal_log(&mut r,log_2,&U256::from(50u32),log_2_is_position);
+    let (log_2,r) = cal_log(&r,log_2,&U256::from(50u32),log_2_is_position);
     //20220409 check point TODO
 
     // int256 log_sqrt10001 = log_2 * 255738958999603826347141; // 128.128 number

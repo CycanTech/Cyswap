@@ -8,16 +8,15 @@ pub mod crab_swap_pool {
         Mapping,
         traits::{PackedLayout, SpreadLayout, StorageLayout},
     };
-    use libs::core::tick_math;
+    use libs::{core::tick_math, get_tick_at_sqrt_ratio};
     use scale::{Decode, Encode, WrapperTypeEncode};
-    use primitives::Uint160;
+    use primitives::{Uint160, Int24};
     #[cfg(feature = "std")]
     use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
     use ink_storage::traits::SpreadAllocate;
     use crabswap::traits::core::pool::*;
     type Address = AccountId;
     type Uint24 = u32;
-    type Int24 = i32;
 
 
     // accumulated protocol fees in token0/token1 units
@@ -66,8 +65,11 @@ pub mod crab_swap_pool {
         #[ink(message, payable)]
         fn initialize(&mut self,sqrtPriceX96:Uint160){
             // require(slot0.sqrtPriceX96 == 0, 'AI');
+            assert!(self.slot0.sqrtPriceX96.value.is_zero(), "AI");
             // int24 tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+            let tick:Int24 = get_tick_at_sqrt_ratio(sqrtPriceX96.value);
             // (uint16 cardinality, uint16 cardinalityNext) = observations.initialize(_blockTimestamp());
+            // self.env()
             // slot0 = Slot0({
             //     sqrtPriceX96: sqrtPriceX96,
             //     tick: tick,
@@ -78,7 +80,9 @@ pub mod crab_swap_pool {
             //     unlocked: true
             // });
             // emit Initialize(sqrtPriceX96, tick);
-            assert!(self.slot0.sqrtPriceX96.value.is_zero(), "AI");
+            
+            
+
             // let tick:Int24 = tick_math::getTickAtSqrtRatio(sqrtPriceX96);
         }
 
