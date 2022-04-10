@@ -17,7 +17,6 @@ pub const MIN_SQRT_RATIO:&str = "4295128739";//4295128739;
 pub const MAX_SQRT_RATIO:&str = "1461446703485210103287273052203988822378723970342";//1461446703485210103287273052203988822378723970342;
 
 fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
-    // 0
     // second inequality must be < because the price can never reach the price at the max tick
     // require(sqrtPriceX96 >= MIN_SQRT_RATIO && sqrtPriceX96 < MAX_SQRT_RATIO, 'R');
     // uint256 ratio = uint256(sqrtPriceX96) << 32;
@@ -197,7 +196,7 @@ fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
     //     log_2 := or(log_2, shl(50, f))
     // }
     (log_2,r) = cal_log(&mut r,log_2,&U256::from(50u32),log_2_is_position);
-    //20220409 check point
+    //20220409 check point TODO
 
     // int256 log_sqrt10001 = log_2 * 255738958999603826347141; // 128.128 number
     let log_sqrt10001 = log_2.saturating_mul(U256::from_dec_str("255738958999603826347141").unwrap());
@@ -266,85 +265,85 @@ pub fn get_sqrt_ratio_at_tick(tick:Int24) -> U160 {
     assert!(abs_tick.le(&U256::from(MAX_TICK)),"T");
     // uint256 ratio = absTick & 0x1 != 0 ? 0xfffcb933bd6fad37aa2d162d1a594001 : 0x100000000000000000000000000000000;
     let mut ratio:U256;
-    if abs_tick & U256::from_str("0x1").unwrap() != U256::zero(){
+    if (!abs_tick & U256::from(0x1)).is_zero() {
         ratio = U256::from_str("0xfffcb933bd6fad37aa2d162d1a594001").unwrap();
     } else {
         ratio = U256::from_str("0x100000000000000000000000000000000").unwrap();
     }
     // if (absTick & 0x2 != 0) ratio = (ratio * 0xfff97272373d413259a46990580e213a) >> 128;
-    if !(abs_tick & U256::from(0x2u32)).is_zero() {
+    if !(abs_tick & U256::from(0x2)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xfff97272373d413259a46990580e213a").unwrap())>>128u32;
     }
     // if (absTick & 0x4 != 0) ratio = (ratio * 0xfff2e50f5f656932ef12357cf3c7fdcc) >> 128;
-    if !(abs_tick & U256::from(0x4u32)).is_zero() {
+    if !(abs_tick & U256::from(0x4)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xfff2e50f5f656932ef12357cf3c7fdcc").unwrap())>>128u32;
     }
     // if (absTick & 0x8 != 0) ratio = (ratio * 0xffe5caca7e10e4e61c3624eaa0941cd0) >> 128;
-    if !(abs_tick & U256::from(0x8u32)).is_zero() {
+    if !(abs_tick & U256::from(0x8)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xffe5caca7e10e4e61c3624eaa0941cd0").unwrap())>>128u32;
     }
     // if (absTick & 0x10 != 0) ratio = (ratio * 0xffcb9843d60f6159c9db58835c926644) >> 128;
-    if !(abs_tick & U256::from(0x10u32)).is_zero() {
+    if !(abs_tick & U256::from(0x10)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xffcb9843d60f6159c9db58835c926644").unwrap())>>128u32;
     }
     // if (absTick & 0x20 != 0) ratio = (ratio * 0xff973b41fa98c081472e6896dfb254c0) >> 128;
-    if !(abs_tick & U256::from(0x20u32)).is_zero() {
+    if !(abs_tick & U256::from(0x20)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xff973b41fa98c081472e6896dfb254c0").unwrap())>>128u32;
     }
     // if (absTick & 0x40 != 0) ratio = (ratio * 0xff2ea16466c96a3843ec78b326b52861) >> 128;
-    if !(abs_tick & U256::from(0x40u32)).is_zero() {
+    if !(abs_tick & U256::from(0x40)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xff2ea16466c96a3843ec78b326b52861").unwrap())>>128u32;
     }
     // if (absTick & 0x80 != 0) ratio = (ratio * 0xfe5dee046a99a2a811c461f1969c3053) >> 128;
-    if !(abs_tick & U256::from(0x80u32)).is_zero() {
+    if !(abs_tick & U256::from(0x80)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xfe5dee046a99a2a811c461f1969c3053").unwrap())>>128u32;
     }
     // if (absTick & 0x100 != 0) ratio = (ratio * 0xfcbe86c7900a88aedcffc83b479aa3a4) >> 128;
-    if !(abs_tick & U256::from(0x100u32)).is_zero() {
+    if !(abs_tick & U256::from(0x100)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xfcbe86c7900a88aedcffc83b479aa3a4").unwrap())>>128u32;
     }
     // if (absTick & 0x200 != 0) ratio = (ratio * 0xf987a7253ac413176f2b074cf7815e54) >> 128;
-    if !(abs_tick & U256::from(0x200u32)).is_zero() {
+    if !(abs_tick & U256::from(0x200)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xf987a7253ac413176f2b074cf7815e54").unwrap())>>128u32;
     }
     // if (absTick & 0x400 != 0) ratio = (ratio * 0xf3392b0822b70005940c7a398e4b70f3) >> 128;
-    if !(abs_tick & U256::from(0x400u32)).is_zero() {
+    if !(abs_tick & U256::from(0x400)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xf3392b0822b70005940c7a398e4b70f3").unwrap())>>128u32;
     }
     // if (absTick & 0x800 != 0) ratio = (ratio * 0xe7159475a2c29b7443b29c7fa6e889d9) >> 128;
-    if !(abs_tick & U256::from(0x800u32)).is_zero() {
+    if !(abs_tick & U256::from(0x800)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xe7159475a2c29b7443b29c7fa6e889d9").unwrap())>>128u32;
     }
     // if (absTick & 0x1000 != 0) ratio = (ratio * 0xd097f3bdfd2022b8845ad8f792aa5825) >> 128;
-    if !(abs_tick & U256::from(0x1000u32)).is_zero() {
+    if !(abs_tick & U256::from(0x1000)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xd097f3bdfd2022b8845ad8f792aa5825").unwrap())>>128u32;
     }
     // if (absTick & 0x2000 != 0) ratio = (ratio * 0xa9f746462d870fdf8a65dc1f90e061e5) >> 128;
-    if !(abs_tick & U256::from(0x2000u32)).is_zero() {
+    if !(abs_tick & U256::from(0x2000)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0xa9f746462d870fdf8a65dc1f90e061e5").unwrap())>>128u32;
     }
     // if (absTick & 0x4000 != 0) ratio = (ratio * 0x70d869a156d2a1b890bb3df62baf32f7) >> 128;
-    if !(abs_tick & U256::from(0x4000u32)).is_zero() {
+    if !(abs_tick & U256::from(0x4000)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0x70d869a156d2a1b890bb3df62baf32f7").unwrap())>>128u32;
     }
     // if (absTick & 0x8000 != 0) ratio = (ratio * 0x31be135f97d08fd981231505542fcfa6) >> 128;
-    if !(abs_tick & U256::from(0x8000u32)).is_zero() {
+    if !(abs_tick & U256::from(0x8000)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0x31be135f97d08fd981231505542fcfa6").unwrap())>>128u32;
     }
     // if (absTick & 0x10000 != 0) ratio = (ratio * 0x9aa508b5b7a84e1c677de54f3e99bc9) >> 128;
-    if !(abs_tick & U256::from(0x10000u32)).is_zero() {
+    if !(abs_tick & U256::from(0x10000)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0x9aa508b5b7a84e1c677de54f3e99bc9").unwrap())>>128u32;
     }
     // if (absTick & 0x20000 != 0) ratio = (ratio * 0x5d6af8dedb81196699c329225ee604) >> 128;
-    if !(abs_tick & U256::from(0x20000u32)).is_zero() {
+    if !(abs_tick & U256::from(0x20000)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0x5d6af8dedb81196699c329225ee604").unwrap())>>128u32;
     }
     // if (absTick & 0x40000 != 0) ratio = (ratio * 0x2216e584f5fa1ea926041bedfe98) >> 128;
-    if !(abs_tick & U256::from(0x40000u32)).is_zero() {
+    if !(abs_tick & U256::from(0x40000)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0x2216e584f5fa1ea926041bedfe98").unwrap())>>128u32;
     }
     // if (absTick & 0x80000 != 0) ratio = (ratio * 0x48a170391f7dc42444e8fa2) >> 128;
-    if !(abs_tick & U256::from(0x80000u32)).is_zero() {
+    if !(abs_tick & U256::from(0x80000)).is_zero() {
         ratio = ratio.saturating_mul(U256::from_str("0x48a170391f7dc42444e8fa2").unwrap())>>128u32;
     }
 
@@ -391,11 +390,26 @@ mod tests {
     fn it_get_sqrt_ratio_at_tick(){
         // pub const MIN_SQRT_RATIO:&str = "4295128739";//4295128739;
         // pub const MAX_SQRT_RATIO:&str = "1461446703485210103287273052203988822378723970342"
-        let result = get_sqrt_ratio_at_tick(887272_i32);
-        println!("result is:{}",result);
         let result = get_sqrt_ratio_at_tick(-887272_i32);
         println!("result is:{}",result);
+        let result = get_sqrt_ratio_at_tick(887272_i32);
+        println!("result is:{}",result);
     }
+
+    #[test]
+    fn it_tick_to_price(){
+        // pub const MIN_SQRT_RATIO:&str = "4295128739";//4295128739;
+        // pub const MAX_SQRT_RATIO:&str = "1461446703485210103287273052203988822378723970342"
+        for tick_index in -887272..= 887272{
+            println!("tick_index is:{}",tick_index);
+            let price = get_sqrt_ratio_at_tick(tick_index);
+            println!("price is:{}",price);
+            let tick = get_tick_at_sqrt_ratio(price);
+            println!("ticker_index,tick is :{},{}",tick_index,tick);
+            assert_eq!(tick_index,tick,"tick calculate is not correct!");
+        }
+    }
+
     #[test]
     fn it_work(){
         let (a,b) = U256::from(5).div_mod(U256::from(1u64<<32u64));
@@ -413,5 +427,13 @@ mod tests {
         let mut i6:U256 = i4|i5;
         i6= U256::from_big_endian(&[0xff_u8;32]).saturating_sub(i6).saturating_add(U256::from(1));
         println!("i6 is:{}",i6);
+    }
+
+    #[test]
+    fn just(){
+        let mut u = U256::from(1);
+        println!("u is :{}",u);
+        u.saturating_add(U256::from(1));
+        println!("u is :{}",u);
     }
 }

@@ -36,6 +36,7 @@ pub fn cal_log(r:&mut U256,log_2:U256,w:&U256,log_2_is_position:bool)->(U256,U25
         let log_2 = !log_2;
         let log_2 = log_2.saturating_add(U256::from(1u32));
         let log_2 = or(&log_2,&shl(w, &f));
+        let log_2 = U256::from_big_endian(&[0xff_u8;32]).saturating_sub(log_2).saturating_add(U256::from(1));
         let r = shr(&f,&r);
         return (log_2,r);
     }
@@ -84,7 +85,7 @@ mod tests {
 
     #[test]
     fn my_temp_test(){
-        let result = U256::from("ff");
+        let result = U256::from("0xFF");
         println!("result is:{:?}",result);
     }
 }
