@@ -36,9 +36,9 @@ pub struct WrapperU256 {
 }
 
 impl WrapperU256{
-    pub fn new(v:[u64;4])->Self{
+    pub fn new()->Self{
         WrapperU256{
-            value:U256(v),
+            value:U256::zero(),
         }
     }
 }
@@ -109,7 +109,7 @@ impl SpreadAllocate for WrapperU256{
     fn allocate_spread(ptr: &mut ink_primitives::KeyPtr) -> Self {
         ptr.next_for::<WrapperU256>();
         // Id::U8(0)
-        WrapperU256::new([0u64;4])
+        WrapperU256::new()
     }
 }
 

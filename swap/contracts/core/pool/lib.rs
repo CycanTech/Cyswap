@@ -4,17 +4,19 @@
 
 #[brush::contract]
 pub mod crab_swap_pool {
+    use ink_env::DefaultEnvironment;
     use ink_storage::{
         Mapping,
         traits::{PackedLayout, SpreadLayout, StorageLayout},
     };
-    use libs::{core::tick_math, get_tick_at_sqrt_ratio};
+    use libs::{core::{tick_math, oracle::Observations}, get_tick_at_sqrt_ratio};
     use scale::{Decode, Encode, WrapperTypeEncode};
     use primitives::{Uint160, Int24};
     #[cfg(feature = "std")]
     use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
     use ink_storage::traits::SpreadAllocate;
     use crabswap::traits::core::pool::*;
+    use ink_lang::codegen::Env;
     type Address = AccountId;
     type Uint24 = u32;
 
@@ -28,7 +30,7 @@ pub mod crab_swap_pool {
     }
 
     #[ink(storage)]
-    #[derive(Default,SpreadAllocate)]
+    #[derive(SpreadAllocate)]
     pub struct PoolContract {
         // address public immutable override factory;
         // address public immutable override token0;
@@ -57,6 +59,8 @@ pub mod crab_swap_pool {
         // mapping(int16 => uint256) public override tickBitmap;
         // /// @inheritdoc IUniswapV3PoolState
         // mapping(bytes32 => Position.Info) public override positions;
+        /// @inheritdoc IUniswapV3PoolState
+        pub observations:Observations,
     }
 
     impl Pool for PoolContract{
@@ -69,7 +73,8 @@ pub mod crab_swap_pool {
             // int24 tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
             let tick:Int24 = get_tick_at_sqrt_ratio(sqrtPriceX96.value);
             // (uint16 cardinality, uint16 cardinalityNext) = observations.initialize(_blockTimestamp());
-            // self.env()
+            let time_stamp = self.env().block_timestamp();
+            // let (cardinality, cardinalityNext) = self.observations.initialize(time_stamp);
             // slot0 = Slot0({
             //     sqrtPriceX96: sqrtPriceX96,
             //     tick: tick,
@@ -106,7 +111,7 @@ pub mod crab_swap_pool {
                 instance.tick_spacing = tick_spacing;
                 instance.max_liquidity_per_tick = Default::default();
                 instance.fee_growth_global0_x128 = Default::default();
-                instance.fee_growth_global1_x128=Uint160::new([0u64;4]);
+                instance.fee_growth_global1_x128=Uint160::new();
                 instance.liquidity = Default::default();
                 instance.max_liquidity_per_tick = libs::tick_spacing_to_max_liquidity_per_tick(tick_spacing);
             })
