@@ -10,8 +10,8 @@
 
 #[brush::contract]
 pub mod crab_swap_factory {
-    use ink_env::hash::{Sha2x256, HashOutput};
-    use ink_lang::ToAccountId;
+    use ink_env::{hash::{Sha2x256, HashOutput}, DefaultEnvironment};
+    use ink_lang::{ToAccountId, reflect::ContractEventBase};
     use ink_storage::{Mapping, traits::{SpreadLayout, PackedLayout, StorageLayout}};
     use ink_storage::traits::SpreadAllocate;
     use scale::{Encode, Decode};
@@ -91,15 +91,21 @@ pub mod crab_swap_factory {
 
     impl Ownable for FactoryContract{}
 
-    type Event = <FactoryContract as ::ink_lang::reflect::ContractEventBase>::Type;
+    // type Event = <FactoryContract as ::ink_lang::reflect::ContractEventBase>::Type;
 
     impl OwnableInternal for FactoryContract {
         fn _emit_ownership_transferred_event(&self, previous_owner: Option<AccountId>, new_owner: Option<AccountId>) {
-            self.env().emit_event(OwnerChanged{
+            // self.env().emit_event(
+            //     OwnerChanged{
+            //     old_owner:previous_owner,
+            //     new_owner:new_owner,
+            // });
+            ink_lang::codegen::EmitEvent::<FactoryContract>::emit_event(self.env(), OwnerChanged{
                 old_owner:previous_owner,
                 new_owner:new_owner,
-            })
+            });
         }
+        
     }
 
     impl Factory for FactoryContract{
@@ -134,7 +140,14 @@ pub mod crab_swap_factory {
             //start deploy the pool contract and initial.
             let pool = self.deploy(address_this,token0,token1,fee,tick_spacing).to_account_id();
             self.pool_map.insert((token0,token1,fee),&pool);
-            self.env().emit_event(PoolCreated {
+            // self.env().emit_event(PoolCreated {
+            //     token0,
+            //     token1,
+            //     fee,
+            //     tick_spacing,
+            //     pool,
+            // });
+            ink_lang::codegen::EmitEvent::<FactoryContract>::emit_event(self.env(), PoolCreated {
                 token0,
                 token1,
                 fee,
@@ -152,17 +165,29 @@ pub mod crab_swap_factory {
                 let caller = instance.env().caller();
                 instance._init_with_owner(caller);
                 instance.fee_amount_tick_spacing.insert(500,&10);
-                instance.env().emit_event(FeeAmountEnabled{
+                // instance.env().emit_event(FeeAmountEnabled{
+                //     fee:500,
+                //     tick_spacing:10,
+                // });
+                ink_lang::codegen::EmitEvent::<FactoryContract>::emit_event(instance.env(), FeeAmountEnabled{
                     fee:500,
                     tick_spacing:10,
                 });
                 instance.fee_amount_tick_spacing.insert(3000,&60);
-                instance.env().emit_event(FeeAmountEnabled{
+                // instance.env().emit_event(FeeAmountEnabled{
+                //     fee:3000,
+                //     tick_spacing:60,
+                // });
+                ink_lang::codegen::EmitEvent::<FactoryContract>::emit_event(instance.env(), FeeAmountEnabled{
                     fee:3000,
                     tick_spacing:60,
                 });
                 instance.fee_amount_tick_spacing.insert(10000,&200);
-                instance.env().emit_event(FeeAmountEnabled{
+                // instance.env().emit_event(FeeAmountEnabled{
+                //     fee:10000,
+                //     tick_spacing:200,
+                // });
+                ink_lang::codegen::EmitEvent::<FactoryContract>::emit_event(instance.env(), FeeAmountEnabled{
                     fee:10000,
                     tick_spacing:200,
                 });
@@ -227,7 +252,5 @@ pub mod crab_swap_factory {
         //     emit PoolCreated(token0, token1, fee, tickSpacing, pool);
         // }
     }
-
-    
 
 }

@@ -19,7 +19,7 @@ use ink_storage::traits::StorageLayout;
 pub struct Observation {
     // the block timestamp of the observation
     #[allow(non_snake_case)]
-    pub blockTimestamp: u32,
+    pub blockTimestamp: u64,
     // the tick accumulator, i.e. tick * time elapsed since the pool was first initialized
     #[allow(non_snake_case)]
     pub tickCumulative: i64,
@@ -56,12 +56,12 @@ impl Observations {
     /// @param time The time of the oracle initialization, via block.timestamp truncated to uint32
     /// @return cardinality The number of populated elements in the oracle array
     /// @return cardinalityNext The new length of the oracle array, independent of population
-    fn initialize(
+    pub fn initialize(
         &mut self,
-        time: u32,
+        time: u64,
     ) -> (
-        u32, //cardinality:
-        u32, //cardinalityNext
+        u16, //cardinality:
+        u16, //cardinalityNext
     ) {
         // self[0] = Observation({
         //     blockTimestamp: time,

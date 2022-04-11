@@ -16,18 +16,18 @@ pub struct Slot0 {
     // the current price
     pub sqrtPriceX96: Uint160,
     // the current tick
-    tick: Int24,
+    pub tick: Int24,
     // the most-recently updated index of the observations array
-    observationIndex: Uint16,
+    pub observationIndex: Uint16,
     // the current maximum number of observations that are being stored
-    observationCardinality: Uint16,
+    pub observationCardinality: Uint16,
     // the next maximum number of observations to store, triggered in observations.write
-    observationCardinalityNext: Uint16,
+    pub observationCardinalityNext: Uint16,
     // the current protocol fee as a percentage of the swap fee taken on withdrawal
     // represented as an integer denominator (1/x)%
-    feeProtocol: Uint8,
+    pub feeProtocol: Uint8,
     // whether the pool is locked
-    unlocked: bool,
+    pub unlocked: bool,
 }
 
 #[brush::trait_definition]

@@ -19,6 +19,7 @@ pub mod crab_swap_pool {
     use ink_lang::codegen::Env;
     type Address = AccountId;
     type Uint24 = u32;
+    use ink_lang::codegen::EmitEvent;
 
 
     // accumulated protocol fees in token0/token1 units
@@ -63,6 +64,19 @@ pub mod crab_swap_pool {
         pub observations:Observations,
     }
 
+
+    /// @notice Emitted exactly once by a pool when #initialize is first called on the pool
+    /// @dev Mint/Burn/Swap cannot be emitted by the pool before Initialize
+    /// @param sqrtPriceX96 The initial sqrt price of the pool, as a Q64.96
+    /// @param tick The initial tick of the pool, i.e. log base 1.0001 of the starting price of the pool
+    #[ink(event)]
+    pub struct Initialize{
+        #[ink(topic)]
+        sqrtPriceX96:Uint160, 
+        #[ink(topic)]
+        tick:Int24,
+    }
+
     impl Pool for PoolContract{
         /// @inheritdoc IUniswapV3PoolActions
         /// @dev not locked because it initializes unlocked
@@ -74,7 +88,7 @@ pub mod crab_swap_pool {
             let tick:Int24 = get_tick_at_sqrt_ratio(sqrtPriceX96.value);
             // (uint16 cardinality, uint16 cardinalityNext) = observations.initialize(_blockTimestamp());
             let time_stamp = self.env().block_timestamp();
-            // let (cardinality, cardinalityNext) = self.observations.initialize(time_stamp);
+            let (cardinality, cardinalityNext) = self.observations.initialize(time_stamp);
             // slot0 = Slot0({
             //     sqrtPriceX96: sqrtPriceX96,
             //     tick: tick,
@@ -84,11 +98,17 @@ pub mod crab_swap_pool {
             //     feeProtocol: 0,
             //     unlocked: true
             // });
+            self.slot0 = Slot0{
+                    sqrtPriceX96: sqrtPriceX96.clone(),
+                    tick: tick,
+                    observationIndex: 0,
+                    observationCardinality: cardinality,
+                    observationCardinalityNext: cardinalityNext,
+                    feeProtocol: 0,
+                    unlocked: true
+                };
             // emit Initialize(sqrtPriceX96, tick);
-            
-            
-
-            // let tick:Int24 = tick_math::getTickAtSqrtRatio(sqrtPriceX96);
+            self.env().emit_event(Initialize{sqrtPriceX96,tick});
         }
 
         #[ink(message)]
@@ -117,12 +137,12 @@ pub mod crab_swap_pool {
             })
         }
 
-        /// @inheritdoc IUniswapV3Factory
-        #[ink(message)]
-        pub fn create_pool(&mut self, tokenA: Address, tokenB: Address, fee: u32) -> AccountId {
-            self.env().caller();
-            [0; 32].into()
-        }
+        // /// @inheritdoc IUniswapV3Factory
+        // #[ink(message)]
+        // pub fn create_pool(&mut self, tokenA: Address, tokenB: Address, fee: u32) -> AccountId {
+        //     self.env().caller();
+        //     [0; 32].into()
+        // }
        
     }
 }
