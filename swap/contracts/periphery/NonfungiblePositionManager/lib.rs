@@ -45,10 +45,10 @@ pub mod position_manager {
             ink_lang::codegen::initialize_contract(|instance: &mut PositionManger| {
                 instance.initializer.factory = factory;
                 instance.initializer.WETH9 = weth9;
-                let name = "Uniswap V3 Positions NFT-V1";
-                let symbol = "UNI-V3-POS";
+                let name = "Crabswap V3 Positions NFT-V1";
+                let symbol = "Crab-V3-POS";
                 // let version = "1";
-                instance.erc721_permit.nameHash = ink_lang::blake2x256!("Uniswap V3 Positions NFT-V1");
+                instance.erc721_permit.nameHash = ink_lang::blake2x256!("Crabswap V3 Positions NFT-V1");
                 instance.erc721_permit.versionHash = ink_lang::blake2x256!("1");
                 instance.psp34_base.name = String::from(name);
                 instance.psp34_base.symbol = String::from(symbol);

@@ -23,4 +23,5 @@ impl<T: PSP22Storage + PSP22Internal> Weth9 for T {
         let result = ink_env::transfer::<DefaultEnvironment>(caller, amount);
         result.map_err(|_|PSP22Error::Custom(String::from("transfer error!")))
     }
+
 }

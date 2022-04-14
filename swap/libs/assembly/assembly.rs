@@ -85,7 +85,8 @@ mod tests {
 
     #[test]
     fn my_temp_test(){
-        let result = U256::from("0xFF");
+        let result = U256::from(1);
+        let result = result << 128;
         println!("result is:{:?}",result);
     }
 }
