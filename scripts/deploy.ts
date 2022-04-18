@@ -12,7 +12,7 @@ async function run() {
   // const signer = (await getSigners())[0]
   const signer = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"; // Alice Address
 
-  const contractFactory = await getContractFactory("erc20", signer);
+  const contractFactory = await getContractFactory("stable_coin_contract", signer);
 
   const balance = await api.query.system.account(signer);
 
@@ -21,10 +21,7 @@ async function run() {
   // The `deploy` method will attempt to deploy a new contract.
   // The `deployed` method will first find out if the same contract already exists based on the parameters.
   // If the contract exists, it will be returned, otherwise a new contract will be created.
-  const contract = await contractFactory.deploy("new", "1000000", {
-    gasLimit: "400000000000",
-    value: "1000 UNIT",
-  });
+  const contract = await contractFactory.deploy("new", "weth9", "weth9Contract");
 
   console.log("");
   console.log(

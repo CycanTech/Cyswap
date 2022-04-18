@@ -6,7 +6,8 @@ use brush::{
         AccountId,
     },
 };
-use primitives::{Uint160, ADDRESS0, U256};
+use ink_env::Error;
+use primitives::{Uint160, ADDRESS0, U256, Address};
 use crate::traits::core::factory::*;
 use crate::traits::core::pool::*;
 
@@ -17,7 +18,7 @@ impl<T:PoolInitializeStorage> Initializer for T{
         token1: AccountId,
         fee: u32,
         sqrt_price_x96: Uint160,
-    ) -> u32 {
+    ) -> Address {
         // require(token0 < token1);
         // pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
 
@@ -45,6 +46,6 @@ impl<T:PoolInitializeStorage> Initializer for T{
                 PoolRef::initialize(&mut pool_address,sqrt_price_x96);
             }
         }
-        0u32
+        pool_address
     }
 }

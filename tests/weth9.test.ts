@@ -21,7 +21,6 @@ describe('WETH9', () => {
     const contract = await contractFactory.deploy('new', 'None','None');
     // const abi = artifacts.readArtifact('metadata');
     const receiver = await getRandomSigner();
-
     return { sender, contractFactory, contract, receiver, Alice };
   }
 
@@ -30,8 +29,12 @@ describe('WETH9', () => {
     const result = await query.balanceOf(defaultSigner.address);
     console.log("result is:",result.output);
     expect(result.output).to.equal(0);
+    var balance = await api.query.system.account(defaultSigner.address);
+    console.log("native balance is:",balance.toHuman());
     //为用户收钱.
     await tx.deposit({value:1000});
+    var balance = await api.query.system.account(defaultSigner.address);
+    console.log("native balance is:",balance.toHuman());
     const resultAfterDefault = await query.balanceOf(defaultSigner.address);
     console.log("resultAfterDefault is:",resultAfterDefault.output);
     expect(resultAfterDefault.output).to.equal(1000);
