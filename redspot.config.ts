@@ -13,7 +13,7 @@ export default {
     ink: {
       docker: false,
       toolchain: "nightly",
-      sources: ['swap/contracts/core/**/*','!swap/primitives/cargo.toml','!swap/cargo.toml'],
+      sources: ['swap/contracts/core/**/*','swap/contracts/periphery/**/*','!swap/cargo.toml'],
     },
   },
   networks: {

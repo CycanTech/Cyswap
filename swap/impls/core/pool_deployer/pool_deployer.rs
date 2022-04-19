@@ -1,3 +1,4 @@
+//由于部署不同,该mod废弃不用.
 use brush::declare_storage_trait;
 // use brush::traits::Flush;
 use ink_env::{hash::{HashOutput, Sha2x256}};

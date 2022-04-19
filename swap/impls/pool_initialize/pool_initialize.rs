@@ -6,7 +6,6 @@ use brush::{
         AccountId,
     },
 };
-use ink_env::Error;
 use primitives::{Uint160, ADDRESS0, U256, Address};
 use crate::traits::core::factory::*;
 use crate::traits::core::pool::*;

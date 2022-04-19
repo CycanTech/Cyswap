@@ -7,6 +7,7 @@ pub mod position_manager {
     use ink_storage::traits::SpreadAllocate;
     use crabswap::impls::pool_initialize::{Initializer,PoolInitializeData,PoolInitializeStorage,initializer_external};
     use crabswap::impls::erc721_permit::*;
+    use crabswap::impls::periphery::position_manager::*;
     use crabswap::impls::psp34_base::*;
     use brush::contracts::psp34::*;
     use brush::contracts::psp34::extensions::mintable::*;
@@ -26,6 +27,12 @@ pub mod position_manager {
         erc721_permit:ERC721PermitData,
         #[PSP34BaseStorageField]
         psp34_base:PSP34BaseData,
+
+        #[PositionStorageField]
+        position_data:PositionData,
+        // /// @dev The address of the token descriptor contract, which handles generating token URIs for position tokens
+        // address private immutable _tokenDescriptor;
+        tokenDescriptor:AccountId,
         // // field for testing _before_token_transfer
         // return_err_on_before: bool,
         // // field for testing _after_token_transfer
@@ -38,6 +45,7 @@ pub mod position_manager {
     impl PSP34Burnable for PositionManger{}
     impl IERC721Permit for PositionManger{}
     impl PSP34Base for PositionManger{}
+    impl Position for PositionManger{}
     
     impl PositionManger {
         #[ink(constructor, payable)]
@@ -52,6 +60,7 @@ pub mod position_manager {
                 instance.erc721_permit.versionHash = ink_lang::blake2x256!("1");
                 instance.psp34_base.name = String::from(name);
                 instance.psp34_base.symbol = String::from(symbol);
+                instance.tokenDescriptor = tokenDescriptor;
             })
         }
     }

@@ -15,3 +15,7 @@ declare_derive_storage_trait!(derive_psp34_base_storage, PSP34BaseStorage, PSP34
 
 #[cfg(feature = "pool_deployer")]
 declare_derive_storage_trait!(derive_pool_deployer_storage, PoolDeployerStorage, PoolDeployerStorageField);
+
+declare_derive_storage_trait!(derive_position_descriptor_storage, PositionDescriptorStorage, PositionDescriptorStorageField);
+
+declare_derive_storage_trait!(derive_position_storage, PositionStorage, PositionStorageField);

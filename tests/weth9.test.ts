@@ -24,7 +24,7 @@ describe('WETH9', () => {
     return { sender, contractFactory, contract, receiver, Alice };
   }
 
-  it('test deposit',async () =>{
+  it('test deposit and withdraw',async () =>{
     const { query,tx,alice,defaultSigner } = await setupContract('weth9_contract','new','weth9','weth9');
     const result = await query.balanceOf(defaultSigner.address);
     console.log("result is:",result.output);
