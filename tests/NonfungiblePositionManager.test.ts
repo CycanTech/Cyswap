@@ -28,8 +28,13 @@ describe('WETH9', () => {
     await api.isReady;
     const { query:factoryQuery,tx:factoryTx,contract:factoryContract} = await setupContract("factory","new");
     const { contract:weth9Contract} = await setupContract('weth9_contract','new','weth9','weth9');
-    
-    const { query,tx,alice,defaultSigner } = await setupContract('NonfungiblePositionManager','new',factoryContract.address,weth9Contract.address,'tokenDescriptor');
+    // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
+    const { contract:positionDescriptor} = await setupContract('NonfungibleTokenPositionDescriptor','new',weth9Contract.address,"_nativeCurrencyLabelBytes");
+    // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
+    const { query,tx,alice,defaultSigner,contract:positionMangerContract } = await setupContract('NonfungiblePositionManager','new',factoryContract.address,weth9Contract.address,positionDescriptor.address);
+    console.log("positionMangerContract address is:",positionMangerContract.address.toHuman());
+    //TODO 开始测试初始化一个交易池.
+
     // const result = await query.balanceOf(defaultSigner.address);
     // console.log("result is:",result.output);
     // expect(result.output).to.equal(0);

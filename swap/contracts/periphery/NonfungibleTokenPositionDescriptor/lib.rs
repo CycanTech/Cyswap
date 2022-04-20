@@ -22,8 +22,9 @@ pub mod PositionDescriptor {
     }
     
     impl PositionDescriptor {
-        #[ink(constructor, payable)]
-        pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
+        #[ink(constructor)]
+        // constructor(address _WETH9, bytes32 _nativeCurrencyLabelBytes) {
+        pub fn new(_WETH9: AccountId, _nativeCurrencyLabelBytes: String) -> Self {
             ink_lang::codegen::initialize_contract(|instance: &mut PositionDescriptor| {
             })
         }
