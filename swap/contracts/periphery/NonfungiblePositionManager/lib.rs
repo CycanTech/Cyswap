@@ -4,10 +4,10 @@
 #[brush::contract]
 pub mod position_manager {
     use brush::contracts::psp34::PSP34Data;
-    use ink_storage::traits::SpreadAllocate;
-    use crabswap::impls::pool_initialize::{Initializer,PoolInitializeData,PoolInitializeStorage,initializer_external};
-    use crabswap::impls::erc721_permit::*;
     use crabswap::impls::periphery::position_manager::*;
+    use ink_storage::traits::SpreadAllocate;
+    use crabswap::impls::pool_initialize::*;
+    use crabswap::impls::erc721_permit::*;
     use crabswap::impls::psp34_base::*;
     use brush::contracts::psp34::*;
     use brush::contracts::psp34::extensions::mintable::*;
@@ -17,8 +17,8 @@ pub mod position_manager {
     use ink_lang::codegen::EmitEvent;
 
     #[ink(storage)]
-    #[derive(Default, SpreadAllocate, PoolInitializeStorage,PSP34Storage,ERC721PermitStorage,PSP34BaseStorage)]
-    pub struct PositionManger {
+    #[derive(Default, SpreadAllocate,PositionStorage, PoolInitializeStorage,PSP34Storage,ERC721PermitStorage,PSP34BaseStorage)]
+    pub struct PositionMangerContract {
         #[PoolInitializeStorageField]
         initializer: PoolInitializeData,
         #[PSP34StorageField]
@@ -29,7 +29,7 @@ pub mod position_manager {
         psp34_base:PSP34BaseData,
 
         #[PositionStorageField]
-        position_data:PositionData,
+        position:PositionData,
         // /// @dev The address of the token descriptor contract, which handles generating token URIs for position tokens
         // address private immutable _tokenDescriptor;
         tokenDescriptor:AccountId,
@@ -39,18 +39,18 @@ pub mod position_manager {
         // return_err_on_after: bool,
     }
 
-    impl Initializer for PositionManger{}
-    impl PSP34 for PositionManger{}
-    impl PSP34Mintable for PositionManger{}
-    impl PSP34Burnable for PositionManger{}
-    impl IERC721Permit for PositionManger{}
-    impl PSP34Base for PositionManger{}
-    impl Position for PositionManger{}
+    impl Initializer for PositionMangerContract{}
+    impl PSP34 for PositionMangerContract{}
+    impl PSP34Mintable for PositionMangerContract{}
+    impl PSP34Burnable for PositionMangerContract{}
+    impl IERC721Permit for PositionMangerContract{}
+    impl PSP34Base for PositionMangerContract{}
+    impl PositionManager for PositionMangerContract{}
     
-    impl PositionManger {
+    impl PositionMangerContract {
         #[ink(constructor, payable)]
         pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
-            ink_lang::codegen::initialize_contract(|instance: &mut PositionManger| {
+            ink_lang::codegen::initialize_contract(|instance: &mut PositionMangerContract| {
                 instance.initializer.factory = factory;
                 instance.initializer.WETH9 = weth9;
                 let name = "Crabswap V3 Positions NFT-V1";
@@ -88,7 +88,7 @@ pub mod position_manager {
         approved: bool,
     }
 
-    impl PSP34Internal for PositionManger {
+    impl PSP34Internal for PositionMangerContract {
         fn _emit_transfer_event(&self, from: Option<AccountId>, to: Option<AccountId>, id: Id) {
             self.env().emit_event(Transfer { from, to, id });
         }

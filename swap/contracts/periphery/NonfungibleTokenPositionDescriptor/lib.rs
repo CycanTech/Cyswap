@@ -7,6 +7,7 @@ pub mod PositionDescriptor {
     use crabswap::traits::periphery::position_descriptor::*;
     use primitives::Address;
     use primitives::Uint256;
+    use ink_prelude::string::String;
 
     #[ink(storage)]
     #[derive(Default, SpreadAllocate)]

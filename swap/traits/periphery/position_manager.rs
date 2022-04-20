@@ -9,7 +9,7 @@ use scale::{Decode, Encode};
 pub type PositionManagerRef = dyn PositionManager;
 
 #[derive(Default, Debug,Decode,Encode, SpreadAllocate, SpreadLayout)]
-#[cfg_attr(feature = "std", derive(StorageLayout))]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
 pub struct MintParams {
     token0: Address,
     token1: Address,

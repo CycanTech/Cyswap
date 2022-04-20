@@ -58,6 +58,9 @@ psp34_base = [
 pool_deployer = [
     "swap_project_derive/pool_deployer",
 ]
+position_manager = [
+    "swap_project_derive/position_manager",
+]
 
 ink-as-dependency = []
 [workspace]
@@ -65,22 +68,22 @@ members = [
     "primitives/",
     "libs/",
     "derive/",
-    "contracts/core/base/psp22",
-    "contracts/core/base/weth9",
-    "contracts/core/pool/",
-    "contracts/core/factory/",
-    "contracts/periphery/NonfungiblePositionManager/",
-    "contracts/periphery/NonfungibleTokenPositionDescriptor/",
-    
-]
-
-exclude = [
     # "contracts/core/base/psp22",
     # "contracts/core/base/weth9",
     # "contracts/core/pool/",
     # "contracts/core/factory/",
     # "contracts/periphery/NonfungiblePositionManager/",
     # "contracts/periphery/NonfungibleTokenPositionDescriptor/",
+    
+]
+
+exclude = [
+    "contracts/core/base/psp22",
+    "contracts/core/base/weth9",
+    "contracts/core/pool/",
+    "contracts/core/factory/",
+    "contracts/periphery/NonfungiblePositionManager/",
+    "contracts/periphery/NonfungibleTokenPositionDescriptor/",
 ]
 
 [profile.dev]

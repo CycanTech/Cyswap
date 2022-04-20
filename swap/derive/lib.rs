@@ -18,4 +18,5 @@ declare_derive_storage_trait!(derive_pool_deployer_storage, PoolDeployerStorage,
 
 declare_derive_storage_trait!(derive_position_descriptor_storage, PositionDescriptorStorage, PositionDescriptorStorageField);
 
+#[cfg(feature = "position_manager")]
 declare_derive_storage_trait!(derive_position_storage, PositionStorage, PositionStorageField);
