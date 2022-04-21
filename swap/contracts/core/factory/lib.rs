@@ -26,7 +26,8 @@ pub mod crab_swap_factory {
         ownable::*,
         psp34::*,
     };
-    pub const  ACCUMULATOR_CODE_HASH:&str = "52ea1e3471f4d4b8e41c34dfbb79db8b899a3f93be7bcb53cc16f011b81d3ffb";
+    use ink_prelude::string::String;
+    // pub const  ACCUMULATOR_CODE_HASH:&str = "52ea1e3471f4d4b8e41c34dfbb79db8b899a3f93be7bcb53cc16f011b81d3ffb";
 
     #[ink(storage)]
     #[derive(Default,SpreadAllocate,PSP34Storage,OwnableStorage)]
@@ -44,6 +45,7 @@ pub mod crab_swap_factory {
         #[OwnableStorageField]
         ownable: OwnableData,
         next_id: u8,
+        pool_code_hash:String,
     }
 
 
@@ -128,9 +130,9 @@ pub mod crab_swap_factory {
                 token0 = token_b;
                 token1 = token_a;
             }
-            ink_env::debug_println!("input fee is:{}",fee);
+            ink_env::debug_println!(" input fee is:{}",fee);
             let fee_amount_tick_spacing_option = self.fee_amount_tick_spacing.get(fee);
-            ink_env::debug_println!("fee_amount_tick_spacing:{:?}",fee_amount_tick_spacing_option);
+            ink_env::debug_println!(" fee_amount_tick_spacing:{:?}",fee_amount_tick_spacing_option);
             let tick_spacing = fee_amount_tick_spacing_option.unwrap_or(0);
             assert!(tick_spacing!=0,"tick spacing should not be zero!");
             assert!(self.pool_map.get((token0,token1,fee)).is_none(),"pool have been exist!");
@@ -194,6 +196,17 @@ pub mod crab_swap_factory {
             })
         }
 
+        //set pool code_hash
+        #[ink(message)]
+        pub fn initial(&mut self,code_hash:String) -> Result<(), PSP34Error> {
+            self.pool_code_hash = code_hash;
+            return Ok(());
+        }
+
+        #[ink(message)]
+        pub fn get_pool_code_hash(&self) -> String {
+            self.pool_code_hash.clone()
+        }
 
         #[ink(message)]
         pub fn mint_token(&mut self) -> Result<(), PSP34Error> {
@@ -222,7 +235,7 @@ pub mod crab_swap_factory {
             ink_env::hash_encoded::<Sha2x256, _>(&encodable, &mut salt);
             let pool_address = PoolContractRef::new(address_this,token0, token1, fee, tick_spacing)
                     .endowment(total_balance / 4)
-                    .code_hash(ink_env::Hash::try_from(hex::decode(ACCUMULATOR_CODE_HASH).unwrap().as_ref()).unwrap())
+                    .code_hash(ink_env::Hash::try_from(hex::decode(self.pool_code_hash.clone()).unwrap().as_ref()).unwrap())
                     .salt_bytes(salt)
                     .instantiate()
                     .unwrap_or_else(|error| {

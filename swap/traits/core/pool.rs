@@ -1,8 +1,9 @@
+#![allow(non_snake_case)]
 use ink_storage::traits::{SpreadLayout, PackedLayout, SpreadAllocate};
 #[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
 use scale::{Encode, Decode};
-use primitives::{Uint160, Uint16, Address, Uint24};
+use primitives::{Uint160, Uint16, Address, Uint24, U160};
 use primitives::Int24;
 use primitives::Uint8;
 
@@ -37,7 +38,7 @@ pub trait Pool{
     /// @inheritdoc IUniswapV3PoolActions
     /// @dev not locked because it initializes unlocked
     #[ink(message, payable)]
-    fn initialize(&mut self,sqrtPriceX96:Uint160);
+    fn initialize(&mut self,sqrtPriceX96:U160);
 
     #[ink(message)]
     fn slot0(&self)->Slot0;

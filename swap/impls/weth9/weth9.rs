@@ -8,6 +8,7 @@ impl<T: PSP22Storage + PSP22Internal> Weth9 for T {
 
     /// @notice Deposit ether to get wrapped ether
     default fn deposit(&mut self)->Result<(),PSP22Error>{
+        ink_env::debug_message("test -------------------------------------");
         let transfer_value = ink_env::transferred_value::<DefaultEnvironment>();
         let caller = ink_env::caller::<DefaultEnvironment>();
         let result = PSP22Internal::_mint(self, caller, transfer_value);

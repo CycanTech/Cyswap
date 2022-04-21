@@ -11,7 +11,7 @@ pub mod crab_swap_pool {
     };
     use libs::{core::{tick_math, oracle::Observations}, get_tick_at_sqrt_ratio};
     use scale::{Decode, Encode, WrapperTypeEncode};
-    use primitives::{Uint160, Int24};
+    use primitives::{U160,Uint160, Int24};
     #[cfg(feature = "std")]
     use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
     use ink_storage::traits::SpreadAllocate;
@@ -72,7 +72,7 @@ pub mod crab_swap_pool {
     #[ink(event)]
     pub struct Initialize{
         #[ink(topic)]
-        sqrtPriceX96:Uint160, 
+        sqrtPriceX96:U160, 
         #[ink(topic)]
         tick:Int24,
     }
@@ -81,11 +81,11 @@ pub mod crab_swap_pool {
         /// @inheritdoc IUniswapV3PoolActions
         /// @dev not locked because it initializes unlocked
         #[ink(message, payable)]
-        fn initialize(&mut self,sqrtPriceX96:Uint160){
+        fn initialize(&mut self,sqrtPriceX96:U160){
             // require(slot0.sqrtPriceX96 == 0, 'AI');
             assert!(self.slot0.sqrtPriceX96.value.is_zero(), "AI");
             // int24 tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
-            let tick:Int24 = get_tick_at_sqrt_ratio(sqrtPriceX96.value);
+            let tick:Int24 = get_tick_at_sqrt_ratio(sqrtPriceX96);
             // (uint16 cardinality, uint16 cardinalityNext) = observations.initialize(_blockTimestamp());
             let time_stamp = self.env().block_timestamp();
             let (cardinality, cardinalityNext) = self.observations.initialize(time_stamp);
@@ -99,7 +99,7 @@ pub mod crab_swap_pool {
             //     unlocked: true
             // });
             self.slot0 = Slot0{
-                    sqrtPriceX96: sqrtPriceX96.clone(),
+                    sqrtPriceX96: Uint160::new_with_u256(sqrtPriceX96),
                     tick: tick,
                     observationIndex: 0,
                     observationCardinality: cardinality,
@@ -124,16 +124,30 @@ pub mod crab_swap_pool {
             // tickSpacing = _tickSpacing;
             // TODO maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
             ink_lang::utils::initialize_contract(|instance:&mut Self|{
+                ink_env::debug_message("----------------1");
                 instance.factory = factory;
                 instance.token0 = token0;
                 instance.token1 = token1;
                 instance.fee = fee;
                 instance.tick_spacing = tick_spacing;
-                instance.max_liquidity_per_tick = Default::default();
-                instance.fee_growth_global0_x128 = Default::default();
+                instance.fee_growth_global0_x128 = Uint160::new();
+                ink_env::debug_message("----------------2");
                 instance.fee_growth_global1_x128=Uint160::new();
+                ink_env::debug_message("----------------3");
                 instance.liquidity = Default::default();
+                ink_env::debug_message("----------------4");
                 instance.max_liquidity_per_tick = libs::tick_spacing_to_max_liquidity_per_tick(tick_spacing);
+                ink_env::debug_message("----------------5");
+            })
+        }
+
+        #[ink(constructor)]
+        pub fn new1() -> Self {
+            ink_env::debug_message("----------------0");
+            // (factory, token0, token1, fee, _tickSpacing) = IUniswapV3PoolDeployer(msg.sender).parameters();
+            // tickSpacing = _tickSpacing;
+            // TODO maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
+            ink_lang::utils::initialize_contract(|instance:&mut Self|{
             })
         }
 

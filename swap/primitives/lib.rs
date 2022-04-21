@@ -45,6 +45,12 @@ impl WrapperU256{
             value:U256::zero(),
         }
     }
+
+    pub fn new_with_u256(v:U256)->Self{
+        WrapperU256{
+            value:v,
+        }
+    }
 }
 
 impl AsRef<U256> for WrapperU256 {
