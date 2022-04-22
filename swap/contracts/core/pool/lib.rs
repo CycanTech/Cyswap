@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(min_specialization)]
-
+#![allow(non_snake_case)]
 
 #[brush::contract]
 pub mod crab_swap_pool {
@@ -138,18 +138,12 @@ pub mod crab_swap_pool {
                 ink_env::debug_message("----------------4");
                 instance.max_liquidity_per_tick = libs::tick_spacing_to_max_liquidity_per_tick(tick_spacing);
                 ink_env::debug_message("----------------5");
+                instance.slot0 = Default::default();
+                instance.observations = Observations::new();
+                ink_env::debug_println!("----------------6");
             })
         }
 
-        #[ink(constructor)]
-        pub fn new1() -> Self {
-            ink_env::debug_message("----------------0");
-            // (factory, token0, token1, fee, _tickSpacing) = IUniswapV3PoolDeployer(msg.sender).parameters();
-            // tickSpacing = _tickSpacing;
-            // TODO maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
-            ink_lang::utils::initialize_contract(|instance:&mut Self|{
-            })
-        }
 
         // /// @inheritdoc IUniswapV3Factory
         // #[ink(message)]
@@ -158,5 +152,33 @@ pub mod crab_swap_pool {
         //     [0; 32].into()
         // }
        
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use ink_lang as ink;
+
+        fn default_accounts(
+        ) -> ink_env::test::DefaultAccounts<ink_env::DefaultEnvironment> {
+            ink_env::test::default_accounts::<Environment>()
+        }
+
+        fn set_next_caller(caller: AccountId) {
+            ink_env::test::set_caller::<Environment>(caller);
+        }
+
+        #[ink::test]
+        fn register_works() {
+            let default_accounts = default_accounts();
+
+            set_next_caller(default_accounts.alice);
+            // factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24
+            let pool_contract = PoolContract::new(default_accounts.alice,default_accounts.alice,default_accounts.alice,500,10);
+            ink_env::debug_println!("test success:{:?}",pool_contract);
+            println!("test success:{:?}",pool_contract);
+            // assert_eq!(weth9_contract.metadata.name,Some(String::from("weth9")));
+        }
+        
     }
 }

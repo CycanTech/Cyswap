@@ -85,8 +85,8 @@ mod tests {
 
     #[test]
     fn my_temp_test(){
-        let result = U256::from(1);
-        let result = result << 128;
-        println!("result is:{:?}",result);
+        let out = &mut [0u8;32];
+        let result = hex::decode_to_slice("cf04e7dcc2ebf38b9e299c28d3dc933e6e2a32f217d7119d541f89cf903fdffd", out);
+        println!("out is:{:?}",out);
     }
 }

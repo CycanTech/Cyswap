@@ -45,7 +45,7 @@ pub mod crab_swap_factory {
         #[OwnableStorageField]
         ownable: OwnableData,
         next_id: u8,
-        pool_code_hash:String,
+        pool_code_hash:Hash,
     }
 
 
@@ -112,8 +112,17 @@ pub mod crab_swap_factory {
 
     impl Factory for FactoryContract{
         #[ink(message)]
-        fn get_pool(&self,fee:u32,token0:AccountId, token1:AccountId)->AccountId{
+        fn get_pool(&self,fee:u32,token_a:AccountId, token_b:AccountId)->AccountId{
             ink_env::debug_println!("get_pool fee is:{:?}",fee);
+            assert!(token_a!=token_b,"token A should not equals token B");
+            let (token0,token1);
+            if token_a < token_b {
+                token0 = token_a;
+                token1 = token_b;
+            }else{
+                token0 = token_b;
+                token1 = token_a;
+            }
             let key = (token0,token1,fee);
             self.pool_map.get(key).unwrap_or(ADDRESS0.into())
         }
@@ -140,7 +149,7 @@ pub mod crab_swap_factory {
 
             //because the contract deploy difference with solidity,so cancel the deployer contract.
             //start deploy the pool contract and initial.
-            let pool = self.deploy(address_this,token0,token1,fee,tick_spacing).to_account_id();
+            let pool = self.deploy(address_this,token0,token1,fee,tick_spacing);
             self.pool_map.insert((token0,token1,fee),&pool);
             // self.env().emit_event(PoolCreated {
             //     token0,
@@ -198,13 +207,13 @@ pub mod crab_swap_factory {
 
         //set pool code_hash
         #[ink(message)]
-        pub fn initial(&mut self,code_hash:String) -> Result<(), PSP34Error> {
+        pub fn initial(&mut self,code_hash:Hash) -> Result<(), PSP34Error> {
             self.pool_code_hash = code_hash;
             return Ok(());
         }
 
         #[ink(message)]
-        pub fn get_pool_code_hash(&self) -> String {
+        pub fn get_pool_code_hash(&self) -> Hash {
             self.pool_code_hash.clone()
         }
 
@@ -228,23 +237,32 @@ pub mod crab_swap_factory {
 
 
 
-        fn deploy(&mut self,address_this: Address, token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24) -> PoolContractRef {
+        fn deploy(&mut self,address_this: Address, token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24) -> AccountId {
+            ink_env::debug_println!("address_this is: {:?}",address_this);
+            ink_env::debug_println!("token0 is: {:?}",token0);
+            ink_env::debug_println!("token1 is: {:?}",token1);
+            ink_env::debug_println!("fee is: {:?}",fee);
+            ink_env::debug_println!("tick_spacing is: {:?}",tick_spacing);
             let total_balance = Self::env().balance();
             let encodable = (address_this, token0, token1,fee); // Implements `scale::Encode`
             let mut salt = <Sha2x256 as HashOutput>::Type::default(); // 256-bit buffer
             ink_env::hash_encoded::<Sha2x256, _>(&encodable, &mut salt);
+            // factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24
             let pool_address = PoolContractRef::new(address_this,token0, token1, fee, tick_spacing)
-                    .endowment(total_balance / 4)
-                    .code_hash(ink_env::Hash::try_from(hex::decode(self.pool_code_hash.clone()).unwrap().as_ref()).unwrap())
+                    .endowment(total_balance/4)
+                    .code_hash(self.pool_code_hash.clone())
                     .salt_bytes(salt)
                     .instantiate()
-                    .unwrap_or_else(|error| {
-                        panic!(
-                            "failed at instantiating the Accumulator contract: {:?}",
-                            error
-                        )
-                    });
-            pool_address
+                    .unwrap();
+                    // .unwrap_or_else(|error| {
+                    //     ink_env::debug_println!("failed at instantiating the Accumulator contract: {:?}",
+                    //     error);
+                    //     panic!(
+                    //         "failed at instantiating the Accumulator contract: {:?}",
+                    //         error
+                    //     )
+                    // });
+            pool_address.to_account_id()
         }
 
         // function createPool(
