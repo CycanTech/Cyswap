@@ -64,6 +64,7 @@ describe('positionManager initialize', () => {
     await factoryTx.initial(pool_code_hash);
     const poolCodeHash = await factoryQuery.getPoolCodeHash();
     console.log("poolCodeHash is:",poolCodeHash.output?.toHuman());
+    await positionMangerContract.connect(alice);
     const poolAddress = await positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000);
 
     console.log("poolAddress is:",poolAddress);
