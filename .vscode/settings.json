@@ -6,6 +6,7 @@
         "IERC",
         "inheritdoc",
         "Mintable",
+        "Nonfungible",
         "patract",
         "polkadot",
         "redspot",

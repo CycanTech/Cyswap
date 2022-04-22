@@ -31,7 +31,7 @@ pub struct Observation {
 #[derive(Debug, SpreadAllocate, SpreadLayout)]
 // #[cfg_attr(feature = "std", derive(StorageLayout))]
 pub struct Observations {
-    pub obs: [Observation;1],
+    pub obs: [Observation;16],
     // pub obs: [Observation;65535],
 }
 
@@ -52,7 +52,7 @@ impl Observations {
     pub fn new()->Self{
         let observation:Observation = Default::default();
         Observations{
-            obs:[observation],
+            obs:[observation;16],
         }
     }
     /// @notice Initialize the oracle array by writing the first slot. Called once for the lifecycle of the observations array
