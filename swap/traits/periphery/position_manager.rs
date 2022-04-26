@@ -1,5 +1,5 @@
 use ink_storage::traits::{SpreadAllocate, SpreadLayout};
-use primitives::{Address, Int24, Uint160, Uint24, Uint256};
+use primitives::{Address, Int24, Uint160, Uint24, Uint256, U256};
 
 #[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
@@ -46,4 +46,5 @@ pub trait PositionManager {
         Uint256, //amount0
         Uint256, //amount1
     );
+
 }

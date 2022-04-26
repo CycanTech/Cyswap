@@ -1,16 +1,16 @@
+#![allow(non_snake_case)]
 pub use super::data::*;
-use primitives::{Address, Int24, Uint128, Uint256, Uint80, Uint96};
-
+use crate::traits::core::pool::*;
 pub use crate::traits::periphery::position_manager::*;
-
+use ink_storage::traits::{SpreadLayout, PackedLayout, SpreadAllocate};
+use primitives::{Address, Int24, Uint128, Uint24, Uint256, Uint80, Uint96, U256};
+use libs::{PoolKey, periphery::PoolAddress};
+use scale::{Encode, Decode};
+use ink_storage::traits::StorageLayout;
 #[cfg(feature = "position_manager")]
 pub use swap_project_derive::PositionStorage;
 
-// #[cfg(feature = "std")]
-// details about the uniswap position
-
-
-impl<T:PositionStorage>  PositionManager for T{
+impl<T: PositionStorage> PositionManager for T {
     default fn mint(
         &mut self,
         params: MintParams,
@@ -19,8 +19,9 @@ impl<T:PositionStorage>  PositionManager for T{
         u128,    //liquidity
         Uint256, //amount0
         Uint256, //amount1
-    ){
+    ) {
         // IUniswapV3Pool pool;
+        let pool: &PoolActionRef;
         // (liquidity, amount0, amount1, pool) = addLiquidity(
         //     AddLiquidityParams({
         //         token0: params.token0,
@@ -62,6 +63,8 @@ impl<T:PositionStorage>  PositionManager for T{
         // });
 
         // emit IncreaseLiquidity(tokenId, liquidity, amount0, amount1);
-        (Uint256::new(),0u128,Uint256::new(),Uint256::new())
+        (Uint256::new(), 0u128, Uint256::new(), Uint256::new())
     }
+    
 }
+

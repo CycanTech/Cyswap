@@ -40,11 +40,11 @@ impl<T:PoolInitializeStorage> Initializer for T{
         
         if pool_address == ADDRESS0.into() {
             pool_address = FactoryRef::create_pool(&factory_address,fee,token0,token1);
-            PoolRef::initialize(&mut pool_address,sqrt_price_x96);
+            PoolActionRef::initialize(&mut pool_address,sqrt_price_x96);
         }else{
-            let sqrt_price_x96_existing = PoolRef::slot0(&pool_address).sqrtPriceX96;
+            let sqrt_price_x96_existing = PoolActionRef::getSlot0(&pool_address).sqrtPriceX96;
             if sqrt_price_x96_existing.value.is_zero() {
-                PoolRef::initialize(&mut pool_address,sqrt_price_x96);
+                PoolActionRef::initialize(&mut pool_address,sqrt_price_x96);
             }
         }
         pool_address

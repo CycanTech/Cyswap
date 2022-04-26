@@ -238,7 +238,7 @@ pub fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
     if tick_low == tick_hi{
         tick = tick_low;
     }else{
-        if get_sqrt_ratio_at_tick(tick_hi) <= sqrt_price_x96{
+        if getSqrtRatioAtTick(tick_hi) <= sqrt_price_x96{
             tick = tick_hi;
         }else {
             tick = tick_low;
@@ -252,7 +252,7 @@ pub fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
 /// @param tick The input tick for the above formula
 /// @return sqrtPriceX96 A Fixed point Q64.96 number representing the sqrt of the ratio of the two assets (token1/token0)
 /// at the given tick
-pub fn get_sqrt_ratio_at_tick(tick:Int24) -> U160 {
+pub fn getSqrtRatioAtTick(tick:Int24) -> U160 {
     // uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));
     let abs_tick:U256;
     if tick < 0 {
@@ -369,7 +369,7 @@ pub fn get_sqrt_ratio_at_tick(tick:Int24) -> U160 {
 #[cfg(test)]
 mod tests {
     use primitives::U256;
-    use crate::{core::tick_math::get_tick_at_sqrt_ratio, get_sqrt_ratio_at_tick};
+    use crate::{core::tick_math::get_tick_at_sqrt_ratio, getSqrtRatioAtTick};
 
     #[test]
     fn it_get_tick_at_sqrt_ratio(){
@@ -389,9 +389,9 @@ mod tests {
     fn it_get_sqrt_ratio_at_tick(){
         // pub const MIN_SQRT_RATIO:&str = "4295128739";//4295128739;
         // pub const MAX_SQRT_RATIO:&str = "1461446703485210103287273052203988822378723970342"
-        let result = get_sqrt_ratio_at_tick(-887272_i32);
+        let result = getSqrtRatioAtTick(-887272_i32);
         println!("result is:{}",result);
-        let result = get_sqrt_ratio_at_tick(887272_i32);
+        let result = getSqrtRatioAtTick(887272_i32);
         println!("result is:{}",result);
     }
 
@@ -401,7 +401,7 @@ mod tests {
         // pub const MAX_SQRT_RATIO:&str = "1461446703485210103287273052203988822378723970342"
         for tick_index in -887272..= 887272{
             println!("tick_index is:{}",tick_index);
-            let price = get_sqrt_ratio_at_tick(tick_index);
+            let price = getSqrtRatioAtTick(tick_index);
             println!("price is:{}",price);
             let tick = get_tick_at_sqrt_ratio(price);
             println!("ticker_index,tick is :{},{}",tick_index,tick);

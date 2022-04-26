@@ -4,3 +4,5 @@ pub mod psp34_base;
 pub mod weth9;
 pub mod position_descriptor;
 pub mod position_manager;
+pub mod LiquidityManagement;
+pub mod PeripheryPayments;
