@@ -1,6 +1,6 @@
 use primitives::{U256, Uint160, I56, U160, Uint24, Int24};
 
-use super::tick_math;
+use super::TickMath;
 
 // info stored for each initialized individual tick
 struct Info {
@@ -35,8 +35,8 @@ pub fn tick_spacing_to_max_liquidity_per_tick(tick_spacing:Int24)  ->u128 {
     //     int24 maxTick = (TickMath.MAX_TICK / tickSpacing) * tickSpacing;
     //     uint24 numTicks = uint24((maxTick - minTick) / tickSpacing) + 1;
     //     return type(uint128).max / numTicks;
-    let min_tick:Int24 = (tick_math::MIN_TICK / tick_spacing) * tick_spacing;
-    let max_tick:Int24 = (tick_math::MAX_TICK / tick_spacing) * tick_spacing;
+    let min_tick:Int24 = (TickMath::MIN_TICK / tick_spacing) * tick_spacing;
+    let max_tick:Int24 = (TickMath::MAX_TICK / tick_spacing) * tick_spacing;
     let num_ticks:Uint24 = (max_tick.saturating_sub(min_tick)).saturating_div(tick_spacing).saturating_add(1).try_into().unwrap();
     u128::MAX.saturating_div(num_ticks.into())
 }

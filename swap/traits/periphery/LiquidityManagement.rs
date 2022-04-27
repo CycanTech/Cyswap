@@ -1,3 +1,6 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+#![allow(non_snake_case)]
+
 use ink_storage::traits::{SpreadLayout, PackedLayout, SpreadAllocate};
 use primitives::{Address, Uint24, Uint256, Int24, U256};
 use scale::{Encode, Decode};

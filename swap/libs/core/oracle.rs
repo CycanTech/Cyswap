@@ -124,13 +124,13 @@ impl Observations {
         let (beforeOrAt, atOrAfter) =
             self.getSurroundingObservations(time, target, tick, index, liquidity, cardinality);
 
-        if (target == beforeOrAt.blockTimestamp) {
+        if target == beforeOrAt.blockTimestamp {
             // we're at the left boundary
             return (
                 beforeOrAt.tickCumulative,
                 U160::from(beforeOrAt.secondsPerLiquidityCumulativeX128),
             );
-        } else if (target == atOrAfter.blockTimestamp) {
+        } else if target == atOrAfter.blockTimestamp {
             // we're at the right boundary
             return (
                 atOrAfter.tickCumulative,
@@ -274,6 +274,48 @@ impl Observations {
             }
         }
         return (beforeOrAt, atOrAfter);
+    }
+
+    /// @notice Writes an oracle observation to the array
+    /// @dev Writable at most once per block. Index represents the most recently written element. cardinality and index must be tracked externally.
+    /// If the index is at the end of the allowable array length (according to cardinality), and the next cardinality
+    /// is greater than the current one, cardinality may be increased. This restriction is created to preserve ordering.
+    /// @param self The stored oracle array
+    /// @param index The index of the observation that was most recently written to the observations array
+    /// @param blockTimestamp The timestamp of the new observation
+    /// @param tick The active tick at the time of the new observation
+    /// @param liquidity The total in-range liquidity at the time of the new observation
+    /// @param cardinality The number of populated elements in the oracle array
+    /// @param cardinalityNext The new length of the oracle array, independent of population
+    /// @return indexUpdated The new index of the most recently written element in the oracle array
+    /// @return cardinalityUpdated The new cardinality of the oracle array
+    pub fn write(
+        &mut self,
+        index:u16,
+        blockTimestamp:u64,
+        tick:Int24,
+        liquidity:u128,
+        cardinality:u16,
+        cardinalityNext:u16
+    ) -> (u16, u16) {
+        let  last:Observation = self.obs[usize::from(index)];
+
+        // early return if we've already written an observation this block
+        if last.blockTimestamp == blockTimestamp{
+            return (index, cardinality);
+        } 
+
+        let cardinalityUpdated:u16;
+        // if the conditions are right, we can bump the cardinality
+        if cardinalityNext > cardinality && index == (cardinality - 1) {
+            cardinalityUpdated = cardinalityNext;
+        } else {
+            cardinalityUpdated = cardinality;
+        }
+
+        let indexUpdated = (index + 1) % cardinalityUpdated;
+        self.obs[usize::from(indexUpdated)] = transform(&last, blockTimestamp, tick, liquidity);
+        (indexUpdated,cardinalityUpdated)
     }
 }
 

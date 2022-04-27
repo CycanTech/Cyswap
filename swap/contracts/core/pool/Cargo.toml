@@ -21,7 +21,10 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 primitives = {version = "3.0.0-rc9",path="../../../primitives/", default-features = false}
 libs = {version = "3.0.0",path="../../../libs/", default-features = false}
 crabswap = { path = "../../../", default-features = false}
-
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+version = '6.0.0'
 
 [lib]
 name = "pool"

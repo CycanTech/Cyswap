@@ -369,7 +369,7 @@ pub fn getSqrtRatioAtTick(tick:Int24) -> U160 {
 #[cfg(test)]
 mod tests {
     use primitives::U256;
-    use crate::{core::tick_math::get_tick_at_sqrt_ratio, getSqrtRatioAtTick};
+    use crate::{core::TickMath::get_tick_at_sqrt_ratio, getSqrtRatioAtTick};
 
     #[test]
     fn it_get_tick_at_sqrt_ratio(){

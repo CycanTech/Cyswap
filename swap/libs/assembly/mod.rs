@@ -27,6 +27,21 @@ pub fn mul(o:&U256,v:&U256)->U256{
     o.saturating_mul(*v)
 }
 
+pub fn div(o:&U256,v:&U256)->U256{
+    o.checked_div(*v).unwrap()
+}
+pub fn div_mod(o:&U256,v:&U256)->U256{
+    o.div_mod(*v).1
+}
+
+pub fn add(o:&U256,v:&U256)->U256{
+    o.saturating_add(*v)
+}
+
+pub fn mulmod(x:&U256,y:&U256,m:&U256)->U256{
+    x.saturating_mul(*y).div_mod(*m).1
+}
+
 #[cfg(test)]
 mod tests {
     use primitives::U256;

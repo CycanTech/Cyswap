@@ -4,7 +4,7 @@
 
 use ink_env::DefaultEnvironment;
 use ink_storage::traits::{SpreadAllocate, SpreadLayout};
-use libs::core::tick_math;
+use libs::core::TickMath;
 use libs::periphery::LiquidityAmounts;
 use libs::{PoolKey, periphery::PoolAddress};
 use primitives::{U256, Address};
@@ -45,9 +45,9 @@ fn addLiquidity(&mut self, params:AddLiquidityParams)->(u128,  U256, U256,Addres
             let slot0:Slot0 = PoolActionRef::getSlot0(&poolAddress);
             let sqrtPriceX96 = slot0.sqrtPriceX96.value;
 //             // uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(params.tickLower);
-            let sqrtRatioAX96 = tick_math::getSqrtRatioAtTick(params.tickLower);
+            let sqrtRatioAX96 = TickMath::getSqrtRatioAtTick(params.tickLower);
 //             // uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(params.tickUpper);
-            let sqrtRatioBX96 = tick_math::getSqrtRatioAtTick(params.tickUpper);
+            let sqrtRatioBX96 = TickMath::getSqrtRatioAtTick(params.tickUpper);
 
 //             liquidity = LiquidityAmounts::getLiquidityForAmounts(
 //                 sqrtPriceX96,

@@ -46,6 +46,7 @@ pub mod position_manager {
     impl IERC721Permit for PositionMangerContract{}
     impl PSP34Base for PositionMangerContract{}
     impl PositionManager for PositionMangerContract{}
+    impl LiquidityManagementTrait for PositionMangerContract{}
 
     
     impl PositionMangerContract {
