@@ -96,7 +96,7 @@ impl Observations {
     /// @param cardinality The number of populated elements in the oracle array
     /// @return tickCumulative The tick * time elapsed since the pool was first initialized, as of `secondsAgo`
     /// @return secondsPerLiquidityCumulativeX128 The time elapsed / max(1, liquidity) since the pool was first initialized, as of `secondsAgo`
-    fn observeSingle(
+    pub fn observeSingle(
         &mut self,
         time: u64,
         secondsAgo: u64,

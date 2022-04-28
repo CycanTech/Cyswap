@@ -15,11 +15,11 @@ pub mod crab_swap_pool {
         Mapping,
     };
     use libs::{
-        core::{oracle::Observations, TickMath,Position,SqrtPriceMath,LiquidityMath},
+        core::{oracle::Observations, TickMath,Position,SqrtPriceMath,LiquidityMath,Tick,TickBitmap},
         get_tick_at_sqrt_ratio,
     };
-    use primitives::{Int24, Uint160, U160, U256,Int256};
-    use scale::{Decode, Encode, WrapperTypeEncode};
+    use primitives::{Int24, Uint160, U160, U256,Int256, Uint256};
+    use scale::{Decode, Encode};
     type Address = AccountId;
     type Uint24 = u32;
     use ink_lang::codegen::EmitEvent;
@@ -41,29 +41,36 @@ pub mod crab_swap_pool {
         // address public immutable override token0;
         // address public immutable override token1;
         // uint24 public immutable override fee;
-        // int24 public immutable override tickSpacing;
-        // uint128 public immutable override maxLiquidityPerTick;
+        pub maxLiquidityPerTick:u128,
 
         // follow six parameter is immutable
         pub factory: Address,
         pub token0: Address,
         pub token1: Address,
         pub fee: Uint24,
-        pub tick_spacing: Int24,
+        pub tickSpacing: Int24,
         pub max_liquidity_per_tick: u128,
         pub slot0: Slot0,
 
         pub fee_growth_global0_x128: Uint160,
         pub fee_growth_global1_x128: Uint160,
+
+        /// @inheritdoc IUniswapV3PoolState
+        pub feeGrowthGlobal0X128:Uint256,
+        /// @inheritdoc IUniswapV3PoolState
+        pub feeGrowthGlobal1X128:Uint256,
+
         
         // pub protocolFees: ProtocolFees,
         pub liquidity: u128,
         // mapping(int24 => Tick.Info) pub ticks;
+        pub ticks:Mapping<Int24,Tick::Info>,
         // /// @inheritdoc IUniswapV3PoolState
         // mapping(int16 => uint256) public override tickBitmap;
+        pub tickBitmap:Mapping<i16,Uint256>,
         // /// @inheritdoc IUniswapV3PoolState
         // mapping(bytes32 => Position.Info) public override positions;
-        pub positions: Mapping<Vec<u8>, Position::Info>,
+        pub positions: Mapping<(Address,Int24,Int24), Position::Info>,
         /// @inheritdoc IUniswapV3PoolState
         pub observations: Observations,
     }
@@ -144,7 +151,7 @@ pub mod crab_swap_pool {
             //             liquidityDelta: int256(amount).toInt128()
             //         })
             //     );
-            let (_, amount0Int, amount1Int) = _modifyPosition(ModifyPositionParams {
+            let (_, amount0Int, amount1Int) = self._modifyPosition(ModifyPositionParams {
                 owner: recipient,
                 tickLower: tickLower,
                 tickUpper: tickUpper,
@@ -154,8 +161,8 @@ pub mod crab_swap_pool {
             let amount0:U256 = U256::from(amount0Int);
             let amount1:U256 = U256::from(amount1Int);
 
-            let balance0Before: U256;
-            let balance1Before: U256;
+            let mut balance0Before: U256=U256::zero();
+            let mut balance1Before: U256=U256::zero();
             // if (amount0 > 0) balance0Before = balance0();
             if amount0 > U256::from(0) {
                 balance0Before = self.balance0();
@@ -174,7 +181,7 @@ pub mod crab_swap_pool {
             }
 
             // emit Mint(msg.sender, recipient, tickLower, tickUpper, amount, amount0, amount1);
-            ink_env::emit_event(Mint {
+            self.env().emit_event(Mint {
                 sender:msg_sender, 
                 owner:recipient, 
                 tickLower, 
@@ -227,18 +234,17 @@ pub mod crab_swap_pool {
             token0: Address,
             token1: Address,
             fee: Uint24,
-            tick_spacing: Int24,
+            tickSpacing: Int24,
         ) -> Self {
             // (factory, token0, token1, fee, _tickSpacing) = IUniswapV3PoolDeployer(msg.sender).parameters();
-            // tickSpacing = _tickSpacing;
-            // TODO maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
+            // 
             ink_lang::utils::initialize_contract(|instance: &mut Self| {
                 ink_env::debug_message("----------------1");
                 instance.factory = factory;
                 instance.token0 = token0;
                 instance.token1 = token1;
                 instance.fee = fee;
-                instance.tick_spacing = tick_spacing;
+                instance.tickSpacing = tickSpacing;
                 instance.fee_growth_global0_x128 = Uint160::new();
                 ink_env::debug_message("----------------2");
                 instance.fee_growth_global1_x128 = Uint160::new();
@@ -246,10 +252,11 @@ pub mod crab_swap_pool {
                 instance.liquidity = Default::default();
                 ink_env::debug_message("----------------4");
                 instance.max_liquidity_per_tick =
-                    libs::tick_spacing_to_max_liquidity_per_tick(tick_spacing);
+                    libs::tick_spacing_to_max_liquidity_per_tick(tickSpacing);
                 ink_env::debug_message("----------------5");
                 instance.slot0 = Default::default();
                 instance.observations = Observations::new();
+                instance.maxLiquidityPerTick = Tick::tickSpacingToMaxLiquidityPerTick(tickSpacing);
                 ink_env::debug_println!("----------------6");
             })
         }
@@ -264,7 +271,7 @@ pub mod crab_swap_pool {
         checkTicks(params.tickLower, params.tickUpper);
 
         // Slot0 memory _slot0 = slot0;
-        let _slot0 = self.slot0; // SLOAD for gas optimization
+        let _slot0 = self.slot0.clone(); // SLOAD for gas optimization
 
         let position = self._updatePosition(
             params.owner,
@@ -273,9 +280,8 @@ pub mod crab_swap_pool {
             params.liquidityDelta,
             _slot0.tick,
         );
-        let amount0;
-        let amount1;
-        let liquidity;
+        let mut amount0=0;
+        let mut amount1=0;
         if params.liquidityDelta != 0 {
             if _slot0.tick < params.tickLower {
                 // current tick is below the passed range; liquidity can only become in range by crossing from left to
@@ -310,7 +316,7 @@ pub mod crab_swap_pool {
                     params.liquidityDelta,
                 );
 
-                liquidity = LiquidityMath::addDelta(liquidityBefore, params.liquidityDelta);
+                self.liquidity = LiquidityMath::addDelta(liquidityBefore, params.liquidityDelta);
             } else {
                 // current tick is above the passed range; liquidity can only become in range by crossing from right to
                 // left, when we'll need _more_ token1 (it's becoming more valuable) so user must provide it
@@ -329,35 +335,36 @@ pub mod crab_swap_pool {
         /// @param tickLower the lower tick of the position's tick range
         /// @param tickUpper the upper tick of the position's tick range
         /// @param tick the current tick, passed to avoid sloads
-        fn _updatePosition(&self,
+        fn _updatePosition(&mut self,
             owner: Address,
             tickLower: Int24,
             tickUpper: Int24,
-            liquidityDelta: int128,
+            liquidityDelta: i128,
             tick: Int24,
-        ) -> (Position::Info) {
-            position = positions.get(owner, tickLower, tickUpper);
+        ) -> Position::Info {
+            // position = positions.get(owner, tickLower, tickUpper);
+            let mut position:Position::Info = self.positions.get((owner, tickLower, tickUpper)).unwrap();
 
-            let _feeGrowthGlobal0X128: U256 = feeGrowthGlobal0X128; // LOAD for gas optimization
-            let _feeGrowthGlobal1X128: U256 = feeGrowthGlobal1X128; // SLOAD for gas optimization
+            let _feeGrowthGlobal0X128: U256 = self.feeGrowthGlobal0X128.value; // LOAD for gas optimization
+            let _feeGrowthGlobal1X128: U256 = self.feeGrowthGlobal1X128.value; // SLOAD for gas optimization
 
             // if we need to update the ticks, do it
-            let flippedLower: bool;
-            let flippedUpper: bool;
+            let flippedLower: bool=false;
+            let flippedUpper: bool=false;
             if liquidityDelta != 0 {
                 // uint32 time = _blockTimestamp();
                 let time = self.env().block_timestamp();
-                let (tickCumulative, secondsPerLiquidityCumulativeX128) = observations
+                let (tickCumulative, secondsPerLiquidityCumulativeX128) = self.observations
                     .observeSingle(
                         time,
                         0,
-                        slot0.tick,
-                        slot0.observationIndex,
-                        liquidity,
-                        slot0.observationCardinality,
+                        self.slot0.tick,
+                        self.slot0.observationIndex,
+                        self.liquidity,
+                        self.slot0.observationCardinality,
                     );
-
-                let flippedLower = ticks.update(
+                let mut tick_info_lower = self.ticks.get(tickLower).unwrap();
+                let flippedLower = tick_info_lower.update(
                     tickLower,
                     tick,
                     liquidityDelta,
@@ -367,9 +374,12 @@ pub mod crab_swap_pool {
                     tickCumulative,
                     time,
                     false,
-                    maxLiquidityPerTick,
+                    self.maxLiquidityPerTick,
                 );
-                let flippedUpper = ticks.update(
+                self.ticks.insert(tickLower,&tick_info_lower);
+
+                let mut tick_info_upper = self.ticks.get(tickUpper).unwrap();
+                let flippedUpper = tick_info_upper.update(
                     tickUpper,
                     tick,
                     liquidityDelta,
@@ -379,18 +389,23 @@ pub mod crab_swap_pool {
                     tickCumulative,
                     time,
                     true,
-                    maxLiquidityPerTick,
+                    self.maxLiquidityPerTick,
                 );
+                self.ticks.insert(tickLower,&tick_info_upper);
 
-                if (flippedLower) {
-                    tickBitmap.flipTick(tickLower, tickSpacing);
+                
+                if flippedLower {
+                    let (wordPos, mask) = TickBitmap::flipTick(tickLower, self.tickSpacing);
+                    let tick_new_value = self.tickBitmap.get(wordPos).unwrap().value^mask;
+                    self.tickBitmap.insert(wordPos,&Uint256::new_with_u256(tick_new_value));
+                    // self[wordPos] ^= mask;
                 }
-                if (flippedUpper) {
-                    tickBitmap.flipTick(tickUpper, tickSpacing);
+                if flippedUpper {
+                    TickBitmap::flipTick(tickUpper, self.tickSpacing);
                 }
             }
 
-            let (feeGrowthInside0X128, feeGrowthInside1X128) = ticks.getFeeGrowthInside(
+            let (feeGrowthInside0X128, feeGrowthInside1X128) = self.getFeeGrowthInside(
                 tickLower,
                 tickUpper,
                 tick,
@@ -401,14 +416,15 @@ pub mod crab_swap_pool {
             position.update(liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
 
             // clear any tick data that is no longer needed
-            if (liquidityDelta < 0) {
-                if (flippedLower) {
-                    ticks.clear(tickLower);
+            if liquidityDelta < 0 {
+                if flippedLower {
+                    self.ticks.remove(tickLower);
                 }
-                if (flippedUpper) {
-                    ticks.clear(tickUpper);
+                if flippedUpper {
+                    self.ticks.remove(tickUpper);
                 }
             }
+            position
         }
 
         /// @dev Returns the block timestamp truncated to 32 bits, i.e. mod 2**32. This method is overridden in tests.
@@ -416,6 +432,53 @@ pub mod crab_swap_pool {
         // return uint32(block.timestamp); // truncation is desired
         ink_env::block_timestamp::<DefaultEnvironment>()
         
+    }
+
+    /// @notice Retrieves fee growth data
+    /// @param self The mapping containing all tick information for initialized ticks
+    /// @param tickLower The lower tick boundary of the position
+    /// @param tickUpper The upper tick boundary of the position
+    /// @param tickCurrent The current tick
+    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
+    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
+    /// @return feeGrowthInside0X128 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
+    /// @return feeGrowthInside1X128 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
+    pub fn getFeeGrowthInside(
+        &mut self,
+        tickLower:Int24,
+        tickUpper:Int24,
+        tickCurrent:Int24,
+        feeGrowthGlobal0X128:U256,
+        feeGrowthGlobal1X128:U256
+    ) -> (U256, U256) {
+        let lower:Tick::Info = self.ticks.get(tickLower).unwrap();
+        let upper:Tick::Info = self.ticks.get(tickUpper).unwrap();
+
+        // calculate fee growth below
+        let feeGrowthBelow0X128:U256;
+        let feeGrowthBelow1X128:U256;
+        if (tickCurrent >= tickLower) {
+            feeGrowthBelow0X128 = lower.feeGrowthOutside0X128.value;
+            feeGrowthBelow1X128 = lower.feeGrowthOutside1X128.value;
+        } else {
+            feeGrowthBelow0X128 = feeGrowthGlobal0X128 - lower.feeGrowthOutside0X128.value;
+            feeGrowthBelow1X128 = feeGrowthGlobal1X128 - lower.feeGrowthOutside1X128.value;
+        }
+
+        // calculate fee growth above
+        let feeGrowthAbove0X128:U256;
+        let feeGrowthAbove1X128:U256;
+        if (tickCurrent < tickUpper) {
+            feeGrowthAbove0X128 = upper.feeGrowthOutside0X128.value;
+            feeGrowthAbove1X128 = upper.feeGrowthOutside1X128.value;
+        } else {
+            feeGrowthAbove0X128 = feeGrowthGlobal0X128 - upper.feeGrowthOutside0X128.value;
+            feeGrowthAbove1X128 = feeGrowthGlobal1X128 - upper.feeGrowthOutside1X128.value;
+        }
+
+        let feeGrowthInside0X128 = feeGrowthGlobal0X128 - feeGrowthBelow0X128 - feeGrowthAbove0X128;
+        let feeGrowthInside1X128 = feeGrowthGlobal1X128 - feeGrowthBelow1X128 - feeGrowthAbove1X128;
+        (feeGrowthInside0X128,feeGrowthInside1X128)
     }
 
     /// @dev Get the pool's balance of token0
@@ -469,7 +532,7 @@ pub mod crab_swap_pool {
             let default_accounts = default_accounts();
 
             set_next_caller(default_accounts.alice);
-            // factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24
+            // factory:Address,token0: Address, token1: Address, fee: Uint24, tickSpacing: Int24
             let pool_contract = PoolContract::new(
                 default_accounts.alice,
                 default_accounts.alice,

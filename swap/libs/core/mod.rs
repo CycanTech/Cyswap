@@ -1,7 +1,9 @@
-pub mod tick;
+pub mod Tick;
 pub mod TickMath;
 pub mod oracle;
 pub mod Position;
 pub mod SqrtPriceMath;
 pub mod UnsafeMath;
 pub mod LiquidityMath;
+pub mod TickBitmap;
+pub mod FixedPoint128;

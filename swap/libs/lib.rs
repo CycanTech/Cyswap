@@ -6,7 +6,7 @@ pub mod periphery;
 pub mod swap;
 
 pub use crate::core::TickMath::*;
-pub use crate::core::tick::*;
+pub use crate::core::Tick::*;
 pub use crate::assembly::assembly::*;
 pub use crate::periphery::PoolAddress::*;
 pub use crate::periphery::LiquidityAmounts::*;
