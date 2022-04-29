@@ -7,6 +7,7 @@ pub mod crab_swap_pool {
     use crabswap::traits::core::pool::*;
     use ink_env::DefaultEnvironment;
     use ink_lang::codegen::Env;
+    use ink_prelude::vec::Vec;
     #[cfg(feature = "std")]
     use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
     use ink_storage::traits::SpreadAllocate;

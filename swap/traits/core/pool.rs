@@ -6,7 +6,7 @@ use primitives::Int24;
 use primitives::Uint8;
 use primitives::{Address, Uint16, Uint160, Uint24, U160, U256};
 use scale::{Decode, Encode};
-
+use ink_prelude::vec::Vec;
 //this interface is PoolActions
 
 #[brush::wrapper]

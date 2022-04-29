@@ -4,6 +4,7 @@ use brush::contracts::psp22::PSP22Storage;
 use brush::traits::Balance;
 use ink_env::DefaultEnvironment;
 use primitives::{Address, U256};
+use ink_prelude::vec;
 
 use crate::impls::pool_initialize::PoolInitializeStorage;
 pub use crate::traits::periphery::PeripheryPayments::*;
@@ -16,7 +17,7 @@ impl<T: PoolInitializeStorage + PSP22Storage> PeripheryPaymentsTrait for T {
             ink_env::transfer::<DefaultEnvironment>(
                 ink_env::caller::<DefaultEnvironment>(),
                 ink_env::balance::<DefaultEnvironment>(),
-            );
+            ).unwrap();
         }
     }
 
@@ -36,20 +37,20 @@ impl<T: PoolInitializeStorage + PSP22Storage> PeripheryPaymentsTrait for T {
             //     .transferred_value(value) // 加上了调用 payable 的方法的时候，提供transfer
             //     .fire()
             //     .expect("something wrong");
-            ink_env::transfer::<DefaultEnvironment>(WETH9, value.as_u128());
+            ink_env::transfer::<DefaultEnvironment>(WETH9, value.as_u128()).unwrap();
             // <&mut Weth9Ref>::call_mut(&mut *WETH9).deposit().transferred_value(value).fire().expect("weth9 deposit error!");
             // TODO add deposit to transfer.
-            Weth9Ref::deposit(&WETH9);
+            Weth9Ref::deposit(&WETH9).unwrap();
             // IWETH9(WETH9).transfer(recipient, value);
-            PSP22Ref::transfer(&mut WETH9, recipient, value.as_u128(), vec![0u8]);
+            PSP22Ref::transfer(&mut WETH9, recipient, value.as_u128(), vec![0u8]).unwrap();
         } else if payer == address_of_this {
             // pay with tokens already in the contract (for the exact input multihop case)
             // TransferHelper.safeTransfer(token, recipient, value);
-            PSP22Ref::transfer(&mut token, recipient, value.as_u128(), vec![0u8]);
+            PSP22Ref::transfer(&mut token, recipient, value.as_u128(), vec![0u8]).unwrap();
         } else {
             // pull payment
             // TransferHelper.safeTransferFrom(token, payer, recipient, value);
-            PSP22Ref::transfer_from(&mut token, payer, recipient, value.as_u128(), vec![0u8]);
+            PSP22Ref::transfer_from(&mut token, payer, recipient, value.as_u128(), vec![0u8]).unwrap();
         }
     }
 }

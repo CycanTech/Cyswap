@@ -1,4 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
 #![allow(non_snake_case)]
 
 
@@ -8,9 +7,9 @@ use libs::core::TickMath;
 use libs::periphery::LiquidityAmounts;
 use libs::{PoolKey, periphery::PoolAddress};
 use primitives::{U256, Address};
-#[cfg(feature = "std")]
-use ink_storage::traits::StorageLayout;
-use scale::{WrapperTypeDecode, Encode, Decode};
+use ink_prelude::vec::Vec;
+use scale::{Encode, Decode};
+
 
 use crate::impls::pool_initialize::PoolInitializeStorage;
 pub use crate::traits::core::pool::*;
@@ -18,9 +17,8 @@ pub use crate::traits::periphery::LiquidityManagement::*;
 use crate::traits::periphery::PeripheryPayments::*;
 
 #[derive(Default,Decode,Encode, Debug, SpreadAllocate, SpreadLayout)]
-#[cfg_attr(feature = "std", derive(StorageLayout))]
 struct MintCallbackData {
-    poolKey:PoolAddress::PoolKey,
+    poolKey:PoolKey,
     payer:Address,
 }
 

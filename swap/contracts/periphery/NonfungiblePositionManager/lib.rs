@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(min_specialization)]
+#![allow(non_snake_case)]
 
 #[brush::contract]
 pub mod position_manager {
@@ -15,6 +16,7 @@ pub mod position_manager {
     use ink_prelude::string::String;
     use ink_lang::codegen::Env;
     use ink_lang::codegen::EmitEvent;
+    use crabswap::traits::periphery::LiquidityManagement::*;
 
     #[ink(storage)]
     #[derive(Default, SpreadAllocate,PositionStorage, PoolInitializeStorage,PSP34Storage,ERC721PermitStorage,PSP34BaseStorage)]

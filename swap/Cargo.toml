@@ -18,7 +18,7 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 swap_project_derive = { path = "derive" }
 primitives = {version = "3.0.0-rc9",path="./primitives/", default-features = false}
 hex = { version = "0.4", default-features = false,features = ["alloc"]}
-libs = {version = "3.0.0",path="libs/", default-features = false}
+libs = {version = "3.0.0",path="./libs/", default-features = false}
 [lib]
 name = "crabswap"
 path = "lib.rs"

@@ -4,15 +4,17 @@
 use ink_storage::traits::{SpreadLayout, PackedLayout, SpreadAllocate};
 use primitives::{Address, Uint24, Uint256, Int24, U256};
 use scale::{Encode, Decode};
+use ink_prelude::vec::Vec;
 #[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
+
 
 #[brush::wrapper]
 pub type LiquidityManagementTraitRef = dyn LiquidityManagementTrait;
 
 
 #[derive(Default, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout,SpreadAllocate)]
-#[cfg_attr(feature = "std", derive(StorageLayout))]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo,StorageLayout))]
 pub struct AddLiquidityParams {
     pub token0: Address,
     pub token1: Address,
