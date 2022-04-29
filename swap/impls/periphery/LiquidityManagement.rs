@@ -5,10 +5,11 @@ use ink_env::DefaultEnvironment;
 use ink_storage::traits::{SpreadAllocate, SpreadLayout};
 use libs::core::TickMath;
 use libs::periphery::LiquidityAmounts;
-use libs::{PoolKey, periphery::PoolAddress};
+use libs::{PoolKey};
 use primitives::{U256, Address};
 use ink_prelude::vec::Vec;
 use scale::{Encode, Decode};
+use crate::traits::core::factory::*;
 
 
 use crate::impls::pool_initialize::PoolInitializeStorage;
@@ -35,7 +36,8 @@ fn addLiquidity(&mut self, params:AddLiquidityParams)->(u128,  U256, U256,Addres
 
     // pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
     let factory = self.get().factory;
-    let poolAddress = PoolAddress::computeAddress(factory, poolKey.clone());
+    // let poolAddress = PoolAddress::computeAddress(factory, poolKey.clone());
+    let poolAddress = FactoryRef::get_pool(&factory,params.fee,params.token0,params.token1);
 
 //         // compute the liquidity amount
 //         {
@@ -89,7 +91,7 @@ fn addLiquidity(&mut self, params:AddLiquidityParams)->(u128,  U256, U256,Addres
     fn uniswapV3MintCallback(&mut self,
         amount0Owed:U256,
         amount1Owed:U256,
-        mut data:Vec<u8>
+        data:Vec<u8>
     ){
         let manager_address:Address = ink_env::account_id::<DefaultEnvironment>();
         let msg_sender = ink_env::caller::<DefaultEnvironment>();

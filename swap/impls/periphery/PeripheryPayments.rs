@@ -9,7 +9,7 @@ use ink_prelude::vec;
 use crate::impls::pool_initialize::PoolInitializeStorage;
 pub use crate::traits::periphery::PeripheryPayments::*;
 
-impl<T: PoolInitializeStorage + PSP22Storage> PeripheryPaymentsTrait for T {
+impl<T: PoolInitializeStorage> PeripheryPaymentsTrait for T {
     /// @inheritdoc IPeripheryPayments
     default fn refundETH(&mut self) {
         // if (address(this).balance > 0) TransferHelper.safeTransferETH(msg.sender, address(this).balance);

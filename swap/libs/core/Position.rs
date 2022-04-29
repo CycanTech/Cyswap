@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(non_snake_case)]
-use ink_storage::traits::{SpreadLayout, PackedLayout,StorageLayout};
+use ink_storage::{traits::{SpreadLayout, PackedLayout,StorageLayout}, Mapping};
 use primitives::{Uint256, U256};
 use scale::{Encode, Decode};
 
@@ -26,6 +26,17 @@ pub struct Info {
     pub tokensOwed0:u128,
     pub tokensOwed1:u128,
 }
+
+// trait MapOperation{
+//     fn update(&self,key:u128,liquid:u128);
+// }
+
+// impl MapOperation for Mapping<u128,Info>{
+//     fn update(&self,key:u128,liquid:u128){
+//         let mut info:Info = self.get(key).unwrap();
+//         info.liquidity = liquid;
+//     }
+// }
 
 impl Info {
     /// @notice Credits accumulated fees to a user's position

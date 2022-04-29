@@ -6,6 +6,7 @@
 pub mod position_manager {
     use brush::contracts::psp34::PSP34Data;
     use crabswap::impls::periphery::position_manager::*;
+    use crabswap::impls::periphery::PeripheryPayments::*;
     use ink_storage::traits::SpreadAllocate;
     use crabswap::impls::pool_initialize::*;
     use crabswap::impls::erc721_permit::*;
@@ -49,23 +50,55 @@ pub mod position_manager {
     impl PSP34Base for PositionMangerContract{}
     impl PositionManager for PositionMangerContract{}
     impl LiquidityManagementTrait for PositionMangerContract{}
+    impl PeripheryPaymentsTrait for PositionMangerContract{}
 
     
     impl PositionMangerContract {
         #[ink(constructor, payable)]
         pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
-            ink_lang::codegen::initialize_contract(|instance: &mut PositionMangerContract| {
-                instance.initializer.factory = factory;
-                instance.initializer.WETH9 = weth9;
-                let name = "Crabswap V3 Positions NFT-V1";
-                let symbol = "Crab-V3-POS";
-                // let version = "1";
-                instance.erc721_permit.nameHash = ink_lang::blake2x256!("Crabswap V3 Positions NFT-V1");
-                instance.erc721_permit.versionHash = ink_lang::blake2x256!("1");
-                instance.psp34_base.name = String::from(name);
-                instance.psp34_base.symbol = String::from(symbol);
-                instance.tokenDescriptor = tokenDescriptor;
-            })
+            ink_env::debug_message("----------------1");
+            let initializer = PoolInitializeData{
+                factory,
+                WETH9:weth9,
+            };
+            ink_env::debug_message("----------------2");
+            let name = "Crabswap V3 Positions NFT-V1";
+            let symbol = "Crab-V3-POS";
+            let psp34_base = PSP34BaseData{
+                name:String::from(name),
+                symbol:String::from(symbol),
+            };
+            ink_env::debug_message("----------------3");
+            let erc721_permit = ERC721PermitData{
+                nameHash:ink_lang::blake2x256!("Crabswap V3 Positions NFT-V1"),
+                versionHash:ink_lang::blake2x256!("1"),
+            };
+            let position = PositionData::default();
+            let psp34 = PSP34Data::default();
+            ink_env::debug_message("----------------4");
+            let instance:PositionMangerContract = PositionMangerContract{
+                initializer,
+                erc721_permit,
+                psp34_base,
+                tokenDescriptor,
+                position,
+                psp34,
+            };
+            ink_env::debug_message("----------------5");
+            instance
+            // ink_lang::codegen::initialize_contract(|instance: &mut PositionMangerContract| {
+            //     instance.initializer.factory = factory;
+            //     instance.initializer.WETH9 = weth9;
+            //     let name = "Crabswap V3 Positions NFT-V1";
+            //     let symbol = "Crab-V3-POS";
+            //     // let version = "1";
+            //     instance.erc721_permit.nameHash = ink_lang::blake2x256!("Crabswap V3 Positions NFT-V1");
+            //     instance.erc721_permit.versionHash = ink_lang::blake2x256!("1");
+            //     instance.psp34_base.name = String::from(name);
+            //     instance.psp34_base.symbol = String::from(symbol);
+            //     instance.tokenDescriptor = tokenDescriptor;
+            //     instance.position = PositionData::default();
+            // })
         }
     }
 

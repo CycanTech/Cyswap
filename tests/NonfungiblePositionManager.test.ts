@@ -28,11 +28,15 @@ describe('positionManager initialize', () => {
   it('test initialize pool',async () =>{
     await api.isReady;
     const { query:factoryQuery,tx:factoryTx,contract:factoryContract,abi:factoryAbi} = await setupContract("factory","new");
+    console.log("factory is:",1);
     const { contract:weth9Contract} = await setupContract('weth9_contract','new','weth9','weth9');
+    console.log("factory is:",2);
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
     const { contract:positionDescriptor} = await setupContract('NonfungibleTokenPositionDescriptor','new',weth9Contract.address,"_nativeCurrencyLabelBytes");
+    console.log("factory is:",3);
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
     const { query:positionManagerQuery,tx:positionManagerTx,alice,defaultSigner,contract:positionMangerContract } = await setupContract('NonfungiblePositionManager','new',factoryContract.address,weth9Contract.address,positionDescriptor.address);
+    console.log("factory is:",4);
     console.log("positionMangerContract address is:",positionMangerContract.address.toHuman());
     const { contract:CHECoinContract} = await setupContract('stable_coin_contract','new',"CHE","CHE");
     const { contract:AAACoinContract} = await setupContract('stable_coin_contract','new',"AAA","AAA");
