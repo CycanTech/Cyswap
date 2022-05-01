@@ -27,15 +27,17 @@ describe('positionManager initialize', () => {
 
   it('test initialize pool',async () =>{
     await api.isReady;
-    const { query:factoryQuery,tx:factoryTx,contract:factoryContract,abi:factoryAbi} = await setupContract("factory","new");
+    const {defaultSigner:defaultSigner1,alice:alice1, query:factoryQuery,tx:factoryTx,contract:factoryContract,abi:factoryAbi} = await setupContract("factory","new");
     console.log("factory is:",1);
+    console.log("defaultSigner is:",defaultSigner1.address.toString());
+    console.log("alice1 is:",alice1.address.toString());
     const { contract:weth9Contract} = await setupContract('weth9_contract','new','weth9','weth9');
     console.log("factory is:",2);
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
     const { contract:positionDescriptor} = await setupContract('NonfungibleTokenPositionDescriptor','new',weth9Contract.address,"_nativeCurrencyLabelBytes");
     console.log("factory is:",3);
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
-    const { query:positionManagerQuery,tx:positionManagerTx,alice,defaultSigner,contract:positionMangerContract } = await setupContract('NonfungiblePositionManager','new',factoryContract.address,weth9Contract.address,positionDescriptor.address);
+    const { query:positionManagerQuery,tx:positionManagerTx,alice,defaultSigner,contract:positionMangerContract } = await setupContract('NonfungiblePositionManager','new',factoryContract.address,weth9Contract.address,positionDescriptor.address,{value:1000000000});
     console.log("factory is:",4);
     console.log("positionMangerContract address is:",positionMangerContract.address.toHuman());
     const { contract:CHECoinContract} = await setupContract('stable_coin_contract','new',"CHE","CHE");
@@ -73,7 +75,7 @@ describe('positionManager initialize', () => {
     await positionMangerContract.connect(alice);
     var poolAddress = await positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000);
 
-    // console.log("poolAddress is:",poolAddress);
+    console.log("poolAddress is:",poolAddress);
   });
 
 });

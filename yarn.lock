@@ -1024,7 +1024,7 @@
     "@polkadot/util" "^8.7.1"
     "rxjs" "^7.5.5"
 
-"@polkadot/api-contract@^7.10.1", "@polkadot/api-contract@^7.5.1", "@polkadot/api-contract@^7.8.1":
+"@polkadot/api-contract@^7.10.1", "@polkadot/api-contract@^7.5.1":
   "integrity" "sha512-FW7qR+ce4rMFukBViDPP1519YyUuJWI0yBagvJkC5t/NpfmOkTyqmmG0Vz7brQHfStdvvnH4hRYkHI1prA217A=="
   "resolved" "https://registry.npmjs.org/@polkadot/api-contract/-/api-contract-7.15.1.tgz"
   "version" "7.15.1"
@@ -1054,7 +1054,7 @@
     "@polkadot/util-crypto" "^8.7.1"
     "rxjs" "^7.5.5"
 
-"@polkadot/api@^7.10.1", "@polkadot/api@^7.5.1", "@polkadot/api@^7.8.1", "@polkadot/api@7.15.1":
+"@polkadot/api@^7.10.1", "@polkadot/api@^7.5.1", "@polkadot/api@7.15.1":
   "integrity" "sha512-z0z6+k8+R9ixRMWzfsYrNDnqSV5zHKmyhTCL0I7+1I081V18MJTCFUKubrh0t1gD0/FCt3U9Ibvr4IbtukYLrQ=="
   "resolved" "https://registry.npmjs.org/@polkadot/api/-/api-7.15.1.tgz"
   "version" "7.15.1"
@@ -1327,7 +1327,7 @@
     "@polkadot/api" "^7.10.1"
     "@polkadot/api-contract" "^7.10.1"
 
-"@redspot/explorer@^0.13.5":
+"@redspot/explorer@^0.13.6":
   "integrity" "sha512-2K480xXFb05M8DfuXvmhSkdRLbOUUE3KqDXbnnK0SpoxS40jfT/ImwQZPrP2MgIvJUTJoNq4ZXOLVdvhsvFMTA=="
   "resolved" "https://registry.npmjs.org/@redspot/explorer/-/explorer-0.13.6.tgz"
   "version" "0.13.6"
@@ -1337,7 +1337,7 @@
     "socket.io" "^4.0.1"
     "socket.io-client" "^4.0.1"
 
-"@redspot/gas-reporter@^0.13.5":
+"@redspot/gas-reporter@^0.13.6":
   "integrity" "sha512-KhJnEqjR44PFCkugacArSyAy4z1VdCNsAUn4fOsC5Bsl5iuHO409p5KKyYyHCkVIiejq6/1kylCyOZreAR1j6A=="
   "resolved" "https://registry.npmjs.org/@redspot/gas-reporter/-/gas-reporter-0.13.6.tgz"
   "version" "0.13.6"
@@ -1348,15 +1348,15 @@
     "lodash" "^4.17.20"
     "sync-request" "^6.1.0"
 
-"@redspot/patract@^0.13.5":
-  "integrity" "sha512-7dB+OhuxaptK45WAFj07JAhdX8XZmpMjNzt+sHbRfGJrLlMDD00/2ND7PKuKozSzqkhoJ5DaHvnAAgh1fsfv5Q=="
-  "resolved" "https://registry.npmjs.org/@redspot/patract/-/patract-0.13.5.tgz"
-  "version" "0.13.5"
+"@redspot/patract@^0.13.6":
+  "integrity" "sha512-G8uSp/GGZRfBbTxKZBI7RDDEKDmRCK7ex45qtztqujtei7SLESwkbeogVdCP+9mNvRZvQ0B/tQv4RIxfkddTrg=="
+  "resolved" "https://registry.npmjs.org/@redspot/patract/-/patract-0.13.6.tgz"
+  "version" "0.13.6"
   dependencies:
-    "@polkadot/api" "^7.8.1"
-    "@polkadot/api-contract" "^7.8.1"
+    "@polkadot/api" "^7.10.1"
+    "@polkadot/api-contract" "^7.10.1"
 
-"@redspot/watcher@^0.13.5":
+"@redspot/watcher@^0.13.6":
   "integrity" "sha512-cxi4X3+IfdTAZZhDoSHYif12YPdrlNsD6j+Vipzi54gXD5Bpjyqm9IjM5IiI4eJK/D51qlp7fTM2vjUeYEv6bg=="
   "resolved" "https://registry.npmjs.org/@redspot/watcher/-/watcher-0.13.6.tgz"
   "version" "0.13.6"
@@ -4015,7 +4015,7 @@
   dependencies:
     "picomatch" "^2.2.1"
 
-"redspot@^0.13.4", "redspot@^0.13.5", "redspot@^0.13.6":
+"redspot@^0.13.4", "redspot@^0.13.6":
   "integrity" "sha512-0bAdSGYUFloHJA7bMR/8Xl91a5JWYQcpuYLHfn1ioJ0BpXRnYgSTPMzGwBG8YXKTF4EVJHIFy8F8mRAZe62qRw=="
   "resolved" "https://registry.npmjs.org/redspot/-/redspot-0.13.6.tgz"
   "version" "0.13.6"
