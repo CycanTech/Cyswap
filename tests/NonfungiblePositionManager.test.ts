@@ -73,9 +73,11 @@ describe('positionManager initialize', () => {
     // &mut self,fee:u32,token_a:Address,token_b:Address
     // var poolAddress = await factoryTx.createPool(500,token0,token1);
     await positionMangerContract.connect(alice);
-    var poolAddress = await positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000);
+    var poolAddress = await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))
+    .to.emit(positionMangerContract,"PoolCreated")
+    .withArgs(token0,token1,500,10,"0x111");
 
-    console.log("poolAddress is:",poolAddress);
+    // console.log("poolAddress is:",poolAddress.txHash?.toString());
   });
 
 });
