@@ -158,6 +158,7 @@ pub mod crab_swap_factory {
             //     tick_spacing,
             //     pool,
             // });
+            ink_env::debug_println!("new pool address is:{:?}",pool);
             ink_lang::codegen::EmitEvent::<FactoryContract>::emit_event(self.env(), PoolCreated {
                 token0,
                 token1,
