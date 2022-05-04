@@ -2,6 +2,7 @@
 #[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
 use ink_storage::traits::{PackedLayout, SpreadAllocate, SpreadLayout};
+use libs::core::Position;
 use primitives::Int24;
 use primitives::Uint8;
 use primitives::{Address, Uint16, Uint160, Uint24, U160, U256};
@@ -65,4 +66,7 @@ pub trait PoolAction {
         amount: u128,
         data:Vec<u8>,
     ) -> (U256, U256);
+
+    #[ink(message)]
+    fn positions(&self,position_address:Address,tick_lower:Int24,tick_upper:Int24) -> Position::Info;
 }

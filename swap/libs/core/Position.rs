@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(non_snake_case)]
-use ink_storage::{traits::{SpreadLayout, PackedLayout,StorageLayout}, Mapping};
+use ink_storage::{traits::{SpreadLayout, PackedLayout,StorageLayout}, };
 use primitives::{Uint256, U256};
 use scale::{Encode, Decode};
 

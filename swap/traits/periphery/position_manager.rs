@@ -1,3 +1,4 @@
+use crate::traits::periphery::LiquidityManagement::*;
 use ink_storage::traits::{SpreadAllocate, SpreadLayout};
 use primitives::{Address, Int24, Uint160, Uint24, Uint256, U256};
 
@@ -8,11 +9,11 @@ use scale::{Decode, Encode};
 #[brush::wrapper]
 pub type PositionManagerRef = dyn PositionManager;
 
-#[derive(Default, Debug,Decode,Encode, SpreadAllocate, SpreadLayout)]
+#[derive(Default, Debug, Decode, Encode, SpreadAllocate, SpreadLayout)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
 pub struct MintParams {
     pub token0: Address,
-    pub  token1: Address,
+    pub token1: Address,
     pub fee: Uint24,
     pub tickLower: Int24,
     pub tickUpper: Int24,
@@ -41,10 +42,9 @@ pub trait PositionManager {
         &mut self,
         params: MintParams,
     ) -> (
-        Uint256, //tokenId
-        u128,    //liquidity
-        Uint256, //amount0
-        Uint256, //amount1
+        u128, //tokenId
+        u128, //liquidity
+        U256, //amount0
+        U256, //amount1
     );
-
 }

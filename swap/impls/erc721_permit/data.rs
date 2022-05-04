@@ -1,19 +1,11 @@
 use brush::{
     declare_storage_trait,
-    traits::{
-        AccountId,
-        AccountIdExt,
-        Balance,
-        Hash,
-        ZERO_ADDRESS,
-    },
 };
 use ink_storage::{
     traits::{
         SpreadAllocate,
         SpreadLayout,
     },
-    Mapping,
 };
 
 #[cfg(feature = "erc721_permit")]

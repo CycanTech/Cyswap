@@ -130,6 +130,11 @@ pub mod crab_swap_pool {
             self.slot0.clone()
         }
 
+        #[ink(message)]
+        fn positions(&self,position_address:Address,tick_lower:Int24,tick_upper:Int24) -> Position::Info {
+            self.positions.get((position_address,tick_lower,tick_upper)).unwrap()
+        }
+
         /// @inheritdoc IUniswapV3PoolActions
         /// @dev noDelegateCall is applied indirectly via _modifyPosition
         #[ink(message)]

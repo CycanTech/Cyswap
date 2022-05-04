@@ -1,14 +1,16 @@
 #![allow(non_snake_case)]
 
-use ink_env::hash::{HashOutput, Sha2x256};
-use ink_storage::traits::{SpreadAllocate, SpreadLayout};
+use ink_storage::traits::{SpreadAllocate, SpreadLayout,StorageLayout,PackedLayout};
 use primitives::{Address, Uint24};
 use scale::{Decode, Encode};
 
+#[cfg(feature = "std")]
+use scale_info::TypeInfo;
 
 const POOL_INIT_CODE_HASH: &str = "0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54";
 
-#[derive(Default, Clone, Decode, Encode, Debug, SpreadAllocate, SpreadLayout)]
+#[derive(Default, Clone, Decode, Encode, Debug, SpreadAllocate, SpreadLayout,PackedLayout)]
+#[cfg_attr(feature = "std", derive(TypeInfo,StorageLayout))]
 pub struct PoolKey {
     pub token0: Address,
     pub token1: Address,

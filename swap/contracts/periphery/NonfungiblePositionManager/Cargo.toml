@@ -20,6 +20,8 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 
 # factory = {version = "3.0.0-rc9",path="../../core/factory", default-features = false,features = ["ink-as-dependency"]}
 crabswap = { path = "../../../", default-features = false,features=["pool_initial","erc721_permit","psp34_base","position_manager"]}
+primitives = {version = "3.0.0-rc9",path="../../../primitives/", default-features = false}
+libs = {version = "3.0.0",path="../../../libs/", default-features = false}
 
 [lib]
 name = "NonfungiblePositionManager"
@@ -39,6 +41,8 @@ std = [
     "scale-info",
     "scale-info/std",
     "crabswap/std",
+    "primitives/std",
+    "libs/std",
 ]
 ink-as-dependency = []
 [profile.dev]
