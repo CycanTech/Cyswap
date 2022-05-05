@@ -171,6 +171,13 @@ pub mod position_manager {
             }
             poolId
         }
+
+        /// @dev Caches a pool key
+        #[ink(message)]
+        pub fn testEvent(&mut self) -> u128 {
+            self.env().emit_event(TestEvent{tokenId:1});
+            0
+        }
     }
 
     impl PositionManager for PositionMangerContract {
@@ -326,6 +333,12 @@ pub mod position_manager {
         amount0: U256,
         #[ink(topic)]
         amount1: U256,
+    }
+
+    #[ink(event)]
+    pub struct TestEvent {
+        #[ink(topic)]
+        tokenId: u128,
     }
 
     impl PSP34Internal for PositionMangerContract {

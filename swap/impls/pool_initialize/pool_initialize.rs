@@ -11,7 +11,7 @@ use crate::traits::core::factory::*;
 use crate::traits::core::pool::*;
 
 impl<T:PoolInitializeStorage> Initializer for T{
-    default fn create_and_initialize_pool_if_necessary(
+    default fn createAndInitializePoolIfNecessary(
         &mut self,
         token0: AccountId,
         token1: AccountId,

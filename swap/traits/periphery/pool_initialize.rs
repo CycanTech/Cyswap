@@ -22,7 +22,7 @@ pub trait Initializer{
     /// @param sqrtPriceX96 The initial square root price of the pool as a Q64.96 value
     /// @return pool Returns the pool address based on the pair of tokens and fee, will return the newly created pool address if necessary
     #[ink(message, payable)]
-    fn create_and_initialize_pool_if_necessary(
+    fn createAndInitializePoolIfNecessary(
         &mut self,
         token0: AccountId,
         token1: AccountId,
