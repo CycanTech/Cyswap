@@ -474,7 +474,7 @@ pub mod crab_swap_pool {
         // calculate fee growth above
         let feeGrowthAbove0X128:U256;
         let feeGrowthAbove1X128:U256;
-        if (tickCurrent < tickUpper) {
+        if tickCurrent < tickUpper {
             feeGrowthAbove0X128 = upper.feeGrowthOutside0X128.value;
             feeGrowthAbove1X128 = upper.feeGrowthOutside1X128.value;
         } else {

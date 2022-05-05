@@ -109,52 +109,56 @@ pub mod position_manager {
     impl PositionMangerContract {
         #[ink(constructor, payable)]
         pub fn new(factory: AccountId, weth9: AccountId, _tokenDescriptor: AccountId) -> Self {
-            ink_env::debug_message("----------------1");
-            let initializer = PoolInitializeData {
-                factory,
-                WETH9: weth9,
-            };
-            ink_env::debug_message("----------------2");
-            let name = "Crabswap V3 Positions NFT-V1";
-            let symbol = "Crab-V3-POS";
-            let psp34_base = PSP34BaseData {
-                name: String::from(name),
-                symbol: String::from(symbol),
-            };
-            ink_env::debug_message("----------------3");
-            let erc721_permit = ERC721PermitData {
-                nameHash: ink_lang::blake2x256!("Crabswap V3 Positions NFT-V1"),
-                versionHash: ink_lang::blake2x256!("1"),
-            };
-            let psp34 = PSP34Data::default();
-            ink_env::debug_message("----------------4");
-            let instance: PositionMangerContract = PositionMangerContract {
-                initializer,
-                erc721_permit,
-                psp34_base,
-                _tokenDescriptor,
-                psp34,
-                _nextPoolId: 1,
-                _nextId: 1,
-                _positions: Default::default(),
-                _poolIdToPoolKey: Default::default(),
-                _poolIds: Mapping::default(),
-            };
-            ink_env::debug_message("----------------5");
-            instance
-            // ink_lang::codegen::initialize_contract(|instance: &mut PositionMangerContract| {
-            //     instance.initializer.factory = factory;
-            //     instance.initializer.WETH9 = weth9;
-            //     let name = "Crabswap V3 Positions NFT-V1";
-            //     let symbol = "Crab-V3-POS";
-            //     // let version = "1";
-            //     instance.erc721_permit.nameHash = ink_lang::blake2x256!("Crabswap V3 Positions NFT-V1");
-            //     instance.erc721_permit.versionHash = ink_lang::blake2x256!("1");
-            //     instance.psp34_base.name = String::from(name);
-            //     instance.psp34_base.symbol = String::from(symbol);
-            //     instance._tokenDescriptor = _tokenDescriptor;
-            //     instance.position = PositionData::default();
-            // })
+            // ink_env::debug_message("----------------1");
+            // let initializer = PoolInitializeData {
+            //     factory,
+            //     WETH9: weth9,
+            // };
+            // ink_env::debug_message("----------------2");
+            // let name = "Crabswap V3 Positions NFT-V1";
+            // let symbol = "Crab-V3-POS";
+            // let psp34_base = PSP34BaseData {
+            //     name: String::from(name),
+            //     symbol: String::from(symbol),
+            // };
+            // ink_env::debug_message("----------------3");
+            // let erc721_permit = ERC721PermitData {
+            //     nameHash: ink_lang::blake2x256!("Crabswap V3 Positions NFT-V1"),
+            //     versionHash: ink_lang::blake2x256!("1"),
+            // };
+            // let psp34 = PSP34Data::default();
+            // ink_env::debug_message("----------------4");
+            // let instance: PositionMangerContract = PositionMangerContract {
+            //     initializer,
+            //     erc721_permit,
+            //     psp34_base,
+            //     _tokenDescriptor,
+            //     psp34,
+            //     _nextPoolId: 1,
+            //     _nextId: 1,
+            //     _positions: Default::default(),
+            //     _poolIdToPoolKey: Default::default(),
+            //     _poolIds: Default::default(),
+            // };
+            // ink_env::debug_message("----------------5");
+            // instance
+            ink_lang::codegen::initialize_contract(|instance: &mut PositionMangerContract| {
+                instance.initializer.factory = factory;
+                instance.initializer.WETH9 = weth9;
+                let name = "Crabswap V3 Positions NFT-V1";
+                let symbol = "Crab-V3-POS";
+                // let version = "1";
+                instance.erc721_permit.nameHash = ink_lang::blake2x256!("Crabswap V3 Positions NFT-V1");
+                instance.erc721_permit.versionHash = ink_lang::blake2x256!("1");
+                instance.psp34_base.name = String::from(name);
+                instance.psp34_base.symbol = String::from(symbol);
+                instance._tokenDescriptor = _tokenDescriptor;
+                instance._nextPoolId= 1;
+                instance._nextId= 1;
+                instance._positions= Default::default();
+                instance._poolIdToPoolKey= Default::default();
+                instance._poolIds= Default::default();
+            })
         }
 
         /// @dev Caches a pool key
