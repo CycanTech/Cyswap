@@ -26,10 +26,12 @@ impl<T: PoolInitializeStorage> PeripheryPaymentsTrait for T {
     /// @param recipient The entity that will receive payment
     /// @param value The amount to pay
     default fn pay(&mut self, mut token: Address, payer: Address, recipient: Address, value: U256) {
+        ink_env::debug_message("&&&&&&&&&&8");
         let mut WETH9 = <Self as PoolInitializeStorage>::get(self).WETH9;
         let balance_of_contract: Balance = ink_env::balance::<DefaultEnvironment>();
         let address_of_this: Address = ink_env::account_id::<DefaultEnvironment>();
         if token == WETH9 && balance_of_contract >= value.as_u128() {
+            ink_env::debug_message("&&&&&&&&&&9");
             // pay with WETH9
             // IWETH9(WETH9).deposit{value: value}(); // wrap only what is needed to pay
             // <&mut Erc20Minable>::call_mut(&mut *self.erc20_minable)
@@ -38,19 +40,26 @@ impl<T: PoolInitializeStorage> PeripheryPaymentsTrait for T {
             //     .fire()
             //     .expect("something wrong");
             ink_env::transfer::<DefaultEnvironment>(WETH9, value.as_u128()).unwrap();
+            ink_env::debug_message("&&&&&&&&&&10");
             // <&mut Weth9Ref>::call_mut(&mut *WETH9).deposit().transferred_value(value).fire().expect("weth9 deposit error!");
             // TODO add deposit to transfer.
             Weth9Ref::deposit(&WETH9).unwrap();
+            ink_env::debug_message("&&&&&&&&&&11");
             // IWETH9(WETH9).transfer(recipient, value);
             PSP22Ref::transfer(&mut WETH9, recipient, value.as_u128(), vec![0u8]).unwrap();
+            ink_env::debug_message("&&&&&&&&&&12");
         } else if payer == address_of_this {
+            ink_env::debug_message("&&&&&&&&&&13");
             // pay with tokens already in the contract (for the exact input multihop case)
             // TransferHelper.safeTransfer(token, recipient, value);
             PSP22Ref::transfer(&mut token, recipient, value.as_u128(), vec![0u8]).unwrap();
+            ink_env::debug_message("&&&&&&&&&&14");
         } else {
             // pull payment
             // TransferHelper.safeTransferFrom(token, payer, recipient, value);
+            ink_env::debug_message("&&&&&&&&&&15");
             PSP22Ref::transfer_from(&mut token, payer, recipient, value.as_u128(), vec![0u8]).unwrap();
+            ink_env::debug_message("&&&&&&&&&&16");
         }
     }
 }

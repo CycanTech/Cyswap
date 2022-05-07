@@ -45,4 +45,3 @@ std = [
     "primitives/std",
     "hex/std",
 ]
-ink-as-dependency = []

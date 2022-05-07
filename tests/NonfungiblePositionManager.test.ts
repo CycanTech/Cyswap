@@ -39,7 +39,6 @@ describe('positionManager initialize', () => {
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
     const { query:positionManagerQuery,tx:positionManagerTx,alice,defaultSigner,contract:positionMangerContract } = await setupContract('NonfungiblePositionManager','new',factoryContract.address,weth9Contract.address,positionDescriptor.address,{value:1000000000});
     console.log("factory is:",4);
-    console.log("positionMangerContract address is:",positionMangerContract.address.toHuman());
     const { contract:CHECoinContract} = await setupContract('stable_coin_contract','new',"CHE","CHE");
     const { contract:AAACoinContract} = await setupContract('stable_coin_contract','new',"AAA","AAA");
       // &mut self,token0: AccountId,token1: AccountId,fee: u32,sqrt_price_x96: Uint160,) -> Address 
@@ -116,6 +115,7 @@ describe('positionManager initialize', () => {
     console.log("token0.address is:",token0.toHuman());
     console.log("token1.address is:",token1.toHuman());
     console.log("factoryContract.address is:",factoryContract.address.toHuman());
+    console.log("positionMangerContract.address is:",positionMangerContract.address);
     // factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24
     const { abi:poolAbi} = await setupContract('pool','new',factoryContract.address,token0,token1,500,0);
     
@@ -147,21 +147,21 @@ describe('positionManager initialize', () => {
   //     pub recipient: Address,
   //     pub deadline: Uint256,
   // }
-    var mintParams = {
-      token0:token0,
-      token1:token1,
-      fee:500,
-      tickLower:100,
-      tickUpper:100000,
-      amount0Desired:1000,
-      amount1Desired:1000,
-      amount0Min:100,
-      amount1Min:100,
-      recipient:alice,
-      deadline:10,
-    };
-    console.log("mintParams:",mintParams);
-    await positionManagerTx.mint(mintParams);
+    // var mintParams = {
+    //   token0:token0,
+    //   token1:token1,
+    //   fee:500,
+    //   tickLower:100,
+    //   tickUpper:100000,
+    //   amount0Desired:1000,
+    //   amount1Desired:1000,
+    //   amount0Min:100,
+    //   amount1Min:100,
+    //   recipient:alice,
+    //   deadline:10,
+    // };
+    // console.log("mintParams:",mintParams);
+    await positionManagerTx.mint(token0,token1,500,100,10000,1000,1000,100,100,alice,10);
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))
     // .to.emit(factoryContract,"PoolCreated")
     // .withArgs(token0,token1,500,10,"0x111");

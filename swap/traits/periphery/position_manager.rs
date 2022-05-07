@@ -40,7 +40,17 @@ pub trait PositionManager {
     #[ink(message, payable)]
     fn mint(
         &mut self,
-        params: MintParams,
+        token0:Address,
+            token1:Address,
+            fee:Uint24,
+            tickLower:Int24,
+            tickUpper:Int24,
+            amount0Desired:U256,
+            amount1Desired:U256,
+            amount0Min:U256,
+            amount1Min:U256,
+            recipient:Address,
+            deadline:U256,
     ) -> (
         u128, //tokenId
         u128, //liquidity

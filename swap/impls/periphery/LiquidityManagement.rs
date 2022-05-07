@@ -23,7 +23,7 @@ struct MintCallbackData {
 
 impl<T: PoolInitializeStorage> LiquidityManagementTrait for T {
     // returns (uint128 liquidity,uint256 amount0,uint256 amount1,IUniswapV3Pool pool)
-    fn addLiquidity(&mut self, params: AddLiquidityParams) -> (u128, U256, U256, Address) {
+    default fn addLiquidity(&mut self, params: AddLiquidityParams) -> (u128, U256, U256, Address) {
         // PoolAddress.PoolKey memory poolKey =
         //         PoolAddress.PoolKey({token0: params.token0, token1: params.token1, fee: params.fee});
         let poolKey: PoolKey = PoolKey {
@@ -83,27 +83,35 @@ impl<T: PoolInitializeStorage> LiquidityManagementTrait for T {
             params.tickLower,
             params.tickUpper,
             liquidity,
-            callback_data,
+            callback_data.clone(),
         );
+        // self.uniswapV3MintCallback(amount0, amount1, callback_data);
+        ink_env::debug_message("&&&&&&&&&&8");
         //         require(amount0 >= params.amount0Min && amount1 >= params.amount1Min, 'Price slippage check');
         assert!(
             amount0 >= params.amount0Min.value && amount1 >= params.amount1Min.value,
             "Price slippage check"
         );
+        ink_env::debug_message("&&&&&&&&&&9");
         return (liquidity, amount0, amount1, poolAddress);
     }
 
-    fn uniswapV3MintCallback(&mut self, amount0Owed: U256, amount1Owed: U256, data: Vec<u8>) {
-        let manager_address: Address = ink_env::account_id::<DefaultEnvironment>();
+    default fn uniswapV3MintCallback(&mut self, amount0Owed: U256, amount1Owed: U256, data: Vec<u8>) {
+        ink_env::debug_message("&&&&&&&&&&1");
+        let manager_address: brush::traits::AccountId = ink_env::account_id::<DefaultEnvironment>();
+        ink_env::debug_message("&&&&&&&&&&2");
         let msg_sender = ink_env::caller::<DefaultEnvironment>();
-        // MintCallbackData memory decoded = abi.decode(data, (MintCallbackData));
+        ink_env::debug_message("&&&&&&&&&&3");
+        // MintCallbackData memory deceoded = abi.decode(data, (MintCallbackData));
         let decoded: MintCallbackData =
             scale::Decode::decode(&mut data.as_ref()).expect("call back data parse error!");
+            ink_env::debug_message("&&&&&&&&&&4");
         // TODO add callback validation
         // CallbackValidation.verifyCallback(factory, decoded.poolKey);
 
         // if (amount0Owed > 0) pay(decoded.poolKey.token0, decoded.payer, msg.sender, amount0Owed);
         if amount0Owed > U256::from(0) {
+            ink_env::debug_message("&&&&&&&&&&4.1");
             PeripheryPaymentsTraitRef::pay(
                 &manager_address,
                 decoded.poolKey.token0,
@@ -111,10 +119,12 @@ impl<T: PoolInitializeStorage> LiquidityManagementTrait for T {
                 msg_sender,
                 amount0Owed,
             );
+            ink_env::debug_message("&&&&&&&&&&4.2");
         }
-
+        ink_env::debug_message("&&&&&&&&&&5");
         // if (amount1Owed > 0) pay(decoded.poolKey.token1, decoded.payer, msg.sender, amount1Owed);
         if amount1Owed > U256::from(0) {
+            ink_env::debug_message("&&&&&&&&&&6");
             PeripheryPaymentsTraitRef::pay(
                 &manager_address,
                 decoded.poolKey.token1,
@@ -122,6 +132,7 @@ impl<T: PoolInitializeStorage> LiquidityManagementTrait for T {
                 msg_sender,
                 amount1Owed,
             );
+            ink_env::debug_message("&&&&&&&&&&7");
         }
     }
 }

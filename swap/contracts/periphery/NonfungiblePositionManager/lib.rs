@@ -23,7 +23,7 @@ pub mod position_manager {
     use ink_storage::Mapping;
     use libs::periphery::PoolAddress;
     use primitives::U256;
-    use primitives::{Address, Int24, Uint128, Uint256, Uint80, Uint96, ADDRESS0};
+    use primitives::{Address, Int24, Uint128, Uint256, Uint80, Uint96, ADDRESS0,Uint24};
 
     use ink_storage::traits::{PackedLayout, SpreadAllocate, SpreadLayout};
 
@@ -180,11 +180,33 @@ pub mod position_manager {
         }
     }
 
+
+    // pub token0: Address,
+    // pub token1: Address,
+    // pub fee: Uint24,
+    // pub tickLower: Int24,
+    // pub tickUpper: Int24,
+    // pub amount0Desired: Uint256,
+    // pub amount1Desired: Uint256,
+    // pub amount0Min: Uint256,
+    // pub amount1Min: Uint256,
+    // pub recipient: Address,
+    // pub deadline: Uint256,
     impl PositionManager for PositionMangerContract {
         #[ink(message, payable)]
         fn mint(
             &mut self,
-            params: MintParams,
+            token0:Address,
+            token1:Address,
+            fee:Uint24,
+            tickLower:Int24,
+            tickUpper:Int24,
+            amount0Desired:U256,
+            amount1Desired:U256,
+            amount0Min:U256,
+            amount1Min:U256,
+            recipient:Address,
+            deadline:U256,
         ) -> (
             u128, //tokenId
             u128, //liquidity
@@ -209,16 +231,16 @@ pub mod position_manager {
             // );
             let position_manager_address = ink_env::account_id::<DefaultEnvironment>();
             let addLiquidityParams = AddLiquidityParams {
-                token0: params.token0,
-                token1: params.token1,
-                fee: params.fee,
+                token0: token0,
+                token1: token1,
+                fee: fee,
                 recipient: position_manager_address,
-                tickLower: params.tickLower,
-                tickUpper: params.tickUpper,
-                amount0Desired: params.amount0Desired,
-                amount1Desired: params.amount1Desired,
-                amount0Min: params.amount0Min,
-                amount1Min: params.amount1Min,
+                tickLower: tickLower,
+                tickUpper: tickUpper,
+                amount0Desired: Uint256::new_with_u256(amount0Desired),
+                amount1Desired: Uint256::new_with_u256(amount1Desired),
+                amount0Min: Uint256::new_with_u256(amount0Min),
+                amount1Min: Uint256::new_with_u256(amount1Min)
             };
             // uint128 liquidity,uint256 amount0,uint256 amount1,IUniswapV3Pool pool
             let liquidity: u128;
@@ -226,10 +248,11 @@ pub mod position_manager {
             let amount1: U256;
             
             (liquidity, amount0, amount1, pool) = self.addLiquidity(addLiquidityParams);
+            ink_env::debug_message("&&&&&&&&&&10");
             let tokenId = self._nextId + 1;
-            self._mint_to(params.recipient, Id::U128(tokenId)).unwrap();
+            self._mint_to(recipient, Id::U128(tokenId)).unwrap();
             // _mint(params.recipient, (tokenId = _nextId++));
-
+            ink_env::debug_message("&&&&&&&&&&11");
             // bytes32 positionKey = PositionKey.compute(address(this), params.tickLower, params.tickUpper);
             let address_of_this = ink_env::account_id::<DefaultEnvironment>();
             // let positionKey = PositionKey::compute(address_of_this,params.tickLower, params.tickUpper);
@@ -237,9 +260,10 @@ pub mod position_manager {
             let position_info = PoolActionRef::positions(
                 &pool,
                 address_of_this,
-                params.tickLower,
-                params.tickUpper,
+                tickLower,
+                tickUpper,
             );
+            ink_env::debug_message("&&&&&&&&&&12");
             let feeGrowthInside0LastX128 = position_info.feeGrowthInside0LastX128;
             let feeGrowthInside1LastX128 = position_info.feeGrowthInside1LastX128;
 
@@ -250,11 +274,11 @@ pub mod position_manager {
             //         PoolAddress.PoolKey({token0: params.token0, token1: params.token1, fee: params.fee})
             //     );
             let pool_key = PoolAddress::PoolKey {
-                token0: params.token0,
-                token1: params.token1,
-                fee: params.fee,
+                token0: token0,
+                token1: token1,
+                fee: fee,
             };
-
+            ink_env::debug_message("&&&&&&&&&&13");
             let poolId = self.cachePoolKey(address_of_this, pool_key);
 
             // _positions[tokenId] = Position({
@@ -273,14 +297,15 @@ pub mod position_manager {
                 nonce: 0,
                 operator: ADDRESS0.into(),
                 poolId: poolId,
-                tickLower: params.tickLower,
-                tickUpper: params.tickUpper,
+                tickLower: tickLower,
+                tickUpper: tickUpper,
                 liquidity: liquidity,
                 feeGrowthInside0LastX128: feeGrowthInside0LastX128,
                 feeGrowthInside1LastX128: feeGrowthInside1LastX128,
                 tokensOwed0: 0,
                 tokensOwed1: 0,
             };
+            ink_env::debug_message("&&&&&&&&&&14");
             self._positions.insert(tokenId, &position);
             self.env().emit_event(IncreaseLiquidity {
                 tokenId,
@@ -288,6 +313,7 @@ pub mod position_manager {
                 amount0,
                 amount1,
             });
+            ink_env::debug_message("&&&&&&&&&&15");
             // emit IncreaseLiquidity(tokenId, liquidity, amount0, amount1);
             (tokenId, liquidity, amount0, amount1)
         }

@@ -5,7 +5,7 @@ use ink_storage::traits::{PackedLayout, SpreadAllocate, SpreadLayout};
 use libs::core::Position;
 use primitives::Int24;
 use primitives::Uint8;
-use primitives::{Address, Uint16, Uint160, Uint24, U160, U256};
+use primitives::{Address, Uint16, Uint160, U160, U256};
 use scale::{Decode, Encode};
 use ink_prelude::vec::Vec;
 //this interface is PoolActions

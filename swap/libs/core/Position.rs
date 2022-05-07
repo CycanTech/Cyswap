@@ -14,7 +14,7 @@ use super::{LiquidityMath, FixedPoint128};
 /// @dev Positions store additional state for tracking fees owed to the position
 
 // info stored for each user's position
-#[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
+#[derive(Debug,Default, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
 pub struct Info {
     // the amount of liquidity owned by this position
