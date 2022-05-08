@@ -35,7 +35,7 @@ pub type Uint80 = u128;
 
 pub const ADDRESS0:[u8;32] = [0u8;32];
 
-#[derive(Default,Debug,Clone, PartialEq, Eq,Encode, Decode)]
+#[derive(Default,Debug,Clone,Copy, PartialEq, Eq,Encode, Decode)]
 // #[cfg_attr(feature = "std", derive(TypeInfo))]
 pub struct WrapperU256 {
     pub value: U256,

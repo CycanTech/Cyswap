@@ -26,7 +26,15 @@ pub mod crab_swap_pool {
     use ink_lang::codegen::EmitEvent;
     use brush::contracts::psp22::extensions::metadata::*;
     use crabswap::traits::periphery::LiquidityManagement::*;
-
+    use ink_env::{
+        call::{
+            build_call,
+            Call,
+            ExecutionInput,
+        },
+        hash::Blake2x256,
+        CallFlags,
+    };
     // accumulated protocol fees in token0/token1 units
     #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
     #[cfg_attr(feature = "std", derive(StorageLayout))]
@@ -186,7 +194,12 @@ pub mod crab_swap_pool {
             ink_env::debug_println!("amount1 is:{:?}",amount1);
             ink_env::debug_println!("data is:{:?}",data);
             // TODO recovery call back
-            LiquidityManagementTraitRef::uniswapV3MintCallback(&manager_address,amount0, amount1, data);
+            LiquidityManagementTraitRef::uniswapV3MintCallback_builder(&manager_address,amount0, amount1, data)
+                .call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
+            ink_env::debug_println!("**************3.1");
+            // let address_of_this = ink_env::account_id::<DefaultEnvironment>();
+            // let balance = PSP22Ref::balance_of(&self.token0,address_of_this);
+            // ink_env::debug_println!("balance is:{:?}",balance);
             if amount0 > U256::from(0) {
                 assert!(balance0Before + amount0 <= self.balance0(), "M0");
             }

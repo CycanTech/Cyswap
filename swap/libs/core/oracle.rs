@@ -6,7 +6,7 @@ use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
 #[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
 use ink_storage::traits::{SpreadAllocate, SpreadLayout};
-use primitives::{Int24, Uint256, U160, U256};
+use primitives::{Int24, Uint256, U160, U256, Uint160};
 
 /// @title Oracle
 /// @notice Provides price and liquidity data useful for a wide variety of system designs
@@ -23,7 +23,7 @@ pub struct Observation {
     // the tick accumulator, i.e. tick * time elapsed since the pool was first initialized
     pub tickCumulative: i64,
     // the seconds per liquidity, i.e. seconds elapsed / max(1, liquidity) since the pool was first initialized
-    pub secondsPerLiquidityCumulativeX128: u128,
+    pub secondsPerLiquidityCumulativeX128: Uint160,
     // whether or not the observation is initialized
     pub initialized: bool,
 }
@@ -77,7 +77,7 @@ impl Observations {
         self.obs[0] = Observation {
             blockTimestamp: time,
             tickCumulative: 0,
-            secondsPerLiquidityCumulativeX128: 0,
+            secondsPerLiquidityCumulativeX128: Uint160::new(),
             initialized: true,
         };
         return (1, 1);
@@ -105,41 +105,49 @@ impl Observations {
         liquidity: u128,
         cardinality: u16,
     ) -> (i64, U160) {
+        ink_env::debug_message("^^^^^^^^^1");
         if secondsAgo == 0 {
             let mut last: Observation = self.obs[usize::from(index)];
+            ink_env::debug_message("^^^^^^^^^2");
             // if (last.blockTimestamp != time) last = transform(last, time, tick, liquidity);
             if last.blockTimestamp != time {
+                ink_env::debug_message("^^^^^^^^^3");
                 last = transform(&last, time, tick, liquidity);
             }
+            ink_env::debug_message("^^^^^^^^^4");
             return (
                 last.tickCumulative,
-                U160::from(last.secondsPerLiquidityCumulativeX128),
+                last.secondsPerLiquidityCumulativeX128.value,
             );
         }
 
         let target: u64 = time - secondsAgo;
-
+        ink_env::debug_message("^^^^^^^^^5");
         // (Observation memory beforeOrAt, Observation memory atOrAfter) =
         //     getSurroundingObservations(, time, target, tick, index, liquidity, cardinality);
         let (beforeOrAt, atOrAfter) =
             self.getSurroundingObservations(time, target, tick, index, liquidity, cardinality);
-
+            ink_env::debug_message("^^^^^^^^^6");
         if target == beforeOrAt.blockTimestamp {
+            ink_env::debug_message("^^^^^^^^^7");
             // we're at the left boundary
             return (
                 beforeOrAt.tickCumulative,
-                U160::from(beforeOrAt.secondsPerLiquidityCumulativeX128),
+                beforeOrAt.secondsPerLiquidityCumulativeX128.value,
             );
         } else if target == atOrAfter.blockTimestamp {
+            ink_env::debug_message("^^^^^^^^^8");
             // we're at the right boundary
             return (
                 atOrAfter.tickCumulative,
-                U160::from(atOrAfter.secondsPerLiquidityCumulativeX128),
+                beforeOrAt.secondsPerLiquidityCumulativeX128.value,
             );
         } else {
+            ink_env::debug_message("^^^^^^^^^9");
             // we're in the middle
             let observationTimeDelta = atOrAfter.blockTimestamp - beforeOrAt.blockTimestamp;
             let targetDelta = target - beforeOrAt.blockTimestamp;
+            ink_env::debug_message("^^^^^^^^^10");
             // return (
             //     beforeOrAt.tickCumulative +
             //         ((atOrAfter.tickCumulative - beforeOrAt.tickCumulative) / observationTimeDelta) *
@@ -155,13 +163,16 @@ impl Observations {
                 + ((atOrAfter.tickCumulative - beforeOrAt.tickCumulative)
                     / i64::try_from(observationTimeDelta).unwrap())
                     * i64::try_from(targetDelta).unwrap();
-            let secondsPerLiquidityCumulativeX128 = U256::from(
-                beforeOrAt.secondsPerLiquidityCumulativeX128
-                    + ((atOrAfter.secondsPerLiquidityCumulativeX128
-                        - beforeOrAt.secondsPerLiquidityCumulativeX128)
-                        * u128::from(targetDelta))
-                        / u128::from(observationTimeDelta),
-            );
+            ink_env::debug_message("^^^^^^^^^11");
+
+            let secondsPerLiquidityCumulativeX128 = 
+                beforeOrAt.secondsPerLiquidityCumulativeX128.value
+                    + ((atOrAfter.secondsPerLiquidityCumulativeX128.value
+                        - beforeOrAt.secondsPerLiquidityCumulativeX128.value)
+                        * U160::from(targetDelta))
+                        / U160::from(observationTimeDelta);
+
+            ink_env::debug_message("^^^^^^^^^12");
             return (tickCumulative, secondsPerLiquidityCumulativeX128);
         }
     }
@@ -350,9 +361,9 @@ fn transform(
     Observation {
         blockTimestamp: blockTimestamp,
         tickCumulative: last.tickCumulative + (i64::from(tick) * delta),
-        secondsPerLiquidityCumulativeX128: U256::from(last.secondsPerLiquidityCumulativeX128)
-            .saturating_add((U256::from(delta) << 128) / liquidity)
-            .as_u128(),
+        secondsPerLiquidityCumulativeX128: Uint160::new_with_u256(last.secondsPerLiquidityCumulativeX128.value
+            .saturating_add((U256::from(delta) << 128) / liquidity))
+            ,
         initialized: true,
     }
 }

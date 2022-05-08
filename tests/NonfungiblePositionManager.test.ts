@@ -96,7 +96,6 @@ describe('positionManager initialize', () => {
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
     const { query:positionManagerQuery,tx:positionManagerTx,alice,defaultSigner,contract:positionMangerContract } = await setupContract('NonfungiblePositionManager','new',factoryContract.address,weth9Contract.address,positionDescriptor.address,{value:1000000000});
     console.log("factory is:",4);
-    console.log("positionMangerContract address is:",positionMangerContract.address.toHuman());
     const { contract:CHECoinContract} = await setupContract('stable_coin_contract','new',"CHE","CHE");
     const { contract:AAACoinContract} = await setupContract('stable_coin_contract','new',"AAA","AAA");
       // &mut self,token0: AccountId,token1: AccountId,fee: u32,sqrt_price_x96: Uint160,) -> Address 
@@ -123,7 +122,6 @@ describe('positionManager initialize', () => {
     var pool_code_hash = (await poolAbi).source.hash;
     console.log("pool_code_hash is:",pool_code_hash);
     // pool_code_hash = pool_code_hash.substring(2);
-    console.log("pool_code_hash is:",pool_code_hash);
     
     await factoryTx.initial(pool_code_hash);
     const poolCodeHash = await factoryQuery.getPoolCodeHash();
@@ -131,9 +129,12 @@ describe('positionManager initialize', () => {
     // &mut self,fee:u32,token_a:Address,token_b:Address
     // var poolAddress = await factoryTx.createPool(500,token0,token1);
     await positionMangerContract.connect(alice);
+    console.log("@@@@@@@@@@@@@@@@@@@@@0");
     await expect(positionManagerTx.testEvent()).to.emit(positionMangerContract,"TestEvent")
     .withArgs(1);
+    console.log("@@@@@@@@@@@@@@@@@@@@@1");
     await positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000,{value:1000000000});
+    console.log("@@@@@@@@@@@@@@@@@@@@@2");
   //   pub struct MintParams {
   //     pub token0: Address,
   //     pub token1: Address,
@@ -162,6 +163,7 @@ describe('positionManager initialize', () => {
     // };
     // console.log("mintParams:",mintParams);
     await positionManagerTx.mint(token0,token1,500,100,10000,1000,1000,100,100,alice,10);
+    console.log("@@@@@@@@@@@@@@@@@@@@@3");
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))
     // .to.emit(factoryContract,"PoolCreated")
     // .withArgs(token0,token1,500,10,"0x111");

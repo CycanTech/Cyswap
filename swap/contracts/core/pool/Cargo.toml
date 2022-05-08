@@ -5,16 +5,16 @@ authors = ["Parity Technologies <cloudweisz@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-ink_primitives = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
-ink_metadata = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false, features = ["derive"], optional = true }
-ink_env = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
-ink_storage = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
-ink_lang = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
-ink_prelude = { tag = "v3.0.0", git = "https://github.com/paritytech/ink", default-features = false }
+ink_primitives = { tag = "v3.0.1", git = "https://github.com/paritytech/ink", default-features = false }
+ink_metadata = { tag = "v3.0.1", git = "https://github.com/paritytech/ink", default-features = false, features = ["derive"], optional = true }
+ink_env = { tag = "v3.0.1", git = "https://github.com/paritytech/ink", default-features = false }
+ink_storage = { tag = "v3.0.1", git = "https://github.com/paritytech/ink", default-features = false }
+ink_lang = { tag = "v3.0.1", git = "https://github.com/paritytech/ink", default-features = false }
+ink_prelude = { tag = "v3.0.1", git = "https://github.com/paritytech/ink", default-features = false }
 # primitive-types = { tag="uint-v0.9.3", git = "https://github.com/paritytech/parity-common", default-features = false,features = ["scale-info"] }
 
 
-brush = { tag = "v1.5.0", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false}
+brush = { tag = "v1.6.1", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false}
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }

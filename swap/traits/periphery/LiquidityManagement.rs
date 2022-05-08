@@ -49,9 +49,6 @@ pub trait LiquidityManagementTrait{
     /// @param amount1Owed The amount of token1 due to the pool for the minted liquidity
     /// @param data Any data passed through by the caller via the IUniswapV3PoolActions#mint call
     #[ink(message)]
-    fn uniswapV3MintCallback(&mut self,
-        amount0Owed:U256,
-        amount1Owed:U256,
-        data:Vec<u8>
+    fn uniswapV3MintCallback(&mut self, amount0Owed: U256, amount1Owed: U256, data: Vec<u8>
     );
 }
