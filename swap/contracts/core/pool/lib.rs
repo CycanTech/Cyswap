@@ -236,9 +236,9 @@ pub mod crab_swap_pool {
         sender: Address,
         #[ink(topic)]
         owner: Address,
-        #[ink(topic)]
+        // #[ink(topic)]
         tickLower: Int24,
-        #[ink(topic)]
+        // #[ink(topic)]
         tickUpper: Int24,
         amount: u128,
         amount0: U256,

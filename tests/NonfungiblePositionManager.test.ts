@@ -96,8 +96,8 @@ describe('positionManager initialize', () => {
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
     const { query:positionManagerQuery,tx:positionManagerTx,alice,defaultSigner,contract:positionMangerContract } = await setupContract('NonfungiblePositionManager','new',factoryContract.address,weth9Contract.address,positionDescriptor.address,{value:1000000000});
     console.log("factory is:",4);
-    const { contract:CHECoinContract} = await setupContract('stable_coin_contract','new',"CHE","CHE");
-    const { contract:AAACoinContract} = await setupContract('stable_coin_contract','new',"AAA","AAA");
+    const { contract:CHECoinContract,tx:cheCoinTx} = await setupContract('stable_coin_contract','new',"CHE","CHE");
+    const { contract:AAACoinContract,tx:AAACoinTx} = await setupContract('stable_coin_contract','new',"AAA","AAA");
       // &mut self,token0: AccountId,token1: AccountId,fee: u32,sqrt_price_x96: Uint160,) -> Address 
       //fee 500,3000,10000
     console.log("positionMangerContract.address is:",positionMangerContract.address.toHuman());
@@ -162,7 +162,16 @@ describe('positionManager initialize', () => {
     //   deadline:10,
     // };
     // console.log("mintParams:",mintParams);
-    await positionManagerTx.mint(token0,token1,500,100,10000,1000,1000,100,100,alice,10);
+    // console.log("cheCoinTx is:",cheCoinTx);
+    await cheCoinTx.mint(alice.address,1000000);
+    console.log("@@@@@@@@@@@@@@@@@@@@@3.1");
+    await AAACoinTx.mint(alice.address,1000000);
+    console.log("@@@@@@@@@@@@@@@@@@@@@3.2");
+    await cheCoinTx.approve(positionMangerContract.address,1000000);
+    console.log("@@@@@@@@@@@@@@@@@@@@@3.3");
+    await AAACoinTx.approve(positionMangerContract.address,1000000);
+    console.log("@@@@@@@@@@@@@@@@@@@@@3.4");
+    await positionManagerTx.mint(token0,token1,500,100,10000,1000,1000,10,0,alice.address,10);
     console.log("@@@@@@@@@@@@@@@@@@@@@3");
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))
     // .to.emit(factoryContract,"PoolCreated")

@@ -5,6 +5,7 @@
 #[brush::contract]
 pub mod token {
     use brush::contracts::psp22::extensions::metadata::*;
+    use brush::contracts::psp22::extensions::mintable::*;
     use ink_prelude::string::String;
     // use lending_project::traits::stable_coin::*;
     use ink_storage::traits::SpreadAllocate;
@@ -21,6 +22,8 @@ pub mod token {
 
     /// implement PSP22 Trait for our coin
     impl PSP22 for StableCoinContract {}
+
+    impl PSP22Mintable for StableCoinContract{}
 
     /// implement PSP22Metadata Trait for our coin
     impl PSP22Metadata for StableCoinContract {}

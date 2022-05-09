@@ -65,7 +65,8 @@ export const setupContract = async (name, constructor, ...args) => {
 
   return {
     defaultSigner: Alice,
-    alice: Bob,
+    alice: Alice,
+    bob:Bob,
     accounts: [Bob, await getRandomSigner(), await getRandomSigner()],
     contractFactory,
     contract,

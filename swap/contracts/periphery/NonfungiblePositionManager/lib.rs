@@ -231,13 +231,13 @@ struct MintCallbackData {
             // if (amount1Owed > 0) pay(decoded.poolKey.token1, decoded.payer, msg.sender, amount1Owed);
             if amount1Owed > U256::from(0) {
                 ink_env::debug_message("&&&&&&&&&&6");
-                PeripheryPaymentsTraitRef::pay(
+                PeripheryPaymentsTraitRef::pay_builder(
                     &manager_address,
                     decoded.poolKey.token1,
                     decoded.payer,
                     msg_sender,
                     amount1Owed,
-                );
+                ).call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
                 ink_env::debug_message("&&&&&&&&&&7");
             }
         }
@@ -301,7 +301,10 @@ struct MintCallbackData {
 
         /// @dev Caches a pool key
         fn cachePoolKey(&mut self, pool: Address, poolKey: PoolAddress::PoolKey) -> u128 {
-            let mut poolId = self._poolIds.get(&pool).unwrap();
+            let mut poolId = match self._poolIds.get(&pool){
+                Some(id)=>id,
+                None=>0,
+            };
             if poolId == 0 {
                 poolId = self._nextPoolId + 1;
                 self._poolIds.insert(pool, &poolId);
@@ -451,6 +454,12 @@ struct MintCallbackData {
                 amount0,
                 amount1,
             });
+            // ink_lang::codegen::EmitEvent::<PositionMangerContract>::emit_event(self.env(), IncreaseLiquidity {
+            //         tokenId,
+            //         liquidity,
+            //         amount0,
+            //         amount1,
+            //     });
             ink_env::debug_message("&&&&&&&&&&15");
             // emit IncreaseLiquidity(tokenId, liquidity, amount0, amount1);
             (tokenId, liquidity, amount0, amount1)

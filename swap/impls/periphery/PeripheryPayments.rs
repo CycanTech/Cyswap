@@ -5,6 +5,8 @@ use brush::traits::Balance;
 use ink_env::DefaultEnvironment;
 use primitives::{Address, U256};
 use ink_prelude::vec;
+use ink_env::CallFlags;
+use ink_prelude::vec::Vec;
 
 use crate::impls::pool_initialize::PoolInitializeStorage;
 pub use crate::traits::periphery::PeripheryPayments::*;
@@ -58,7 +60,12 @@ impl<T: PoolInitializeStorage> PeripheryPaymentsTrait for T {
             // pull payment
             // TransferHelper.safeTransferFrom(token, payer, recipient, value);
             ink_env::debug_message("&&&&&&&&&&15");
-            PSP22Ref::transfer_from(&mut token, payer, recipient, value.as_u128(), vec![0u8]).unwrap();
+            let result:Result<(),PSP22Error> = PSP22Ref::transfer_from_builder(&mut token, payer, recipient, value.as_u128(), Vec::<u8>::new())
+            .call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
+            match result{
+                Ok(s)=>ink_env::debug_message("success!!!!!!!!!!"),
+                Err(e)=>ink_env::debug_message("fail!!!!!!!!!!"),
+            }
             ink_env::debug_message("&&&&&&&&&&16");
         }
     }
