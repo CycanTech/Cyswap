@@ -1,6 +1,5 @@
 use crate::traits::periphery::weth9::*;
 use brush::contracts::psp22::extensions::metadata::*;
-use brush::contracts::psp22::PSP22Storage;
 use brush::traits::Balance;
 use ink_env::DefaultEnvironment;
 use primitives::{Address, U256};
@@ -60,6 +59,7 @@ impl<T: PoolInitializeStorage> PeripheryPaymentsTrait for T {
             // pull payment
             // TransferHelper.safeTransferFrom(token, payer, recipient, value);
             ink_env::debug_message("&&&&&&&&&&15");
+            //Here will make a error.panicked at 'dispatching ink! message failed: could not read input',But the transfer is success.
             let result:Result<(),PSP22Error> = PSP22Ref::transfer_from_builder(&mut token, payer, recipient, value.as_u128(), Vec::<u8>::new())
             .call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
             match result{

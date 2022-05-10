@@ -96,7 +96,25 @@ pub mod crab_swap_pool {
         tick: Int24,
     }
 
-
+    impl PSP22Receiver for PoolContract {
+        #[ink(message)]
+        fn before_received(
+            &mut self,
+            _operator: AccountId,
+            _from: AccountId,
+            _value: Balance,
+            _data: Vec<u8>,
+        ) -> Result<(), PSP22ReceiverError> {
+            // if self.revert_next_transfer {
+            //     self.revert_next_transfer = false;
+            //     return Err(PSP22ReceiverError::TransferRejected(String::from(
+            //         "I should reject next transfer",
+            //     )))
+            // }
+            // self.call_counter += 1;
+            Ok(())
+        }
+    }
 
     impl PoolAction for PoolContract {
         /// @inheritdoc IUniswapV3PoolActions
