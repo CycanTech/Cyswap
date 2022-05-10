@@ -380,7 +380,8 @@ struct MintCallbackData {
             
             (liquidity, amount0, amount1, pool) = self.addLiquidity(addLiquidityParams);
             ink_env::debug_println!("liquidity:{:?}, amount0:{:?}, amount1:{:?}",liquidity,amount0,amount1);
-            let tokenId = self._nextId + 1;
+            self._nextId = self._nextId + 1;
+            let tokenId = self._nextId;
             self._mint_to(recipient, Id::U128(tokenId)).unwrap();
             // _mint(params.recipient, (tokenId = _nextId++));
             // bytes32 positionKey = PositionKey.compute(address(this), params.tickLower, params.tickUpper);

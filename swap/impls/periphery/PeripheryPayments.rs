@@ -35,16 +35,11 @@ impl<T: PoolInitializeStorage> PeripheryPaymentsTrait for T {
             ink_env::debug_message("&&&&&&&&&&9");
             // pay with WETH9
             // IWETH9(WETH9).deposit{value: value}(); // wrap only what is needed to pay
-            // <&mut Erc20Minable>::call_mut(&mut *self.erc20_minable)
-            //     .mine(who, value)
-            //     .transferred_value(value) // 加上了调用 payable 的方法的时候，提供transfer
-            //     .fire()
-            //     .expect("something wrong");
-            ink_env::transfer::<DefaultEnvironment>(WETH9, value.as_u128()).unwrap();
-            ink_env::debug_message("&&&&&&&&&&10");
-            // <&mut Weth9Ref>::call_mut(&mut *WETH9).deposit().transferred_value(value).fire().expect("weth9 deposit error!");
-            // TODO add deposit to transfer.
-            Weth9Ref::deposit(&WETH9).unwrap();
+            // ink_env::debug_message("&&&&&&&&&&10");
+            Weth9Ref::deposit_builder(&mut WETH9).transferred_value(value.as_u128()).fire().unwrap().unwrap();
+            // <&mut Weth9Ref>::call_mut(&mut WETH9).deposit().transferred_value(value).fire().expect("weth9 deposit error!");
+            // // TODO add deposit to transfer.
+            // Weth9Ref::deposit(&WETH9).unwrap();
             ink_env::debug_message("&&&&&&&&&&11");
             // IWETH9(WETH9).transfer(recipient, value);
             PSP22Ref::transfer(&mut WETH9, recipient, value.as_u128(), vec![0u8]).unwrap();

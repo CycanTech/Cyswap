@@ -102,21 +102,21 @@ describe('positionManager initialize', () => {
       //fee 500,3000,10000
     console.log("positionMangerContract.address is:",positionMangerContract.address.toHuman());
     
-    let token0;
-    let token1;
+    let token0Address;
+    let token1Address;
     if(CHECoinContract.address.toHuman()<AAACoinContract.address.toHuman()) {
-      token0 = CHECoinContract.address;
-      token1 = AAACoinContract.address;
+      token0Address = CHECoinContract.address;
+      token1Address = AAACoinContract.address;
     }else{
-      token1 = CHECoinContract.address;
-      token0 = AAACoinContract.address;
+      token1Address = CHECoinContract.address;
+      token0Address = AAACoinContract.address;
     }
-    console.log("token0.address is:",token0.toHuman());
-    console.log("token1.address is:",token1.toHuman());
+    console.log("token0.address is:",token0Address.toHuman());
+    console.log("token1.address is:",token1Address.toHuman());
     console.log("factoryContract.address is:",factoryContract.address.toHuman());
     console.log("positionMangerContract.address is:",positionMangerContract.address);
     // factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24
-    const { abi:poolAbi} = await setupContract('pool','new',factoryContract.address,token0,token1,500,0);
+    const { abi:poolAbi} = await setupContract('pool','new',factoryContract.address,token0Address,token1Address,500,0);
     
     
     var pool_code_hash = (await poolAbi).source.hash;
@@ -131,45 +131,23 @@ describe('positionManager initialize', () => {
     await positionMangerContract.connect(alice);
     await expect(positionManagerTx.testEvent()).to.emit(positionMangerContract,"TestEvent")
     .withArgs(1);
-    await positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,new BN("120621891405341611593710811006"),{value:1000000000});
-  //   pub struct MintParams {
-  //     pub token0: Address,
-  //     pub token1: Address,
-  //     pub fee: Uint24,
-  //     pub tickLower: Int24,
-  //     pub tickUpper: Int24,
-  //     pub amount0Desired: Uint256,
-  //     pub amount1Desired: Uint256,
-  //     pub amount0Min: Uint256,
-  //     pub amount1Min: Uint256,
-  //     pub recipient: Address,
-  //     pub deadline: Uint256,
-  // }
-    // var mintParams = {
-    //   token0:token0,
-    //   token1:token1,
-    //   fee:500,
-    //   tickLower:100,
-    //   tickUpper:100000,
-    //   amount0Desired:1000,
-    //   amount1Desired:1000,
-    //   amount0Min:100,
-    //   amount1Min:100,
-    //   recipient:alice,
-    //   deadline:10,
-    // };
+    await positionManagerTx.createAndInitializePoolIfNecessary(token0Address,token1Address,500,new BN("120621891405341611593710811006"),{value:1000000000});
+    
     // console.log("mintParams:",mintParams);
     // console.log("cheCoinTx is:",cheCoinTx);
     await cheCoinTx.mint(alice.address,1000000);
-    console.log("@@@@@@@@@@@@@@@@@@@@@3.1");
     await AAACoinTx.mint(alice.address,1000000);
-    console.log("@@@@@@@@@@@@@@@@@@@@@3.2");
     await cheCoinTx.approve(positionMangerContract.address,1000000);
-    console.log("@@@@@@@@@@@@@@@@@@@@@3.3");
     await AAACoinTx.approve(positionMangerContract.address,1000000);
-    console.log("@@@@@@@@@@@@@@@@@@@@@3.4");
-    await positionManagerTx.mint(token0,token1,500,100,10000,1000,1000,10,0,alice.address,10);
-    console.log("@@@@@@@@@@@@@@@@@@@@@3");
+    await positionManagerTx.mint(token0Address,token1Address,500,100,10000,1000,1000,10,0,alice.address,10);
+    if(token0Address.toHuman()<weth9Contract.address.toHuman()) {
+      await positionManagerTx.createAndInitializePoolIfNecessary(token0Address,weth9Contract.address,500,new BN("120621891405341611593710811006"),{value:1000000000});
+      await positionManagerTx.mint(token0Address,weth9Contract.address,500,100,10000,1000,1000,10,0,alice.address,10,{value:100000000000});
+    }else{
+      await positionManagerTx.createAndInitializePoolIfNecessary(weth9Contract.address,token0Address,500,new BN("120621891405341611593710811006"),{value:1000000000});
+      await positionManagerTx.mint(weth9Contract.address,token0Address,500,100,10000,1000,1000,10,0,alice.address,10,{value:100000000000});
+    }
+    
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))
     // .to.emit(factoryContract,"PoolCreated")
     // .withArgs(token0,token1,500,10,"0x111");
