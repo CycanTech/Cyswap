@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+#![allow(non_snake_case)]
 use crate::assembly::mulmod;
 use primitives::U256;
 
@@ -8,7 +10,9 @@ use primitives::U256;
 /// @return result The 256-bit result
 /// @dev Credit to Remco Bloemen under MIT license https://xn--2-umb.com/21/muldiv
 pub fn mulDiv(a: U256, b: U256, denominator: U256) -> U256 {
-    a.saturating_mul(b).checked_div(denominator).unwrap()
+    a.saturating_mul(b)
+    .checked_div(denominator)
+    .unwrap()
 }
 
 /// @notice Calculates ceil(a×b÷denominator) with full precision. Throws if result overflows a uint256 or denominator == 0

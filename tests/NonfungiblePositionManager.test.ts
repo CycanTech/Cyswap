@@ -129,12 +129,9 @@ describe('positionManager initialize', () => {
     // &mut self,fee:u32,token_a:Address,token_b:Address
     // var poolAddress = await factoryTx.createPool(500,token0,token1);
     await positionMangerContract.connect(alice);
-    console.log("@@@@@@@@@@@@@@@@@@@@@0");
     await expect(positionManagerTx.testEvent()).to.emit(positionMangerContract,"TestEvent")
     .withArgs(1);
-    console.log("@@@@@@@@@@@@@@@@@@@@@1");
-    await positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000,{value:1000000000});
-    console.log("@@@@@@@@@@@@@@@@@@@@@2");
+    await positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,new BN("120621891405341611593710811006"),{value:1000000000});
   //   pub struct MintParams {
   //     pub token0: Address,
   //     pub token1: Address,

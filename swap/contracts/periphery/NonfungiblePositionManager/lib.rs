@@ -161,6 +161,7 @@ struct MintCallbackData {
         //                 params.amount1Desired
         //             );
         //         }
+        ink_env::debug_println!("sqrtPriceX96 is:{},sqrtRatioAX96 is:{},sqrtRatioBX96 is:{}",sqrtPriceX96,sqrtRatioAX96,sqrtRatioBX96);
         let liquidity = LiquidityAmounts::getLiquidityForAmounts(
             sqrtPriceX96,
             sqrtRatioAX96,
@@ -192,32 +193,25 @@ struct MintCallbackData {
             callback_data.clone(),
         ).call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
         // self.uniswapV3MintCallback(amount0, amount1, callback_data);
-        ink_env::debug_message("&&&&&&&&&&8");
         //         require(amount0 >= params.amount0Min && amount1 >= params.amount1Min, 'Price slippage check');
         assert!(
             amount0 >= params.amount0Min.value && amount1 >= params.amount1Min.value,
             "Price slippage check"
         );
-        ink_env::debug_message("&&&&&&&&&&9");
         return (liquidity, amount0, amount1, poolAddress);
     }
     #[ink(message)]
         fn uniswapV3MintCallback(&mut self, amount0Owed: U256, amount1Owed: U256, data: Vec<u8>) {
-            ink_env::debug_message("&&&&&&&&&&1");
             let manager_address: brush::traits::AccountId = ink_env::account_id::<DefaultEnvironment>();
-            ink_env::debug_message("&&&&&&&&&&2");
             let msg_sender = ink_env::caller::<DefaultEnvironment>();
-            ink_env::debug_message("&&&&&&&&&&3");
             // MintCallbackData memory deceoded = abi.decode(data, (MintCallbackData));
             let decoded: MintCallbackData =
                 scale::Decode::decode(&mut data.as_ref()).expect("call back data parse error!");
-                ink_env::debug_message("&&&&&&&&&&4");
             // TODO add callback validation
             // CallbackValidation.verifyCallback(factory, decoded.poolKey);
 
             // if (amount0Owed > 0) pay(decoded.poolKey.token0, decoded.payer, msg.sender, amount0Owed);
             if amount0Owed > U256::from(0) {
-                ink_env::debug_message("&&&&&&&&&&4.1");
                 PeripheryPaymentsTraitRef::pay_builder(
                     &manager_address,
                     decoded.poolKey.token0,
@@ -225,12 +219,9 @@ struct MintCallbackData {
                     msg_sender,
                     amount0Owed,
                 ).call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
-                ink_env::debug_message("&&&&&&&&&&4.2");
             }
-            ink_env::debug_message("&&&&&&&&&&5");
             // if (amount1Owed > 0) pay(decoded.poolKey.token1, decoded.payer, msg.sender, amount1Owed);
             if amount1Owed > U256::from(0) {
-                ink_env::debug_message("&&&&&&&&&&6");
                 PeripheryPaymentsTraitRef::pay_builder(
                     &manager_address,
                     decoded.poolKey.token1,
@@ -238,7 +229,6 @@ struct MintCallbackData {
                     msg_sender,
                     amount1Owed,
                 ).call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
-                ink_env::debug_message("&&&&&&&&&&7");
             }
         }
     }
@@ -389,11 +379,10 @@ struct MintCallbackData {
             let amount1: U256;
             
             (liquidity, amount0, amount1, pool) = self.addLiquidity(addLiquidityParams);
-            ink_env::debug_message("&&&&&&&&&&10");
+            ink_env::debug_println!("liquidity:{:?}, amount0:{:?}, amount1:{:?}",liquidity,amount0,amount1);
             let tokenId = self._nextId + 1;
             self._mint_to(recipient, Id::U128(tokenId)).unwrap();
             // _mint(params.recipient, (tokenId = _nextId++));
-            ink_env::debug_message("&&&&&&&&&&11");
             // bytes32 positionKey = PositionKey.compute(address(this), params.tickLower, params.tickUpper);
             let address_of_this = ink_env::account_id::<DefaultEnvironment>();
             // let positionKey = PositionKey::compute(address_of_this,params.tickLower, params.tickUpper);
@@ -404,7 +393,6 @@ struct MintCallbackData {
                 tickLower,
                 tickUpper,
             );
-            ink_env::debug_message("&&&&&&&&&&12");
             let feeGrowthInside0LastX128 = position_info.feeGrowthInside0LastX128;
             let feeGrowthInside1LastX128 = position_info.feeGrowthInside1LastX128;
 
@@ -419,7 +407,6 @@ struct MintCallbackData {
                 token1: token1,
                 fee: fee,
             };
-            ink_env::debug_message("&&&&&&&&&&13");
             let poolId = self.cachePoolKey(address_of_this, pool_key);
 
             // _positions[tokenId] = Position({
@@ -446,7 +433,6 @@ struct MintCallbackData {
                 tokensOwed0: 0,
                 tokensOwed1: 0,
             };
-            ink_env::debug_message("&&&&&&&&&&14");
             self._positions.insert(tokenId, &position);
             self.env().emit_event(IncreaseLiquidity {
                 tokenId,
@@ -460,7 +446,6 @@ struct MintCallbackData {
             //         amount0,
             //         amount1,
             //     });
-            ink_env::debug_message("&&&&&&&&&&15");
             // emit IncreaseLiquidity(tokenId, liquidity, amount0, amount1);
             (tokenId, liquidity, amount0, amount1)
         }
@@ -500,11 +485,8 @@ struct MintCallbackData {
     pub struct IncreaseLiquidity {
         #[ink(topic)]
         tokenId: u128,
-        #[ink(topic)]
         liquidity: u128,
-        #[ink(topic)]
         amount0: U256,
-        #[ink(topic)]
         amount1: U256,
     }
 

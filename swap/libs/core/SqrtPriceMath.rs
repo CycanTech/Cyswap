@@ -117,8 +117,8 @@ pub fn getAmount1Delta(sqrtRatioAX96: U160, sqrtRatioBX96: U160, liquidity: i128
             getAmount1DeltaWithRound(
                 sqrtRatioAX96,
                 sqrtRatioBX96,
-                u128::try_from(-liquidity).unwrap(),
-                false,
+                u128::try_from(liquidity).unwrap(),
+                true,
             )
             .as_u128(),
         )
