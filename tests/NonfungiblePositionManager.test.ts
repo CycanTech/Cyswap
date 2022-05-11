@@ -131,6 +131,7 @@ describe('positionManager initialize', () => {
     await positionMangerContract.connect(alice);
     await expect(positionManagerTx.testEvent()).to.emit(positionMangerContract,"TestEvent")
     .withArgs(1);
+    //{value:1000000000} will transfer native token to 
     await positionManagerTx.createAndInitializePoolIfNecessary(token0Address,token1Address,500,new BN("120621891405341611593710811006"),{value:1000000000});
     
     // console.log("mintParams:",mintParams);
@@ -142,10 +143,10 @@ describe('positionManager initialize', () => {
     await positionManagerTx.mint(token0Address,token1Address,500,100,10000,1000,1000,10,0,alice.address,10);
     if(token0Address.toHuman()<weth9Contract.address.toHuman()) {
       await positionManagerTx.createAndInitializePoolIfNecessary(token0Address,weth9Contract.address,500,new BN("120621891405341611593710811006"),{value:1000000000});
-      await positionManagerTx.mint(token0Address,weth9Contract.address,500,100,10000,1000,1000,10,0,alice.address,10,{value:100000000000});
+      await positionManagerTx.mint(token0Address,weth9Contract.address,500,200,10000,1000,1000,10,10,alice.address,10,{value:100000000000});
     }else{
       await positionManagerTx.createAndInitializePoolIfNecessary(weth9Contract.address,token0Address,500,new BN("120621891405341611593710811006"),{value:1000000000});
-      await positionManagerTx.mint(weth9Contract.address,token0Address,500,100,10000,1000,1000,10,0,alice.address,10,{value:100000000000});
+      await positionManagerTx.mint(weth9Contract.address,token0Address,500,200,10000,1000,1000,10,10,alice.address,10,{value:100000000000});
     }
     
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))

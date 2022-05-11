@@ -239,12 +239,13 @@ pub mod crab_swap_factory {
 
 
         fn deploy(&mut self,address_this: Address, token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24) -> AccountId {
-            ink_env::debug_println!("address_this is: {:?}",address_this);
-            ink_env::debug_println!("token0 is: {:?}",token0);
-            ink_env::debug_println!("token1 is: {:?}",token1);
-            ink_env::debug_println!("fee is: {:?}",fee);
-            ink_env::debug_println!("tick_spacing is: {:?}",tick_spacing);
+            // ink_env::debug_println!("address_this is: {:?}",address_this);
+            // ink_env::debug_println!("token0 is: {:?}",token0);
+            // ink_env::debug_println!("token1 is: {:?}",token1);
+            // ink_env::debug_println!("fee is: {:?}",fee);
+            // ink_env::debug_println!("tick_spacing is: {:?}",tick_spacing);
             let total_balance = Self::env().balance();
+            ink_env::debug_println!("total_balance------------ is: {:?}",total_balance);
             let encodable = (address_this, token0, token1,fee); // Implements `scale::Encode`
             let mut salt = <Sha2x256 as HashOutput>::Type::default(); // 256-bit buffer
             ink_env::hash_encoded::<Sha2x256, _>(&encodable, &mut salt);
