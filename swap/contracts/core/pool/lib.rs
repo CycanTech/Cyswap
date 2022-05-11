@@ -275,7 +275,7 @@ pub mod crab_swap_pool {
 
 
     impl PoolContract {
-        #[ink(constructor)]
+        #[ink(constructor,payable)]
         pub fn new(
             factory: Address,
             token0: Address,

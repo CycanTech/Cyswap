@@ -114,7 +114,8 @@ describe('positionManager initialize', () => {
     console.log("token0.address is:",token0Address.toHuman());
     console.log("token1.address is:",token1Address.toHuman());
     console.log("factoryContract.address is:",factoryContract.address.toHuman());
-    console.log("positionMangerContract.address is:",positionMangerContract.address);
+    console.log("weth9Contract.address is:",weth9Contract.address.toHuman());
+    
     // factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24
     const { abi:poolAbi} = await setupContract('pool','new',factoryContract.address,token0Address,token1Address,500,0);
     
@@ -133,6 +134,8 @@ describe('positionManager initialize', () => {
     .withArgs(1);
     //{value:1000000000} will transfer native token to 
     await positionManagerTx.createAndInitializePoolIfNecessary(token0Address,token1Address,500,new BN("120621891405341611593710811006"),{value:1000000000});
+    // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0Address,token1Address,500,1000000000000))
+    // .to.emit(factoryContract,"PoolCreated");
     
     // console.log("mintParams:",mintParams);
     // console.log("cheCoinTx is:",cheCoinTx);
@@ -144,9 +147,13 @@ describe('positionManager initialize', () => {
     if(token0Address.toHuman()<weth9Contract.address.toHuman()) {
       await positionManagerTx.createAndInitializePoolIfNecessary(token0Address,weth9Contract.address,500,new BN("120621891405341611593710811006"),{value:1000000000});
       await positionManagerTx.mint(token0Address,weth9Contract.address,500,200,10000,1000,1000,10,10,alice.address,10,{value:100000000000});
+      let poolAddress = await factoryQuery.getPool(500,token0Address,weth9Contract.address);
+      console.log("poolAddress is:",poolAddress);
     }else{
       await positionManagerTx.createAndInitializePoolIfNecessary(weth9Contract.address,token0Address,500,new BN("120621891405341611593710811006"),{value:1000000000});
       await positionManagerTx.mint(weth9Contract.address,token0Address,500,200,10000,1000,1000,10,10,alice.address,10,{value:100000000000});
+      let poolAddress = await factoryQuery.getPool(500,weth9Contract.address,token0Address);
+      console.log("poolAddress is:",poolAddress.output?.toHuman());
     }
     
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))

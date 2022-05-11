@@ -32,7 +32,6 @@ impl<T: PoolInitializeStorage> PeripheryPaymentsTrait for T {
         let balance_of_contract: Balance = ink_env::balance::<DefaultEnvironment>();
         let address_of_this: Address = ink_env::account_id::<DefaultEnvironment>();
         if token == WETH9 && balance_of_contract >= value.as_u128() {
-            ink_env::debug_message("&&&&&&&&&&9");
             // pay with WETH9
             // IWETH9(WETH9).deposit{value: value}(); // wrap only what is needed to pay
             // ink_env::debug_message("&&&&&&&&&&10");

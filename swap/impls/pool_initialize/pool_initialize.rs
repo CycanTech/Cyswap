@@ -6,6 +6,7 @@ use brush::{
         AccountId,
     },
 };
+use ink_env::DefaultEnvironment;
 use primitives::{Uint160, ADDRESS0, U256, Address, U160};
 use crate::traits::core::factory::*;
 use crate::traits::core::pool::*;
@@ -35,11 +36,13 @@ impl<T:PoolInitializeStorage> Initializer for T{
         ink_env::debug_message("start initial pool");
         assert!(token0<token1,"token0 must less than token1");
         let factory_address = self.get().factory;
-        
         let mut pool_address = FactoryRef::get_pool(&factory_address,fee,token0,token1);
         
         if pool_address == ADDRESS0.into() {
-            pool_address = FactoryRef::create_pool(&factory_address,fee,token0,token1);
+            let transfer_value = ink_env::transferred_value::<DefaultEnvironment>();
+            pool_address = FactoryRef::create_pool_builder(&factory_address,fee,token0,token1)
+                .transferred_value(transfer_value/2)
+                .fire().unwrap();
             PoolActionRef::initialize(&mut pool_address,sqrt_price_x96);
         }else{
             let sqrt_price_x96_existing = PoolActionRef::getSlot0(&pool_address).sqrtPriceX96;

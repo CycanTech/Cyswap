@@ -128,7 +128,7 @@ pub mod crab_swap_factory {
         }
 
         //此处原有modifier,限制不可以使用delegateCall的方式调用该方法,因为ink!中没有delegate call 调用,所以按时不使用NoDelegateCall
-        #[ink(message)]
+        #[ink(message,payable)]
         fn create_pool(&mut self,fee:u32,token_a:Address,token_b:Address)->AccountId{
             assert!(token_a!=token_b,"token A should not equals token B");
             let (token0,token1);
@@ -244,14 +244,14 @@ pub mod crab_swap_factory {
             // ink_env::debug_println!("token1 is: {:?}",token1);
             // ink_env::debug_println!("fee is: {:?}",fee);
             // ink_env::debug_println!("tick_spacing is: {:?}",tick_spacing);
-            let total_balance = Self::env().balance();
-            ink_env::debug_println!("total_balance------------ is: {:?}",total_balance);
+            let transfer_value = ink_env::transferred_value::<DefaultEnvironment>();
+            ink_env::debug_println!("transfer_value------------ is: {:?}",transfer_value);
             let encodable = (address_this, token0, token1,fee); // Implements `scale::Encode`
             let mut salt = <Sha2x256 as HashOutput>::Type::default(); // 256-bit buffer
             ink_env::hash_encoded::<Sha2x256, _>(&encodable, &mut salt);
             // factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24
             let pool_address = PoolContractRef::new(address_this,token0, token1, fee, tick_spacing)
-                    .endowment(total_balance/4)
+                    .endowment(transfer_value/4)
                     .code_hash(self.pool_code_hash.clone())
                     .salt_bytes(salt)
                     .instantiate()
