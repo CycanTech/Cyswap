@@ -20,9 +20,9 @@ pub mod position_manager {
     use ink_prelude::string::String;
     use ink_storage::Mapping;
     use libs::periphery::PoolAddress;
-    use primitives::{ Int24, Uint128, Uint256, Uint80, Uint96, ADDRESS0,Uint24};
+    use primitives::{Int24, Uint128, Uint24, Uint256, Uint80, Uint96, ADDRESS0};
 
-    use ink_storage::traits::{PackedLayout};
+    use ink_storage::traits::PackedLayout;
 
     #[cfg(feature = "std")]
     use ink_storage::traits::StorageLayout;
@@ -39,15 +39,7 @@ pub mod position_manager {
 
     use crabswap::impls::pool_initialize::PoolInitializeStorage;
     use crabswap::traits::core::pool::*;
-    use ink_env::{
-        call::{
-            build_call,
-            Call,
-            ExecutionInput,
-        },
-        hash::Blake2x256,
-        CallFlags,
-    };
+    use ink_env::CallFlags;
 
     #[derive(Default, Debug, Encode, Decode, SpreadAllocate, SpreadLayout, PackedLayout)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
@@ -71,12 +63,11 @@ pub mod position_manager {
         tokensOwed1: Uint128,
     }
 
-
-#[derive(Default, Decode, Encode, Debug, SpreadAllocate, SpreadLayout)]
-struct MintCallbackData {
-    poolKey: PoolKey,
-    payer: Address,
-}
+    #[derive(Default, Decode, Encode, Debug, SpreadAllocate, SpreadLayout)]
+    struct MintCallbackData {
+        poolKey: PoolKey,
+        payer: Address,
+    }
     #[ink(storage)]
     #[derive(
         Default,
@@ -130,79 +121,90 @@ struct MintCallbackData {
         // returns (uint128 liquidity,uint256 amount0,uint256 amount1,IUniswapV3Pool pool)
         #[ink(message)]
         fn addLiquidity(&mut self, params: AddLiquidityParams) -> (u128, U256, U256, Address) {
-        // PoolAddress.PoolKey memory poolKey =
-        //         PoolAddress.PoolKey({token0: params.token0, token1: params.token1, fee: params.fee});
-        let poolKey: PoolKey = PoolKey {
-            token0: params.token0,
-            token1: params.token1,
-            fee: params.fee,
-        };
+            // PoolAddress.PoolKey memory poolKey =
+            //         PoolAddress.PoolKey({token0: params.token0, token1: params.token1, fee: params.fee});
+            let poolKey: PoolKey = PoolKey {
+                token0: params.token0,
+                token1: params.token1,
+                fee: params.fee,
+            };
 
-        // pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
-        let factory = self.initializer.factory;
-        // let poolAddress = PoolAddress::computeAddress(factory, poolKey.clone());
-        let poolAddress = FactoryRef::get_pool(&factory, params.fee, params.token0, params.token1);
+            // pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
+            let factory = self.initializer.factory;
+            // let poolAddress = PoolAddress::computeAddress(factory, poolKey.clone());
+            let poolAddress =
+                FactoryRef::get_pool(&factory, params.fee, params.token0, params.token1);
 
-        //         // compute the liquidity amount
-        //         {
-        //             // (uint160 sqrtPriceX96, , , , , , ) = poolRef::slot0(poolAddress);
-        let slot0: Slot0 = PoolActionRef::getSlot0(&poolAddress);
-        let sqrtPriceX96 = slot0.sqrtPriceX96.value;
-        //             // uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(params.tickLower);
-        let sqrtRatioAX96 = TickMath::getSqrtRatioAtTick(params.tickLower);
-        //             // uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(params.tickUpper);
-        let sqrtRatioBX96 = TickMath::getSqrtRatioAtTick(params.tickUpper);
+            //         // compute the liquidity amount
+            //         {
+            //             // (uint160 sqrtPriceX96, , , , , , ) = poolRef::slot0(poolAddress);
+            let slot0: Slot0 = PoolActionRef::getSlot0(&poolAddress);
+            let sqrtPriceX96 = slot0.sqrtPriceX96.value;
+            //             // uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(params.tickLower);
+            let sqrtRatioAX96 = TickMath::getSqrtRatioAtTick(params.tickLower);
+            //             // uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(params.tickUpper);
+            let sqrtRatioBX96 = TickMath::getSqrtRatioAtTick(params.tickUpper);
 
-        //             liquidity = LiquidityAmounts::getLiquidityForAmounts(
-        //                 sqrtPriceX96,
-        //                 sqrtRatioAX96,
-        //                 sqrtRatioBX96,
-        //                 params.amount0Desired,
-        //                 params.amount1Desired
-        //             );
-        //         }
-        ink_env::debug_println!("sqrtPriceX96 is:{},sqrtRatioAX96 is:{},sqrtRatioBX96 is:{}",sqrtPriceX96,sqrtRatioAX96,sqrtRatioBX96);
-        let liquidity = LiquidityAmounts::getLiquidityForAmounts(
-            sqrtPriceX96,
-            sqrtRatioAX96,
-            sqrtRatioBX96,
-            params.amount0Desired.value,
-            params.amount1Desired.value,
-        );
+            //             liquidity = LiquidityAmounts::getLiquidityForAmounts(
+            //                 sqrtPriceX96,
+            //                 sqrtRatioAX96,
+            //                 sqrtRatioBX96,
+            //                 params.amount0Desired,
+            //                 params.amount1Desired
+            //             );
+            //         }
+            ink_env::debug_println!(
+                "sqrtPriceX96 is:{},sqrtRatioAX96 is:{},sqrtRatioBX96 is:{}",
+                sqrtPriceX96,
+                sqrtRatioAX96,
+                sqrtRatioBX96
+            );
+            let liquidity = LiquidityAmounts::getLiquidityForAmounts(
+                sqrtPriceX96,
+                sqrtRatioAX96,
+                sqrtRatioBX96,
+                params.amount0Desired.value,
+                params.amount1Desired.value,
+            );
 
-        //         (amount0, amount1) = pool.mint(
-        //             params.recipient,
-        //             params.tickLower,
-        //             params.tickUpper,
-        //             liquidity,
-        //             abi.encode(MintCallbackData({poolKey: poolKey, payer: msg.sender}))
-        //         );
-        let msg_sender = ink_env::caller::<DefaultEnvironment>();
-        let mint_callback_data = MintCallbackData {
-            poolKey: poolKey,
-            payer: msg_sender,
-        };
+            //         (amount0, amount1) = pool.mint(
+            //             params.recipient,
+            //             params.tickLower,
+            //             params.tickUpper,
+            //             liquidity,
+            //             abi.encode(MintCallbackData({poolKey: poolKey, payer: msg.sender}))
+            //         );
+            let msg_sender = ink_env::caller::<DefaultEnvironment>();
+            let mint_callback_data = MintCallbackData {
+                poolKey: poolKey,
+                payer: msg_sender,
+            };
 
-        let callback_data = scale::Encode::encode(&mint_callback_data);
-        let (amount0, amount1) = PoolActionRef::mint_builder(
-            &poolAddress,
-            params.recipient,
-            params.tickLower,
-            params.tickUpper,
-            liquidity,
-            callback_data.clone(),
-        ).call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
-        // self.uniswapV3MintCallback(amount0, amount1, callback_data);
-        //         require(amount0 >= params.amount0Min && amount1 >= params.amount1Min, 'Price slippage check');
-        assert!(
-            amount0 >= params.amount0Min.value && amount1 >= params.amount1Min.value,
-            "Price slippage check"
-        );
-        return (liquidity, amount0, amount1, poolAddress);
-    }
-    #[ink(message)]
+            let callback_data = scale::Encode::encode(&mint_callback_data);
+            let (amount0, amount1) = PoolActionRef::mint_builder(
+                &poolAddress,
+                params.recipient,
+                params.tickLower,
+                params.tickUpper,
+                liquidity,
+                callback_data.clone(),
+            )
+            .call_flags(CallFlags::default().set_allow_reentry(true))
+            .fire()
+            .unwrap();
+            // self.uniswapV3MintCallback(amount0, amount1, callback_data);
+            //         require(amount0 >= params.amount0Min && amount1 >= params.amount1Min, 'Price slippage check');
+            assert!(
+                amount0 >= params.amount0Min.value && amount1 >= params.amount1Min.value,
+                "Price slippage check"
+            );
+            return (liquidity, amount0, amount1, poolAddress);
+        }
+
+        #[ink(message)]
         fn uniswapV3MintCallback(&mut self, amount0Owed: U256, amount1Owed: U256, data: Vec<u8>) {
-            let manager_address: brush::traits::AccountId = ink_env::account_id::<DefaultEnvironment>();
+            let manager_address: brush::traits::AccountId =
+                ink_env::account_id::<DefaultEnvironment>();
             let msg_sender = ink_env::caller::<DefaultEnvironment>();
             // MintCallbackData memory deceoded = abi.decode(data, (MintCallbackData));
             let decoded: MintCallbackData =
@@ -218,7 +220,10 @@ struct MintCallbackData {
                     decoded.payer,
                     msg_sender,
                     amount0Owed,
-                ).call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
+                )
+                .call_flags(CallFlags::default().set_allow_reentry(true))
+                .fire()
+                .unwrap();
             }
             // if (amount1Owed > 0) pay(decoded.poolKey.token1, decoded.payer, msg.sender, amount1Owed);
             if amount1Owed > U256::from(0) {
@@ -228,11 +233,34 @@ struct MintCallbackData {
                     decoded.payer,
                     msg_sender,
                     amount1Owed,
-                ).call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
+                )
+                .call_flags(CallFlags::default().set_allow_reentry(true))
+                .fire()
+                .unwrap();
             }
         }
     }
+    
     impl PeripheryPaymentsTrait for PositionMangerContract {}
+
+    // modifier isAuthorizedForToken(uint256 tokenId) {
+    //     require(_isApprovedOrOwner(msg.sender, tokenId), 'Not approved');
+    //     _;
+    // }
+
+    /// Throws if called by any account other than the owner.
+    // #[modifier_definition]
+    // pub fn only_owner<T, F, R, E>(instance: &mut T, body: F) -> Result<R, E>
+    // where
+    //     T: OwnableStorage,
+    //     F: FnOnce(&mut T) -> Result<R, E>,
+    //     E: From<OwnableError>,
+    // {
+    //     if instance.get().owner != T::env().caller() {
+    //         return Err(From::from(OwnableError::CallerIsNotOwner))
+    //     }
+    //     body(instance)
+    // }
 
     impl PositionMangerContract {
         #[ink(constructor, payable)]
@@ -276,27 +304,29 @@ struct MintCallbackData {
                 let name = "Crabswap V3 Positions NFT-V1";
                 let symbol = "Crab-V3-POS";
                 // let version = "1";
-                instance.erc721_permit.nameHash = ink_lang::blake2x256!("Crabswap V3 Positions NFT-V1");
+                instance.erc721_permit.nameHash =
+                    ink_lang::blake2x256!("Crabswap V3 Positions NFT-V1");
                 instance.erc721_permit.versionHash = ink_lang::blake2x256!("1");
                 instance.psp34_base.name = String::from(name);
                 instance.psp34_base.symbol = String::from(symbol);
                 instance._tokenDescriptor = _tokenDescriptor;
-                instance._nextPoolId= 1;
-                instance._nextId= 1;
-                instance._positions= Default::default();
-                instance._poolIdToPoolKey= Default::default();
-                instance._poolIds= Default::default();
+                instance._nextPoolId = 0;
+                instance._nextId = 0;
+                instance._positions = Default::default();
+                instance._poolIdToPoolKey = Default::default();
+                instance._poolIds = Default::default();
             })
         }
 
         /// @dev Caches a pool key
         fn cachePoolKey(&mut self, pool: Address, poolKey: PoolAddress::PoolKey) -> u128 {
-            let mut poolId = match self._poolIds.get(&pool){
-                Some(id)=>id,
-                None=>0,
+            let mut poolId = match self._poolIds.get(&pool) {
+                Some(id) => id,
+                None => 0,
             };
             if poolId == 0 {
-                poolId = self._nextPoolId + 1;
+                self._nextPoolId = self._nextPoolId + 1;
+                poolId = self._nextPoolId;
                 self._poolIds.insert(pool, &poolId);
                 self._poolIdToPoolKey.insert(poolId, &poolKey);
             }
@@ -306,38 +336,97 @@ struct MintCallbackData {
         /// @dev Caches a pool key
         #[ink(message)]
         pub fn testEvent(&mut self) -> u128 {
-            self.env().emit_event(TestEvent{tokenId:1});
+            self.env().emit_event(TestEvent { tokenId: 1 });
             0
         }
     }
 
-
-    // pub token0: Address,
-    // pub token1: Address,
-    // pub fee: Uint24,
-    // pub tickLower: Int24,
-    // pub tickUpper: Int24,
-    // pub amount0Desired: Uint256,
-    // pub amount1Desired: Uint256,
-    // pub amount0Min: Uint256,
-    // pub amount1Min: Uint256,
-    // pub recipient: Address,
-    // pub deadline: Uint256,
     impl PositionManager for PositionMangerContract {
+        /**
+         * @dev Returns whether `spender` is allowed to manage `tokenId`.
+         *
+         * Requirements:
+         *
+         * - `tokenId` must exist.
+         */
+        fn _isApprovedOrOwner(&self, spender: Address, tokenId: u128) -> bool {
+            // require(_exists(tokenId), "ERC721: operator query for nonexistent token");
+            // address owner = ERC721.ownerOf(tokenId);
+            // return (spender == owner || getApproved(tokenId) == spender || ERC721.isApprovedForAll(owner, spender));
+            let tokenId: Id = Id::U128(tokenId);
+            assert!(
+                self._check_token_exists(&tokenId).is_ok(),
+                "ERC721: operator query for nonexistent token"
+            );
+            let owner: Address = self.owner_of(tokenId.clone()).unwrap();
+            spender == owner || self._allowance(&owner, &spender, &Some(tokenId.clone()))
+        }
+
+        #[ink(message)]
+        fn positions(
+            &self,
+            tokenId: u128,
+        ) -> (
+            Uint96,
+            Address,
+            Address,
+            Address,
+            Uint24,
+            Int24,
+            Int24,
+            u128,
+            U256,
+            U256,
+            u128,
+            u128,
+        ) {
+            //Position memory position = _positions[tokenId];
+            // require(position.poolId != 0, 'Invalid token ID');
+            // PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
+            let position: Position = self._positions.get(tokenId).unwrap_or(Default::default());
+            assert!(position.poolId != 0, "Invalid token ID");
+            let poolKey: PoolAddress::PoolKey = self._poolIdToPoolKey.get(position.poolId).unwrap();
+            return (
+                position.nonce,
+                position.operator,
+                poolKey.token0,
+                poolKey.token1,
+                poolKey.fee,
+                position.tickLower,
+                position.tickUpper,
+                position.liquidity,
+                position.feeGrowthInside0LastX128.value,
+                position.feeGrowthInside1LastX128.value,
+                position.tokensOwed0,
+                position.tokensOwed1,
+            );
+        }
+
+        // pub token0: Address,
+        // pub token1: Address,
+        // pub fee: Uint24,
+        // pub tickLower: Int24,
+        // pub tickUpper: Int24,
+        // pub amount0Desired: Uint256,
+        // pub amount1Desired: Uint256,
+        // pub amount0Min: Uint256,
+        // pub amount1Min: Uint256,
+        // pub recipient: Address,
+        // pub deadline: Uint256,
         #[ink(message, payable)]
         fn mint(
             &mut self,
-            token0:Address,
-            token1:Address,
-            fee:Uint24,
-            tickLower:Int24,
-            tickUpper:Int24,
-            amount0Desired:U256,
-            amount1Desired:U256,
-            amount0Min:U256,
-            amount1Min:U256,
-            recipient:Address,
-            deadline:U256,
+            token0: Address,
+            token1: Address,
+            fee: Uint24,
+            tickLower: Int24,
+            tickUpper: Int24,
+            amount0Desired: U256,
+            amount1Desired: U256,
+            amount0Min: U256,
+            amount1Min: U256,
+            recipient: Address,
+            deadline: U256,
         ) -> (
             u128, //tokenId
             u128, //liquidity
@@ -371,29 +460,29 @@ struct MintCallbackData {
                 amount0Desired: Uint256::new_with_u256(amount0Desired),
                 amount1Desired: Uint256::new_with_u256(amount1Desired),
                 amount0Min: Uint256::new_with_u256(amount0Min),
-                amount1Min: Uint256::new_with_u256(amount1Min)
+                amount1Min: Uint256::new_with_u256(amount1Min),
             };
             // uint128 liquidity,uint256 amount0,uint256 amount1,IUniswapV3Pool pool
             let liquidity: u128;
             let amount0: U256;
             let amount1: U256;
-            
+
             (liquidity, amount0, amount1, pool) = self.addLiquidity(addLiquidityParams);
-            ink_env::debug_println!("liquidity:{:?}, amount0:{:?}, amount1:{:?}",liquidity,amount0,amount1);
+            ink_env::debug_println!(
+                "liquidity:{:?}, amount0:{:?}, amount1:{:?}",
+                liquidity,
+                amount0,
+                amount1
+            );
             self._nextId = self._nextId + 1;
             let tokenId = self._nextId;
             self._mint_to(recipient, Id::U128(tokenId)).unwrap();
             // _mint(params.recipient, (tokenId = _nextId++));
             // bytes32 positionKey = PositionKey.compute(address(this), params.tickLower, params.tickUpper);
-            let address_of_this = ink_env::account_id::<DefaultEnvironment>();
             // let positionKey = PositionKey::compute(address_of_this,params.tickLower, params.tickUpper);
             // (, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, , ) = pool.positions(positionKey);
-            let position_info = PoolActionRef::positions(
-                &pool,
-                address_of_this,
-                tickLower,
-                tickUpper,
-            );
+            let position_info =
+                PoolActionRef::positions(&pool, position_manager_address, tickLower, tickUpper);
             let feeGrowthInside0LastX128 = position_info.feeGrowthInside0LastX128;
             let feeGrowthInside1LastX128 = position_info.feeGrowthInside1LastX128;
 
@@ -408,7 +497,7 @@ struct MintCallbackData {
                 token1: token1,
                 fee: fee,
             };
-            let poolId = self.cachePoolKey(address_of_this, pool_key);
+            let poolId = self.cachePoolKey(position_manager_address, pool_key);
 
             // _positions[tokenId] = Position({
             //     nonce: 0,

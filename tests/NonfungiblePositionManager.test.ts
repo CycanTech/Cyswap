@@ -148,14 +148,17 @@ describe('positionManager initialize', () => {
       await positionManagerTx.createAndInitializePoolIfNecessary(token0Address,weth9Contract.address,500,new BN("120621891405341611593710811006"),{value:1000000000});
       await positionManagerTx.mint(token0Address,weth9Contract.address,500,200,10000,1000,1000,10,10,alice.address,10,{value:100000000000});
       let poolAddress = await factoryQuery.getPool(500,token0Address,weth9Contract.address);
-      console.log("poolAddress is:",poolAddress);
+      console.log("poolAddress is:",poolAddress.output?.toHuman());
     }else{
       await positionManagerTx.createAndInitializePoolIfNecessary(weth9Contract.address,token0Address,500,new BN("120621891405341611593710811006"),{value:1000000000});
       await positionManagerTx.mint(weth9Contract.address,token0Address,500,200,10000,1000,1000,10,10,alice.address,10,{value:100000000000});
       let poolAddress = await factoryQuery.getPool(500,weth9Contract.address,token0Address);
       console.log("poolAddress is:",poolAddress.output?.toHuman());
     }
-    
+
+    // await expect(positionManagerQuery.positions(1)).to.
+    let position1 = await positionManagerQuery.positions(1);
+    console.log("position1 is:",position1.output);
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))
     // .to.emit(factoryContract,"PoolCreated")
     // .withArgs(token0,token1,500,10,"0x111");
