@@ -17,5 +17,5 @@ pub trait Descriptor{
     /// @return The URI of the ERC721-compliant metadata
     #[ink(message)]
     // fn tokenURI(&self, tokenId:Uint256) -> String;
-    fn tokenURI(&self,positionManager:Address, tokenId:Uint256) -> String;
+    fn tokenURI(&self,positionManager:Address, tokenId:u128) -> String;
 }

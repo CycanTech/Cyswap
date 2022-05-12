@@ -16,7 +16,7 @@ pub mod PositionDescriptor {
 
     impl Descriptor for PositionDescriptor{
         #[ink(message)]
-        fn tokenURI(&self,positionManager:Address, tokenId:Uint256) -> String{
+        fn tokenURI(&self,positionManager:Address, tokenId:u128) -> String{
             String::from("")
         }
     }

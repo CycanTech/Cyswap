@@ -28,6 +28,7 @@ pub mod position_manager {
     use ink_storage::traits::StorageLayout;
 
     use crabswap::traits::core::factory::*;
+    use crabswap::traits::periphery::position_descriptor::*;
     use ink_env::DefaultEnvironment;
     use ink_prelude::vec::Vec;
     use ink_storage::traits::{SpreadAllocate, SpreadLayout};
@@ -239,8 +240,9 @@ pub mod position_manager {
                 .unwrap();
             }
         }
+
     }
-    
+
     impl PeripheryPaymentsTrait for PositionMangerContract {}
 
     // modifier isAuthorizedForToken(uint256 tokenId) {
@@ -342,6 +344,13 @@ pub mod position_manager {
     }
 
     impl PositionManager for PositionMangerContract {
+        #[ink(message)]
+        fn tokenURI(&self,tokenId:u128)-> String {
+            assert!(self._check_token_exists(&Id::U128(tokenId)).is_ok());
+            let manager_address = ink_env::account_id::<DefaultEnvironment>();
+            return DescriptorRef::tokenURI(&self._tokenDescriptor,manager_address,tokenId);
+        }
+
         /**
          * @dev Returns whether `spender` is allowed to manage `tokenId`.
          *

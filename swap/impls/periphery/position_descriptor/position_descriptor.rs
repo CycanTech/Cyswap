@@ -18,7 +18,7 @@ pub struct PositionDescriptor {
 declare_storage_trait!(PositionDescriptorStorage, PositionDescriptor);
 
 impl<T:PositionDescriptorStorage>  Descriptor for T{
-    default fn tokenURI(&self,positionManager:Address, tokenId:Uint256) -> String{
+    default fn tokenURI(&self,positionManager:Address, tokenId:u128) -> String{
         String::from("")
     }
 }

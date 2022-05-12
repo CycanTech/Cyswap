@@ -2,6 +2,7 @@ use brush::modifier_definition;
 use ink_env::DefaultEnvironment;
 use ink_storage::traits::{SpreadAllocate, SpreadLayout};
 use primitives::{Address, Int24, Uint24, Uint256, Uint96, U256};
+use ink_prelude::string::String;
 
 #[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
@@ -44,6 +45,9 @@ pub struct MintParams {
 /// and authorized.
 #[brush::trait_definition]
 pub trait PositionManager {
+    #[ink(message)]
+    fn tokenURI(&self,tokenId:u128)-> String;
+
     fn _isApprovedOrOwner(&self,spender:Address, tokenId:u128) -> bool;
     /// @notice Returns the position information associated with a given token ID.
     /// @dev Throws if the token ID is not valid.
