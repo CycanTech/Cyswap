@@ -8,6 +8,7 @@ pub mod position_manager {
     // use crabswap::impls::periphery::position_manager::*;
     use brush::contracts::psp34::extensions::burnable::*;
     use brush::contracts::psp34::extensions::mintable::*;
+    use brush::modifiers;
     use crabswap::impls::erc721_permit::*;
     use crabswap::impls::periphery::PeripheryPayments::*;
     use crabswap::impls::pool_initialize::*;
@@ -15,11 +16,15 @@ pub mod position_manager {
     use crabswap::traits::core::pool::PoolActionRef;
     use crabswap::traits::periphery::position_manager::*;
     use crabswap::traits::periphery::LiquidityManagement::*;
+
     use ink_lang::codegen::EmitEvent;
     use ink_lang::codegen::Env;
     use ink_prelude::string::String;
     use ink_storage::Mapping;
+    use libs::core::FixedPoint128;
     use libs::periphery::PoolAddress;
+    use libs::core::Position::Info;
+    use libs::swap::FullMath;
     use primitives::{Int24, Uint128, Uint24, Uint256, Uint80, Uint96, ADDRESS0};
 
     use ink_storage::traits::PackedLayout;
@@ -344,6 +349,108 @@ pub mod position_manager {
     }
 
     impl PositionManager for PositionMangerContract {
+
+        #[ink(message, payable)]
+        #[modifiers(checkDeadline(deadline))]
+        fn increaseLiquidity(&mut self, tokenId: u128,
+            amount0Desired: U256,
+            amount1Desired: U256,
+            amount0Min: U256,
+            amount1Min: U256,
+            deadline: u64,) -> (
+            u128 //liquidity
+            , U256//amount0
+            , U256//amount1
+        ){
+            // Position storage position = _positions[params.tokenId];
+            let params = IncreaseLiquidityParams{
+                tokenId,
+            amount0Desired,
+            amount1Desired,
+            amount0Min,
+            amount1Min,
+            deadline,
+            };
+            let mut position:Position = self._positions.get(params.tokenId).expect("token not in _positions!");
+            // PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
+            let poolKey:PoolAddress::PoolKey = self._poolIdToPoolKey.get(position.poolId).expect("token not in _poolIdToPoolKey!");
+            // IUniswapV3Pool pool;
+            
+            // (liquidity, amount0, amount1, pool) = addLiquidity(
+            //     AddLiquidityParams({
+            //         token0: poolKey.token0,
+            //         token1: poolKey.token1,
+            //         fee: poolKey.fee,
+            //         tickLower: position.tickLower,
+            //         tickUpper: position.tickUpper,
+            //         amount0Desired: params.amount0Desired,
+            //         amount1Desired: params.amount1Desired,
+            //         amount0Min: params.amount0Min,
+            //         amount1Min: params.amount1Min,
+            //         recipient: address(this)
+            //     })
+            // );
+            let address_this = ink_env::account_id::<DefaultEnvironment>();
+            let (liquidity, amount0, amount1, pool) = self.addLiquidity(
+                AddLiquidityParams{
+                    token0: poolKey.token0,
+                    token1: poolKey.token1,
+                    fee: poolKey.fee,
+                    tickLower: position.tickLower,
+                    tickUpper: position.tickUpper,
+                    amount0Desired: Uint256::new_with_u256(params.amount0Desired),
+                    amount1Desired: Uint256::new_with_u256(params.amount1Desired),
+                    amount0Min: Uint256::new_with_u256(params.amount0Min),
+                    amount1Min: Uint256::new_with_u256(params.amount1Min),
+                    recipient: address_this
+                }
+            );
+
+            // bytes32 positionKey = PositionKey.compute(address(this), position.tickLower, position.tickUpper);
+            // let positionKey = PositionKey::compute(address_this, position.tickLower, position.tickUpper);
+
+            // // this is now updated to the current transaction
+            // (, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, , ) = pool.positions(positionKey);
+            let positionInfo:Info = PoolActionRef::positions(&pool,address_this, position.tickLower, position.tickUpper);
+            let feeGrowthInside0LastX128 = positionInfo.feeGrowthInside0LastX128;
+            let feeGrowthInside1LastX128 = positionInfo.feeGrowthInside1LastX128;
+            // position.tokensOwed0 += uint128(
+            //     FullMath.mulDiv(
+            //         feeGrowthInside0LastX128 - position.feeGrowthInside0LastX128,
+            //         position.liquidity,
+            //         FixedPoint128.Q128
+            //     )
+            // );
+            position.tokensOwed0 = position.tokensOwed0 + FullMath::mulDiv(feeGrowthInside0LastX128.value-position.feeGrowthInside0LastX128.value
+                ,U256::from(position.liquidity)
+                ,U256::from(FixedPoint128::Q128)).as_u128();
+            // position.tokensOwed1 += uint128(
+            //     FullMath.mulDiv(
+            //         feeGrowthInside1LastX128 - position.feeGrowthInside1LastX128,
+            //         position.liquidity,
+            //         FixedPoint128.Q128
+            //     )
+            // );
+            position.tokensOwed1 = position.tokensOwed1 + FullMath::mulDiv(feeGrowthInside1LastX128.value-position.feeGrowthInside1LastX128.value
+                ,U256::from(position.liquidity)
+                ,U256::from(FixedPoint128::Q128)).as_u128();
+            // position.feeGrowthInside0LastX128 = feeGrowthInside0LastX128;
+            position.feeGrowthInside0LastX128 = feeGrowthInside0LastX128;
+            // position.feeGrowthInside1LastX128 = feeGrowthInside1LastX128;
+            position.feeGrowthInside1LastX128 = feeGrowthInside1LastX128;
+            // position.liquidity += liquidity;
+            position.liquidity += liquidity;
+            self._positions.insert(params.tokenId,&position);
+            // emit IncreaseLiquidity(params.tokenId, liquidity, amount0, amount1);
+            self.env().emit_event(IncreaseLiquidity {
+                tokenId:params.tokenId,
+                liquidity,
+                amount0,
+                amount1,
+            });
+            (liquidity,amount0,amount1)
+        }
+
         #[ink(message)]
         fn tokenURI(&self,tokenId:u128)-> String {
             assert!(self._check_token_exists(&Id::U128(tokenId)).is_ok());

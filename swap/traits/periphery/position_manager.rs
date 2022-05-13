@@ -1,8 +1,8 @@
 use brush::modifier_definition;
 use ink_env::DefaultEnvironment;
+use ink_prelude::string::String;
 use ink_storage::traits::{SpreadAllocate, SpreadLayout};
 use primitives::{Address, Int24, Uint24, Uint256, Uint96, U256};
-use ink_prelude::string::String;
 
 #[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
@@ -25,6 +25,23 @@ where
     body(instance)
 }
 
+// modifier checkDeadline(uint256 deadline) {
+//     require(_blockTimestamp() <= deadline, 'Transaction too old');
+//     _;
+// }
+
+#[modifier_definition]
+pub fn checkDeadline<T, F, R>(instance: &mut T, body: F, deadline: u64) -> R
+where
+    F: FnOnce(&mut T) -> R,
+{
+    assert!(
+        ink_env::block_timestamp::<DefaultEnvironment>() <= deadline,
+        "Transaction too old"
+    );
+    body(instance)
+}
+
 #[derive(Default, Debug, Decode, Encode, SpreadAllocate, SpreadLayout)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
 pub struct MintParams {
@@ -40,15 +57,54 @@ pub struct MintParams {
     pub recipient: Address,
     pub deadline: Uint256,
 }
+
+// #[derive(Default, Debug, Decode, Encode, SpreadAllocate, SpreadLayout)]
+// #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
+pub struct IncreaseLiquidityParams {
+    pub tokenId: u128,
+    pub amount0Desired: U256,
+    pub amount1Desired: U256,
+    pub amount0Min: U256,
+    pub amount1Min: U256,
+    pub deadline: u64,
+}
+
+// #[derive(Default, Debug, Decode, Encode, SpreadAllocate, SpreadLayout)]
+// #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
+pub struct DecreaseLiquidityParams {
+    pub tokenId: u128,
+    pub liquidity: U256,
+    pub amount0Min: U256,
+    pub amount1Min: U256,
+    pub deadline: U256,
+}
 /// @title Non-fungible token for positions
 /// @notice Wraps CrabSwap V3 positions in a non-fungible token interface which allows for them to be transferred
 /// and authorized.
 #[brush::trait_definition]
 pub trait PositionManager {
     #[ink(message)]
-    fn tokenURI(&self,tokenId:u128)-> String;
+    fn tokenURI(&self, tokenId: u128) -> String;
 
-    fn _isApprovedOrOwner(&self,spender:Address, tokenId:u128) -> bool;
+    /// @notice Increases the amount of liquidity in a position, with tokens paid by the `msg.sender`
+    /// @param params tokenId The ID of the token for which liquidity is being increased,
+    /// amount0Desired The desired amount of token0 to be spent,
+    /// amount1Desired The desired amount of token1 to be spent,
+    /// amount0Min The minimum amount of token0 to spend, which serves as a slippage check,
+    /// amount1Min The minimum amount of token1 to spend, which serves as a slippage check,
+    /// deadline The time by which the transaction must be included to effect the change
+    /// @return liquidity The new liquidity amount as a result of the increase
+    /// @return amount0 The amount of token0 to acheive resulting liquidity
+    /// @return amount1 The amount of token1 to acheive resulting liquidity
+    #[ink(message, payable)]
+    fn increaseLiquidity(&mut self, tokenId: u128,
+        amount0Desired: U256,
+        amount1Desired: U256,
+        amount0Min: U256,
+        amount1Min: U256,
+        deadline: u64,) -> (u128, U256, U256);
+
+    fn _isApprovedOrOwner(&self, spender: Address, tokenId: u128) -> bool;
     /// @notice Returns the position information associated with a given token ID.
     /// @dev Throws if the token ID is not valid.
     /// @param tokenId The ID of the token that represents the position
@@ -65,7 +121,10 @@ pub trait PositionManager {
     /// @return tokensOwed0 The uncollected amount of token0 owed to the position as of the last computation
     /// @return tokensOwed1 The uncollected amount of token1 owed to the position as of the last computation
     #[ink(message)]
-    fn positions(&self,tokenId: u128,) -> (
+    fn positions(
+        &self,
+        tokenId: u128,
+    ) -> (
         Uint96,
         Address,
         Address,

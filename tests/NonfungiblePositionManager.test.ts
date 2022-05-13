@@ -158,7 +158,14 @@ describe('positionManager initialize', () => {
 
     // await expect(positionManagerQuery.positions(1)).to.
     let position1 = await positionManagerQuery.positions(1);
-    console.log("position1 is:",position1.output);
+    console.log("position1 is:",position1.output?.[2].toHuman());
+    // interface IncreaseLiquidityParams{
+    //   tokenId:Number,amount0Desired:Number,amount1Desired:Number,amount0Min:Number,amount1Min:Number,deadline:Number,
+    // };
+    // let increaseParam:IncreaseLiquidityParams={
+    //   tokenId:1,amount0Desired:100,amount1Desired:100,amount0Min:10,amount1Min:10,deadline:111111,
+    // };
+    await positionManagerTx.increaseLiquidity(1,100,100,1,1,9652429262733);
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))
     // .to.emit(factoryContract,"PoolCreated")
     // .withArgs(token0,token1,500,10,"0x111");
