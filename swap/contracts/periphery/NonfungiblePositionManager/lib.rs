@@ -23,7 +23,7 @@ pub mod position_manager {
     use ink_storage::Mapping;
     use libs::core::FixedPoint128;
     use libs::core::Position::Info;
-    use libs::periphery::{PoolAddress};
+    use libs::periphery::PoolAddress;
     use libs::swap::FullMath;
     use primitives::{Int24, Uint128, Uint24, Uint256, Uint80, Uint96, ADDRESS0};
 
@@ -93,7 +93,7 @@ pub mod position_manager {
         #[PSP34BaseStorageField]
         psp34_base: PSP34BaseData,
 
-        factory:Option<Address>,
+        factory: Option<Address>,
 
         // /// @dev IDs of pools assigned by this contract
         // mapping(address => uint80) private _poolIds;
@@ -472,7 +472,7 @@ pub mod position_manager {
         }
 
         #[ink(message)]
-        fn setFactory(&mut self, factory: Address){
+        fn setFactory(&mut self, factory: Address) {
             self.factory = Some(factory);
         }
 
@@ -489,7 +489,7 @@ pub mod position_manager {
             amount1Min: U256,
             deadline: u64,
         ) -> (U256, U256) {
-            let params = DecreaseLiquidityParams{
+            let params = DecreaseLiquidityParams {
                 tokenId,
                 liquidity,
                 amount0Min,
@@ -497,30 +497,53 @@ pub mod position_manager {
                 deadline,
             };
             // require(params.liquidity > 0);
-            assert!(liquidity > 0,"liquidity must big than 0!");
+            assert!(liquidity > 0, "liquidity must big than 0!");
 
             // Position storage position = _positions[params.tokenId];
-            let mut position:Position = self._positions.get(tokenId).expect("tokenId not in _positions!");
+            let mut position: Position = self
+                ._positions
+                .get(tokenId)
+                .expect("tokenId not in _positions!");
             // uint128 positionLiquidity = position.liquidity;
-            let positionLiquidity:u128 = position.liquidity;
+            let positionLiquidity: u128 = position.liquidity;
             // require(positionLiquidity >= params.liquidity);
-            assert!(U256::from(positionLiquidity) >= U256::from(params.liquidity),"positionLiquidity must bt params.liquidity");
+            assert!(
+                U256::from(positionLiquidity) >= U256::from(params.liquidity),
+                "positionLiquidity must bt params.liquidity"
+            );
             // PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
-            let poolKey:PoolAddress::PoolKey = self._poolIdToPoolKey.get(position.poolId).expect("poolId not in _poolIdToPoolKey!");
+            let poolKey: PoolAddress::PoolKey = self
+                ._poolIdToPoolKey
+                .get(position.poolId)
+                .expect("poolId not in _poolIdToPoolKey!");
             // IUniswapV3Pool pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
             let factoryAddress = self.factory.expect("factory not set");
-            let pool:Address = FactoryRef::get_pool(&factoryAddress,poolKey.fee,poolKey.token0, poolKey.token1);
+            let pool: Address =
+                FactoryRef::get_pool(&factoryAddress, poolKey.fee, poolKey.token0, poolKey.token1);
 
             // (amount0, amount1) = pool.burn(position.tickLower, position.tickUpper, params.liquidity);
-            let (amount0,amount1) = PoolActionRef::burn(&pool,position.tickLower,position.tickUpper, params.liquidity);
+            let (amount0, amount1) = PoolActionRef::burn(
+                &pool,
+                position.tickLower,
+                position.tickUpper,
+                params.liquidity,
+            );
             // require(amount0 >= params.amount0Min && amount1 >= params.amount1Min, 'Price slippage check');
-            assert!(amount0 >= params.amount0Min && amount1 >= params.amount1Min, "Price slippage check");
+            assert!(
+                amount0 >= params.amount0Min && amount1 >= params.amount1Min,
+                "Price slippage check"
+            );
             // bytes32 positionKey = PositionKey.compute(address(this), position.tickLower, position.tickUpper);
             let address_this = ink_env::account_id::<DefaultEnvironment>();
             // let positionKey = PositionKey::compute(address_this, position.tickLower, position.tickUpper);
             // // this is now updated to the current transaction
             // (, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, , ) = pool.positions(positionKey);
-            let pool_info = PoolActionRef::positions(&pool,address_this, position.tickLower, position.tickUpper);
+            let pool_info = PoolActionRef::positions(
+                &pool,
+                address_this,
+                position.tickLower,
+                position.tickUpper,
+            );
             let feeGrowthInside0LastX128 = pool_info.feeGrowthInside0LastX128;
             let feeGrowthInside1LastX128 = pool_info.feeGrowthInside1LastX128;
             // position.tokensOwed0 +=
@@ -532,11 +555,13 @@ pub mod position_manager {
             //             FixedPoint128.Q128
             //         )
             //     );
-            position.tokensOwed0 += amount0.as_u128()+FullMath::mulDiv(
-                            feeGrowthInside0LastX128.value - position.feeGrowthInside0LastX128.value,
-                            U256::from(positionLiquidity),
-                            U256::from(FixedPoint128::Q128)
-                        ).as_u128();
+            position.tokensOwed0 += amount0.as_u128()
+                + FullMath::mulDiv(
+                    feeGrowthInside0LastX128.value - position.feeGrowthInside0LastX128.value,
+                    U256::from(positionLiquidity),
+                    U256::from(FixedPoint128::Q128),
+                )
+                .as_u128();
             // position.tokensOwed1 +=
             //     uint128(amount1) +
             //     uint128(
@@ -546,11 +571,13 @@ pub mod position_manager {
             //             FixedPoint128.Q128
             //         )
             //     );
-            position.tokensOwed1 += amount1.as_u128()+FullMath::mulDiv(
-                feeGrowthInside1LastX128.value - position.feeGrowthInside1LastX128.value,
-                U256::from(positionLiquidity),
-                U256::from(FixedPoint128::Q128)
-            ).as_u128();
+            position.tokensOwed1 += amount1.as_u128()
+                + FullMath::mulDiv(
+                    feeGrowthInside1LastX128.value - position.feeGrowthInside1LastX128.value,
+                    U256::from(positionLiquidity),
+                    U256::from(FixedPoint128::Q128),
+                )
+                .as_u128();
             // position.feeGrowthInside0LastX128 = feeGrowthInside0LastX128;
             position.feeGrowthInside0LastX128 = feeGrowthInside0LastX128;
             // position.feeGrowthInside1LastX128 = feeGrowthInside1LastX128;
@@ -558,7 +585,7 @@ pub mod position_manager {
             // // subtraction is safe because we checked positionLiquidity is gte params.liquidity
             // position.liquidity = positionLiquidity - params.liquidity;
             position.liquidity = positionLiquidity - params.liquidity;
-            self._positions.insert(tokenId,&position);
+            self._positions.insert(tokenId, &position);
             // emit DecreaseLiquidity(params.tokenId, params.liquidity, amount0, amount1);
             self.env().emit_event(DecreaseLiquidity {
                 tokenId: params.tokenId,
@@ -566,7 +593,7 @@ pub mod position_manager {
                 amount0,
                 amount1,
             });
-            (amount0,amount1)
+            (amount0, amount1)
         }
 
         #[ink(message)]
@@ -773,6 +800,134 @@ pub mod position_manager {
             // emit IncreaseLiquidity(tokenId, liquidity, amount0, amount1);
             (tokenId, liquidity, amount0, amount1)
         }
+
+        #[ink(message, payable)]
+        #[modifiers(isAuthorizedForToken(tokenId))]
+        fn collect(
+            &mut self,
+            tokenId: u128,
+            recipient: Address,
+            amount0Max: u128,
+            amount1Max: u128,
+        ) -> (U256, U256){
+            let params = CollectParams{
+                tokenId,
+                recipient,
+                amount0Max,
+                amount1Max,
+            };
+            // require(params.amount0Max > 0 || params.amount1Max > 0);
+            assert!(params.amount0Max > 0 || params.amount1Max > 0,"input must be position!");
+            // // allow collecting to the nft position manager address with address 0
+            // address recipient = params.recipient == address(0) ? address(this) : params.recipient;
+            let recipient:Address;
+            if params.recipient == ADDRESS0.into(){
+                recipient = ink_env::account_id::<DefaultEnvironment>();
+            }else{
+                recipient = params.recipient;
+            }
+
+            // Position storage position = _positions[params.tokenId];
+            let position:Position = self._positions.get(params.tokenId).expect("tokenId not exist!");
+
+            // PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
+            let poolKey:PoolAddress::PoolKey = self._poolIdToPoolKey.get(position.poolId).expect("pooId not exist!");
+
+            // IUniswapV3Pool pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
+            let factoryAddress = self.factory.expect("factory not set");
+            let pool: Address =
+                FactoryRef::get_pool(&factoryAddress, poolKey.fee, poolKey.token0, poolKey.token1);
+            // (uint128 tokensOwed0, uint128 tokensOwed1) = (position.tokensOwed0, position.tokensOwed1);
+            let (tokensOwed0, tokensOwed1) = (position.tokensOwed0, position.tokensOwed1);
+            // // trigger an update of the position fees owed and fee growth snapshots if it has any liquidity
+            // if (position.liquidity > 0) {
+            //     pool.burn(position.tickLower, position.tickUpper, 0);
+            //     (, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, , ) =
+            //         pool.positions(PositionKey.compute(address(this), position.tickLower, position.tickUpper));
+            let address_of_this = ink_env::account_id::<DefaultEnvironment>();
+            if position.liquidity > 0 {
+                PoolActionRef::burn(&pool,position.tickLower, position.tickUpper, 0);
+                let position_info =
+                    PoolActionRef::positions(&pool,address_of_this, position.tickLower, position.tickUpper);
+                let feeGrowthInside0LastX128 = position_info.feeGrowthInside0LastX128;
+                let feeGrowthInside1LastX128 = position_info.feeGrowthInside1LastX128;
+                //     tokensOwed0 += uint128(
+                //         FullMath.mulDiv(
+                //             feeGrowthInside0LastX128 - position.feeGrowthInside0LastX128,
+                //             position.liquidity,
+                //             FixedPoint128.Q128
+                //         )
+                //     );
+                tokensOwed0+=FullMath::mulDiv(
+                                feeGrowthInside0LastX128.value - position.feeGrowthInside0LastX128.value,
+                                U256::from(position.liquidity),
+                                U256::from(FixedPoint128::Q128)
+                            ).as_u128();
+                //     tokensOwed1 += uint128(
+                //         FullMath.mulDiv(
+                //             feeGrowthInside1LastX128 - position.feeGrowthInside1LastX128,
+                //             position.liquidity,
+                //             FixedPoint128.Q128
+                //         )
+                //     );
+                tokensOwed1+=FullMath::mulDiv(
+                    feeGrowthInside1LastX128.value - position.feeGrowthInside1LastX128.value,
+                    U256::from(position.liquidity),
+                    U256::from(FixedPoint128::Q128)
+                ).as_u128();
+                //     position.feeGrowthInside0LastX128 = feeGrowthInside0LastX128;
+                //     position.feeGrowthInside1LastX128 = feeGrowthInside1LastX128;
+                position.feeGrowthInside0LastX128 = feeGrowthInside0LastX128;
+                position.feeGrowthInside1LastX128 = feeGrowthInside1LastX128;
+
+            }
+
+            // // compute the arguments to give to the pool#collect method
+            // (uint128 amount0Collect, uint128 amount1Collect) =
+            //     (
+            //         params.amount0Max > tokensOwed0 ? tokensOwed0 : params.amount0Max,
+            //         params.amount1Max > tokensOwed1 ? tokensOwed1 : params.amount1Max
+            //     );
+            let (amount0Collect, amount1Collect) = (
+                    if params.amount0Max > tokensOwed0{
+                        tokensOwed0
+                    }else{
+                        params.amount0Max
+                    },
+                    if params.amount1Max > tokensOwed1 {
+                        tokensOwed1
+                    }else{
+                        params.amount1Max
+                    }
+                );
+            // // the actual amounts collected are returned
+            // (amount0, amount1) = pool.collect(
+            //     recipient,
+            //     position.tickLower,
+            //     position.tickUpper,
+            //     amount0Collect,
+            //     amount1Collect
+            // );
+            let (amount0, amount1) = PoolActionRef::collect(&pool,recipient,
+                    position.tickLower,
+                    position.tickUpper,
+                    amount0Collect,
+                    amount1Collect);
+            // // sometimes there will be a few less wei than expected due to rounding down in core, but we just subtract the full amount expected
+            // // instead of the actual amount so we can burn the token
+            // (position.tokensOwed0, position.tokensOwed1) = (tokensOwed0 - amount0Collect, tokensOwed1 - amount1Collect);
+            position.tokensOwed0 = tokensOwed0 - amount0Collect;
+            position.tokensOwed1 = tokensOwed1 - amount1Collect;
+            self._positions.insert(params.tokenId,&position);
+            // emit Collect(params.tokenId, recipient, amount0Collect, amount1Collect);
+            self.env().emit_event(Collect {
+                tokenId:params.tokenId,
+                recipient,
+                amount0,
+                amount1,
+            });
+            (amount0,amount1)
+        }
     }
 
     /// Event emitted when a token transfer occurs.
@@ -786,6 +941,21 @@ pub mod position_manager {
         id: Id,
     }
 
+    /// @notice Emitted when tokens are collected for a position NFT
+    /// @dev The amounts reported may not be exactly equivalent to the amounts transferred, due to rounding behavior
+    /// @param tokenId The ID of the token for which underlying tokens were collected
+    /// @param recipient The address of the account that received the collected tokens
+    /// @param amount0 The amount of token0 owed to the position that was collected
+    /// @param amount1 The amount of token1 owed to the position that was collected
+    // event Collect(uint256 indexed tokenId, address recipient, uint256 amount0, uint256 amount1);
+    #[ink(event)]
+    pub struct Collect{
+        #[ink(topic)]
+        tokenId:u128,
+        recipient:Address,
+        amount0:U256,
+        amount1:U256,
+    }
     /// Event emitted when a token approve occurs.
     #[ink(event)]
     pub struct Approval {

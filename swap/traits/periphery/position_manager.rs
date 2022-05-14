@@ -78,6 +78,13 @@ pub struct DecreaseLiquidityParams {
     pub amount1Min: U256,
     pub deadline: u64,
 }
+
+pub struct CollectParams {
+    pub tokenId: u128,
+    pub recipient: Address,
+    pub amount0Max: u128,
+    pub amount1Max: u128,
+}
 /// @title Non-fungible token for positions
 /// @notice Wraps CrabSwap V3 positions in a non-fungible token interface which allows for them to be transferred
 /// and authorized.
@@ -100,12 +107,15 @@ pub trait PositionManager {
     /// @return amount0 The amount of token0 to acheive resulting liquidity
     /// @return amount1 The amount of token1 to acheive resulting liquidity
     #[ink(message, payable)]
-    fn increaseLiquidity(&mut self, tokenId: u128,
+    fn increaseLiquidity(
+        &mut self,
+        tokenId: u128,
         amount0Desired: U256,
         amount1Desired: U256,
         amount0Min: U256,
         amount1Min: U256,
-        deadline: u64,) -> (u128, U256, U256);
+        deadline: u64,
+    ) -> (u128, U256, U256);
 
     /// @notice Decreases the amount of liquidity in a position and accounts it to the position
     /// @param params tokenId The ID of the token for which liquidity is being decreased,
@@ -115,13 +125,15 @@ pub trait PositionManager {
     /// deadline The time by which the transaction must be included to effect the change
     /// @return amount0 The amount of token0 accounted to the position's tokens owed
     /// @return amount1 The amount of token1 accounted to the position's tokens owed
-    #[ink(message,payable)]
-    fn decreaseLiquidity(&mut self,tokenId: u128,
+    #[ink(message, payable)]
+    fn decreaseLiquidity(
+        &mut self,
+        tokenId: u128,
         liquidity: u128,
         amount0Min: U256,
         amount1Min: U256,
-        deadline: u64,)
-        -> (U256, U256);
+        deadline: u64,
+    ) -> (U256, U256);
 
     fn _isApprovedOrOwner(&self, spender: Address, tokenId: u128) -> bool;
     /// @notice Returns the position information associated with a given token ID.
@@ -186,4 +198,20 @@ pub trait PositionManager {
         U256, //amount0
         U256, //amount1
     );
+
+    /// @notice Collects up to a maximum amount of fees owed to a specific position to the recipient
+    /// @param params tokenId The ID of the NFT for which tokens are being collected,
+    /// recipient The account that should receive the tokens,
+    /// amount0Max The maximum amount of token0 to collect,
+    /// amount1Max The maximum amount of token1 to collect
+    /// @return amount0 The amount of fees collected in token0
+    /// @return amount1 The amount of fees collected in token1
+    #[ink(message, payable)]
+    fn collect(
+        &mut self,
+        tokenId: u128,
+        recipient: Address,
+        amount0Max: u128,
+        amount1Max: u128,
+    ) -> (U256, U256);
 }
