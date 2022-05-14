@@ -19,7 +19,7 @@ where
 {
     let spender = ink_env::caller::<DefaultEnvironment>();
     assert!(
-        !instance._isApprovedOrOwner(spender, tokenId),
+        instance._isApprovedOrOwner(spender, tokenId),
         "Not approved"
     );
     body(instance)
@@ -73,10 +73,10 @@ pub struct IncreaseLiquidityParams {
 // #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
 pub struct DecreaseLiquidityParams {
     pub tokenId: u128,
-    pub liquidity: U256,
+    pub liquidity: u128,
     pub amount0Min: U256,
     pub amount1Min: U256,
-    pub deadline: U256,
+    pub deadline: u64,
 }
 /// @title Non-fungible token for positions
 /// @notice Wraps CrabSwap V3 positions in a non-fungible token interface which allows for them to be transferred
@@ -85,6 +85,9 @@ pub struct DecreaseLiquidityParams {
 pub trait PositionManager {
     #[ink(message)]
     fn tokenURI(&self, tokenId: u128) -> String;
+
+    #[ink(message)]
+    fn setFactory(&mut self, factory: Address);
 
     /// @notice Increases the amount of liquidity in a position, with tokens paid by the `msg.sender`
     /// @param params tokenId The ID of the token for which liquidity is being increased,
@@ -103,6 +106,22 @@ pub trait PositionManager {
         amount0Min: U256,
         amount1Min: U256,
         deadline: u64,) -> (u128, U256, U256);
+
+    /// @notice Decreases the amount of liquidity in a position and accounts it to the position
+    /// @param params tokenId The ID of the token for which liquidity is being decreased,
+    /// amount The amount by which liquidity will be decreased,
+    /// amount0Min The minimum amount of token0 that should be accounted for the burned liquidity,
+    /// amount1Min The minimum amount of token1 that should be accounted for the burned liquidity,
+    /// deadline The time by which the transaction must be included to effect the change
+    /// @return amount0 The amount of token0 accounted to the position's tokens owed
+    /// @return amount1 The amount of token1 accounted to the position's tokens owed
+    #[ink(message,payable)]
+    fn decreaseLiquidity(&mut self,tokenId: u128,
+        liquidity: u128,
+        amount0Min: U256,
+        amount1Min: U256,
+        deadline: u64,)
+        -> (U256, U256);
 
     fn _isApprovedOrOwner(&self, spender: Address, tokenId: u128) -> bool;
     /// @notice Returns the position information associated with a given token ID.

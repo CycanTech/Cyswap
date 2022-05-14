@@ -85,17 +85,13 @@ describe('positionManager initialize', () => {
   it('test position manager mint',async () =>{
     await api.isReady;
     const {defaultSigner:defaultSigner1,alice:alice1, query:factoryQuery,tx:factoryTx,contract:factoryContract,abi:factoryAbi} = await setupContract("factory","new");
-    console.log("factory is:",1);
     console.log("defaultSigner is:",defaultSigner1.address.toString());
     console.log("alice1 is:",alice1.address.toString());
     const { contract:weth9Contract} = await setupContract('weth9_contract','new','weth9','weth9');
-    console.log("factory is:",2);
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
     const { contract:positionDescriptor} = await setupContract('NonfungibleTokenPositionDescriptor','new',weth9Contract.address,"_nativeCurrencyLabelBytes");
-    console.log("factory is:",3);
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
     const { query:positionManagerQuery,tx:positionManagerTx,alice,defaultSigner,contract:positionMangerContract } = await setupContract('NonfungiblePositionManager','new',factoryContract.address,weth9Contract.address,positionDescriptor.address,{value:1000000000});
-    console.log("factory is:",4);
     const { contract:CHECoinContract,tx:cheCoinTx} = await setupContract('stable_coin_contract','new',"CHE","CHE");
     const { contract:AAACoinContract,tx:AAACoinTx} = await setupContract('stable_coin_contract','new',"AAA","AAA");
       // &mut self,token0: AccountId,token1: AccountId,fee: u32,sqrt_price_x96: Uint160,) -> Address 
@@ -166,6 +162,9 @@ describe('positionManager initialize', () => {
     //   tokenId:1,amount0Desired:100,amount1Desired:100,amount0Min:10,amount1Min:10,deadline:111111,
     // };
     await positionManagerTx.increaseLiquidity(1,100,100,1,1,9652429262733);
+    // tokenId: u128,liquidity: u128,amount0Min: U256,amount1Min: U256,deadline: u64,
+    await positionManagerTx.setFactory(factoryContract.address);
+    await positionManagerTx.decreaseLiquidity(1,100,1,1,9652429262733);
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))
     // .to.emit(factoryContract,"PoolCreated")
     // .withArgs(token0,token1,500,10,"0x111");
