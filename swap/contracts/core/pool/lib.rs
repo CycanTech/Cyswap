@@ -8,8 +8,6 @@ pub mod crab_swap_pool {
     use ink_env::DefaultEnvironment;
     use ink_lang::codegen::Env;
     use ink_prelude::vec::Vec;
-    #[cfg(feature = "std")]
-    use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
     use ink_storage::traits::SpreadAllocate;
     use ink_storage::{
         traits::{PackedLayout, SpreadLayout, StorageLayout},
@@ -19,22 +17,17 @@ pub mod crab_swap_pool {
         core::{oracle::Observations, TickMath,Position,SqrtPriceMath,LiquidityMath,Tick,TickBitmap},
         get_tick_at_sqrt_ratio,
     };
-    use primitives::{Int24, Uint160, U160, U256,Int256, Uint256};
+    use primitives::{Int24, Uint160, U160, U256,Int256, Uint256, Address};
     use scale::{Decode, Encode};
-    type Address = AccountId;
     type Uint24 = u32;
     use ink_lang::codegen::EmitEvent;
     use brush::contracts::psp22::extensions::metadata::*;
     use brush::modifiers;
     use crabswap::traits::periphery::LiquidityManagement::*;
     use ink_env::{
-        call::{
-            build_call,
-            Call,
-            ExecutionInput,
-        },
         CallFlags,
     };
+    use ink_prelude::vec;
     // accumulated protocol fees in token0/token1 units
     #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
     #[cfg_attr(feature = "std", derive(StorageLayout))]
@@ -140,6 +133,91 @@ pub mod crab_swap_pool {
     }
 
     impl PoolAction for PoolContract {
+        // function collect(
+        //     address recipient,
+        //     int24 tickLower,
+        //     int24 tickUpper,
+        //     uint128 amount0Requested,
+        //     uint128 amount1Requested
+        // ) external override lock returns (uint128 amount0, uint128 amount1) {
+        // }
+        #[ink(message)]
+        #[modifiers(lock)]
+        fn collect(
+            &mut self,
+            recipient: Address,
+            tickLower: Int24,
+            tickUpper: Int24,
+            amount0Requested: u128,
+            amount1Requested: u128,
+        ) -> (u128, u128){
+            //     // we don't need to checkTicks here, because invalid positions will never have non-zero tokensOwed{0,1}
+            //     Position.Info storage position = positions.get(msg.sender, tickLower, tickUpper);
+            ink_env::debug_println!("^^^^^^^^^^^^^^^^1");
+            let msg_sender:AccountId = ink_env::caller::<DefaultEnvironment>();
+            ink_env::debug_println!("^^^^^^^^^^^^^^^^2");
+            let mut position:Position::Info = self.positions.get((msg_sender, tickLower, tickUpper)).expect("position is not exist!");
+            ink_env::debug_println!("^^^^^^^^^^^^^^^^3");
+            //     amount0 = amount0Requested > position.tokensOwed0 ? position.tokensOwed0 : amount0Requested;
+            //     amount1 = amount1Requested > position.tokensOwed1 ? position.tokensOwed1 : amount1Requested;
+            let amount0 = if amount0Requested > position.tokensOwed0 {
+                position.tokensOwed0
+            }else{
+                amount0Requested
+            };
+            ink_env::debug_println!("^^^^^^^^^^^^^^^^4");
+            let amount1 = if amount1Requested > position.tokensOwed1{
+                position.tokensOwed1
+            }else{
+                amount1Requested
+            };
+            ink_env::debug_println!("^^^^^^^^^^^^^^^^5");
+            //     if (amount0 > 0) {
+            //         position.tokensOwed0 -= amount0;
+            //         TransferHelper.safeTransfer(token0, recipient, amount0);
+            //     }
+            if amount0 > 0 {
+                ink_env::debug_println!("^^^^^^^^^^^^^^^^6");
+                position.tokensOwed0 -= amount0;
+                ink_env::debug_println!("^^^^^^^^^^^^^^^^7");
+                // TransferHelper::safeTransfer instead of transfer of PSP22.
+                PSP22Ref::transfer(&mut self.token0, recipient, amount0, vec![0u8]).expect("token0 transfer error!");
+                ink_env::debug_println!("^^^^^^^^^^^^^^^^8");
+            }
+            //     if (amount1 > 0) {
+            //         position.tokensOwed1 -= amount1;
+            //         TransferHelper.safeTransfer(token1, recipient, amount1);
+            //     }
+            if amount1 > 0 {
+                ink_env::debug_println!("^^^^^^^^^^^^^^^^9");
+                position.tokensOwed1 -= amount1;
+                ink_env::debug_println!("^^^^^^^^^^^^^^^^10");
+                PSP22Ref::transfer(&mut self.token1, recipient, amount1, vec![0u8]).expect("token1 transfer error!");
+                ink_env::debug_println!("^^^^^^^^^^^^^^^^11");
+            }
+            //     emit Collect(msg.sender, recipient, tickLower, tickUpper, amount0, amount1);
+            self.env().emit_event(Collect { 
+                owner:msg_sender,
+                recipient,
+                tickLower,
+                tickUpper,
+                amount0,
+                amount1,
+            });
+            // ink_lang::codegen::EmitEvent::<PoolContract>::emit_event(self.env(), Collect { 
+            //         owner:msg_sender,
+            //         recipient,
+            //         tickLower,
+            //         tickUpper,
+            //         amount0,
+            //         amount1,
+            //     });
+            ink_env::debug_println!("^^^^^^^^^^^^^^^^12");
+            self.positions.insert((msg_sender, tickLower, tickUpper),&position);
+            ink_env::debug_println!("^^^^^^^^^^^^^^^^13");
+            (amount0,amount1)
+        }
+
         /// @inheritdoc IUniswapV3PoolActions
         /// @dev not locked because it initializes unlocked
         // #[ink(message, payable)]
@@ -344,6 +422,26 @@ pub mod crab_swap_pool {
         amount: u128,
         amount0: U256,
         amount1: U256,
+    }
+
+    /// @notice Emitted when fees are collected by the owner of a position
+    /// @dev Collect events may be emitted with zero amount0 and amount1 when the caller chooses not to collect fees
+    /// @param owner The owner of the position for which fees are collected
+    /// @param tickLower The lower tick of the position
+    /// @param tickUpper The upper tick of the position
+    /// @param amount0 The amount of token0 fees collected
+    /// @param amount1 The amount of token1 fees collected
+    #[ink(event)]
+    pub struct Collect{
+        #[ink(topic)]
+        owner:Address,
+        recipient:Address,
+        #[ink(topic)]
+        tickLower:Int24,
+        #[ink(topic)]
+        tickUpper:Int24,
+        amount0:u128,
+        amount1:u128,
     }
 
     struct ModifyPositionParams {

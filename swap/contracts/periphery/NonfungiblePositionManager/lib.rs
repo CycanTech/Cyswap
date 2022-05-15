@@ -695,7 +695,6 @@ pub mod position_manager {
             U256, //amount1
         ) {
             // IUniswapV3Pool pool;
-            let pool: Address;
             // (liquidity, amount0, amount1, pool) = addLiquidity(
             //     AddLiquidityParams({
             //         token0: params.token0,
@@ -817,40 +816,50 @@ pub mod position_manager {
                 amount1Max,
             };
             // require(params.amount0Max > 0 || params.amount1Max > 0);
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$1");
             assert!(params.amount0Max > 0 || params.amount1Max > 0,"input must be position!");
             // // allow collecting to the nft position manager address with address 0
             // address recipient = params.recipient == address(0) ? address(this) : params.recipient;
-            let recipient:Address;
-            if params.recipient == ADDRESS0.into(){
-                recipient = ink_env::account_id::<DefaultEnvironment>();
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$2");
+            let recipient:Address = if params.recipient == ADDRESS0.into(){
+                ink_env::account_id::<DefaultEnvironment>()
             }else{
-                recipient = params.recipient;
-            }
-
+                params.recipient
+            };
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$3");
             // Position storage position = _positions[params.tokenId];
-            let position:Position = self._positions.get(params.tokenId).expect("tokenId not exist!");
-
+            let mut position:Position = self._positions.get(params.tokenId).expect("tokenId not exist!");
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$4");
             // PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
             let poolKey:PoolAddress::PoolKey = self._poolIdToPoolKey.get(position.poolId).expect("pooId not exist!");
-
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$5");
             // IUniswapV3Pool pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
             let factoryAddress = self.factory.expect("factory not set");
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$6");
             let pool: Address =
                 FactoryRef::get_pool(&factoryAddress, poolKey.fee, poolKey.token0, poolKey.token1);
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$7");
             // (uint128 tokensOwed0, uint128 tokensOwed1) = (position.tokensOwed0, position.tokensOwed1);
-            let (tokensOwed0, tokensOwed1) = (position.tokensOwed0, position.tokensOwed1);
+            let (mut tokensOwed0,mut tokensOwed1) = (position.tokensOwed0, position.tokensOwed1);
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$8");
             // // trigger an update of the position fees owed and fee growth snapshots if it has any liquidity
             // if (position.liquidity > 0) {
             //     pool.burn(position.tickLower, position.tickUpper, 0);
             //     (, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, , ) =
             //         pool.positions(PositionKey.compute(address(this), position.tickLower, position.tickUpper));
             let address_of_this = ink_env::account_id::<DefaultEnvironment>();
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$9");
             if position.liquidity > 0 {
+                ink_env::debug_println!("$$$$$$$$$$$$$$$$$10");
                 PoolActionRef::burn(&pool,position.tickLower, position.tickUpper, 0);
+                ink_env::debug_println!("$$$$$$$$$$$$$$$$$11");
                 let position_info =
                     PoolActionRef::positions(&pool,address_of_this, position.tickLower, position.tickUpper);
+                ink_env::debug_println!("$$$$$$$$$$$$$$$$$11");
                 let feeGrowthInside0LastX128 = position_info.feeGrowthInside0LastX128;
+                ink_env::debug_println!("$$$$$$$$$$$$$$$$$12");
                 let feeGrowthInside1LastX128 = position_info.feeGrowthInside1LastX128;
+                ink_env::debug_println!("$$$$$$$$$$$$$$$$$13");
                 //     tokensOwed0 += uint128(
                 //         FullMath.mulDiv(
                 //             feeGrowthInside0LastX128 - position.feeGrowthInside0LastX128,
@@ -863,6 +872,7 @@ pub mod position_manager {
                                 U256::from(position.liquidity),
                                 U256::from(FixedPoint128::Q128)
                             ).as_u128();
+                            ink_env::debug_println!("$$$$$$$$$$$$$$$$$14");
                 //     tokensOwed1 += uint128(
                 //         FullMath.mulDiv(
                 //             feeGrowthInside1LastX128 - position.feeGrowthInside1LastX128,
@@ -875,11 +885,12 @@ pub mod position_manager {
                     U256::from(position.liquidity),
                     U256::from(FixedPoint128::Q128)
                 ).as_u128();
+                ink_env::debug_println!("$$$$$$$$$$$$$$$$$15");
                 //     position.feeGrowthInside0LastX128 = feeGrowthInside0LastX128;
                 //     position.feeGrowthInside1LastX128 = feeGrowthInside1LastX128;
                 position.feeGrowthInside0LastX128 = feeGrowthInside0LastX128;
                 position.feeGrowthInside1LastX128 = feeGrowthInside1LastX128;
-
+                ink_env::debug_println!("$$$$$$$$$$$$$$$$$16");
             }
 
             // // compute the arguments to give to the pool#collect method
@@ -900,6 +911,7 @@ pub mod position_manager {
                         params.amount1Max
                     }
                 );
+                ink_env::debug_println!("$$$$$$$$$$$$$$$$$17");
             // // the actual amounts collected are returned
             // (amount0, amount1) = pool.collect(
             //     recipient,
@@ -913,12 +925,17 @@ pub mod position_manager {
                     position.tickUpper,
                     amount0Collect,
                     amount1Collect);
+                    ink_env::debug_println!("$$$$$$$$$$$$$$$$$18");
+            let amount0 = U256::from(amount0);
+            let amount1 = U256::from(amount1);
             // // sometimes there will be a few less wei than expected due to rounding down in core, but we just subtract the full amount expected
             // // instead of the actual amount so we can burn the token
             // (position.tokensOwed0, position.tokensOwed1) = (tokensOwed0 - amount0Collect, tokensOwed1 - amount1Collect);
             position.tokensOwed0 = tokensOwed0 - amount0Collect;
             position.tokensOwed1 = tokensOwed1 - amount1Collect;
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$19");
             self._positions.insert(params.tokenId,&position);
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$20");
             // emit Collect(params.tokenId, recipient, amount0Collect, amount1Collect);
             self.env().emit_event(Collect {
                 tokenId:params.tokenId,
@@ -926,6 +943,13 @@ pub mod position_manager {
                 amount0,
                 amount1,
             });
+            // ink_lang::codegen::EmitEvent::<PositionMangerContract>::emit_event(self.env(), Collect {
+            //     tokenId:params.tokenId,
+            //     recipient,
+            //     amount0,
+            //     amount1,
+            // });
+            ink_env::debug_println!("$$$$$$$$$$$$$$$$$21");
             (amount0,amount1)
         }
     }
