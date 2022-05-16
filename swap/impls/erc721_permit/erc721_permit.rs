@@ -2,11 +2,6 @@ pub use super::data::*;
 pub use crate::traits::periphery::erc721_permit::*;
 
 use brush::{
-    contracts::{
-        traits::{
-            psp34::Id,
-        },
-    },
     modifiers,
     traits::{
         AccountId,

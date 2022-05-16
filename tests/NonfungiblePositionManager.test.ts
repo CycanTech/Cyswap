@@ -164,10 +164,16 @@ describe('positionManager initialize', () => {
     await positionManagerTx.increaseLiquidity(1,100,100,1,1,9652429262733);
     // tokenId: u128,liquidity: u128,amount0Min: U256,amount1Min: U256,deadline: u64,
     await positionManagerTx.setFactory(factoryContract.address);
-    await positionManagerTx.decreaseLiquidity(1,100,1,1,9652429262733);
-    // tokenId: u128,recipient: Address,amount0Max: u128,amount1Max: u128,
-    // TODO add collect method
-    // await positionManagerTx.collect(1,alice.address,10,10);
+    await positionManagerTx.decreaseLiquidity(1,2125,6,52,9652429262733);
+    try{
+      // tokenId: u128,recipient: Address,amount0Max: u128,amount1Max: u128,
+      // TODO add collect method
+      await positionManagerTx.collect(1,alice.address,2000,2000);
+    }catch(e){
+      console.log(e);
+    }
+    console.log("after collect!");
+    await positionManagerTx.burn(1);
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))
     // .to.emit(factoryContract,"PoolCreated")
     // .withArgs(token0,token1,500,10,"0x111");

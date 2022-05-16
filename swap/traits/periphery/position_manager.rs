@@ -214,4 +214,10 @@ pub trait PositionManager {
         amount0Max: u128,
         amount1Max: u128,
     ) -> (U256, U256);
+
+    /// @notice Burns a token ID, which deletes it from the NFT contract. The token must have 0 liquidity and all tokens
+    /// must be collected first.
+    /// @param tokenId The ID of the token that is being burned
+    #[ink(message, payable)]
+    fn burn(&mut self,tokenId:u128);
 }

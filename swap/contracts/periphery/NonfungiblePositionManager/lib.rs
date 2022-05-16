@@ -952,6 +952,21 @@ pub mod position_manager {
             ink_env::debug_println!("$$$$$$$$$$$$$$$$$21");
             (amount0,amount1)
         }
+
+        #[ink(message, payable)]
+        #[modifiers(isAuthorizedForToken(tokenId))]
+        fn burn(&mut self,tokenId:u128){
+            // Position storage position = _positions[tokenId];
+            let position:Position = self._positions.get(tokenId).expect("tokenId not exist!");
+            // require(position.liquidity == 0 && position.tokensOwed0 == 0 && position.tokensOwed1 == 0, 'Not cleared');
+            ink_env::debug_println!("position.liquidity is:{:?} && position.tokensOwed0 is:{:?} && position.tokensOwed1 is:{:?}",position.liquidity , position.tokensOwed0 , position.tokensOwed1);
+            assert!(position.liquidity == 0 && position.tokensOwed0 == 0 && position.tokensOwed1 == 0, "Not cleared");
+            // delete _positions[tokenId];
+            self._positions.remove(tokenId);
+            // _burn(tokenId);
+            let caller = ink_env::caller::<DefaultEnvironment>();
+            self._burn_from(caller,Id::U128(tokenId)).expect("burn token failed");
+        }
     }
 
     /// Event emitted when a token transfer occurs.
