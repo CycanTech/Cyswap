@@ -126,34 +126,49 @@ describe('positionManager initialize', () => {
     // &mut self,fee:u32,token_a:Address,token_b:Address
     // var poolAddress = await factoryTx.createPool(500,token0,token1);
     await positionMangerContract.connect(alice);
-    await expect(positionManagerTx.testEvent()).to.emit(positionMangerContract,"TestEvent")
-    .withArgs(1);
+    // await expect(positionManagerTx.testEvent()).to.emit(positionMangerContract,"TestEvent")
+    // .withArgs(1);
     //{value:1000000000} will transfer native token to 
+    console.log("-----------------------1");
     await positionManagerTx.createAndInitializePoolIfNecessary(token0Address,token1Address,500,new BN("120621891405341611593710811006"),{value:1000000000});
+    console.log("-----------------------2");
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0Address,token1Address,500,1000000000000))
     // .to.emit(factoryContract,"PoolCreated");
     
     // console.log("mintParams:",mintParams);
     // console.log("cheCoinTx is:",cheCoinTx);
     await cheCoinTx.mint(alice.address,1000000);
+    console.log("-----------------------3");
     await AAACoinTx.mint(alice.address,1000000);
+    console.log("-----------------------4");
     await cheCoinTx.approve(positionMangerContract.address,1000000);
+    console.log("-----------------------5");
     await AAACoinTx.approve(positionMangerContract.address,1000000);
+    console.log("-----------------------6");
     await positionManagerTx.mint(token0Address,token1Address,500,100,10000,1000,1000,10,0,alice.address,10);
+    console.log("-----------------------1");
     if(token0Address.toHuman()<weth9Contract.address.toHuman()) {
       await positionManagerTx.createAndInitializePoolIfNecessary(token0Address,weth9Contract.address,500,new BN("120621891405341611593710811006"),{value:1000000000});
+      console.log("-----------------------2");
       await positionManagerTx.mint(token0Address,weth9Contract.address,500,200,10000,1000,1000,10,10,alice.address,10,{value:100000000000});
+      console.log("-----------------------3");
       let poolAddress = await factoryQuery.getPool(500,token0Address,weth9Contract.address);
+      console.log("-----------------------4");
       console.log("poolAddress is:",poolAddress.output?.toHuman());
     }else{
       await positionManagerTx.createAndInitializePoolIfNecessary(weth9Contract.address,token0Address,500,new BN("120621891405341611593710811006"),{value:1000000000});
+      console.log("-----------------------5");
       await positionManagerTx.mint(weth9Contract.address,token0Address,500,200,10000,1000,1000,10,10,alice.address,10,{value:100000000000});
+      console.log("-----------------------6");
       let poolAddress = await factoryQuery.getPool(500,weth9Contract.address,token0Address);
+      console.log("-----------------------7");
       console.log("poolAddress is:",poolAddress.output?.toHuman());
     }
-
+    console.log("-----------------------8");
     // await expect(positionManagerQuery.positions(1)).to.
-    let position1 = await positionManagerQuery.positions(1);
+    let tokenId = { "u128": 1 };
+    let position1 = await positionManagerQuery.positions(tokenId);
+    console.log("-----------------------9");
     console.log("position1 is:",position1.output?.[2].toHuman());
     // interface IncreaseLiquidityParams{
     //   tokenId:Number,amount0Desired:Number,amount1Desired:Number,amount0Min:Number,amount1Min:Number,deadline:Number,
@@ -161,19 +176,21 @@ describe('positionManager initialize', () => {
     // let increaseParam:IncreaseLiquidityParams={
     //   tokenId:1,amount0Desired:100,amount1Desired:100,amount0Min:10,amount1Min:10,deadline:111111,
     // };
-    await positionManagerTx.increaseLiquidity(1,100,100,1,1,9652429262733);
+    await positionManagerTx.increaseLiquidity(tokenId,100,100,1,1,9652429262733);
     // tokenId: u128,liquidity: u128,amount0Min: U256,amount1Min: U256,deadline: u64,
     await positionManagerTx.setFactory(factoryContract.address);
-    await positionManagerTx.decreaseLiquidity(1,2125,6,52,9652429262733);
+    await positionManagerTx.decreaseLiquidity(tokenId,2125,6,52,9652429262733);
     try{
       // tokenId: u128,recipient: Address,amount0Max: u128,amount1Max: u128,
       // TODO add collect method
-      await positionManagerTx.collect(1,alice.address,2000,2000);
+      await positionManagerTx.collect(tokenId,alice.address,2000,2000);
     }catch(e){
       console.log(e);
     }
     console.log("after collect!");
-    await positionManagerTx.burn(1);
+    await positionManagerTx.getApproved(tokenId);
+    await positionManagerTx.GetAndIncrementNonce(tokenId);
+    await positionManagerTx.burn(tokenId);
     // await expect(positionManagerTx.createAndInitializePoolIfNecessary(token0,token1,500,1000000000000))
     // .to.emit(factoryContract,"PoolCreated")
     // .withArgs(token0,token1,500,10,"0x111");

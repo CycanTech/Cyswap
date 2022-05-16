@@ -9,7 +9,7 @@ use brush::{
         Balance,
         Timestamp,
         ZERO_ADDRESS,
-    },
+    }, contracts::traits::psp34::Id,
 };
 use ink_env::{DefaultEnvironment, hash::Blake2x256,hash::CryptoHash};
 use primitives::U256;
@@ -93,5 +93,10 @@ impl<T:ERC721PermitStorage> IERC721Permit for T{
         assert!(block_timestamp<deadline.as_u64(),"Permit expired");
         // TODO finish
 
+    }
+
+    // implement by NonfungiblePositionManager
+    default fn _getAndIncrementNonce(&mut self, _tokenId: Id) -> u128{
+        unimplemented!();
     }
 }

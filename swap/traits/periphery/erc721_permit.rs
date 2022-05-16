@@ -1,30 +1,24 @@
-use brush::{
-    traits::{
-        AccountId,
-    },
-};
-use primitives::U256;
+use brush::{contracts::traits::psp34::Id, traits::AccountId};
 use ink_prelude::string::String;
-
+use primitives::U256;
 
 #[brush::wrapper]
 pub type ERC721PermitRef = dyn IERC721Permit;
-
 
 /// @title Creates and initializes V3 Pools
 /// @notice Provides a method for creating and initializing a pool, if necessary, for bundling with other methods that
 /// require the pool to exist.
 #[brush::trait_definition]
-pub trait IERC721Permit{
+pub trait IERC721Permit {
     /// @notice The permit typehash used in the permit signature
     /// @return The typehash for the permit
     #[ink(message)]
-    fn PERMIT_TYPEHASH(&self) ->String;
+    fn PERMIT_TYPEHASH(&self) -> String;
 
     /// @notice The domain separator used in the permit signature
     /// @return The domain seperator used in encoding of permit signature
     #[ink(message)]
-    fn DOMAIN_SEPARATOR(&self) -> [u8;32];
+    fn DOMAIN_SEPARATOR(&self) -> [u8; 32];
 
     /// @notice Approve of a specific token ID for spending by spender via signature
     /// @param spender The account that is being approved
@@ -36,11 +30,15 @@ pub trait IERC721Permit{
     #[ink(message, payable)]
     fn permit(
         &self,
-        spender:AccountId,
-        token_id:U256,
-        deadline:U256,
-        v:u8,
-        r:String,
-        s:String
+        spender: AccountId,
+        token_id: U256,
+        deadline: U256,
+        v: u8,
+        r: String,
+        s: String,
     );
+
+    /// @dev Gets the current nonce for a token ID and then increments it, returning the original value
+    #[ink(message)]
+    fn _getAndIncrementNonce(&mut self, tokenId: Id) -> u128;
 }

@@ -27,40 +27,32 @@ impl<T: PoolInitializeStorage> PeripheryPaymentsTrait for T {
     /// @param recipient The entity that will receive payment
     /// @param value The amount to pay
     default fn pay(&mut self, mut token: Address, payer: Address, recipient: Address, value: U256) {
-        ink_env::debug_message("&&&&&&&&&&8");
         let mut WETH9 = <Self as PoolInitializeStorage>::get(self).WETH9;
         let balance_of_contract: Balance = ink_env::balance::<DefaultEnvironment>();
         let address_of_this: Address = ink_env::account_id::<DefaultEnvironment>();
         if token == WETH9 && balance_of_contract >= value.as_u128() {
             // pay with WETH9
             // IWETH9(WETH9).deposit{value: value}(); // wrap only what is needed to pay
-            // ink_env::debug_message("&&&&&&&&&&10");
             Weth9Ref::deposit_builder(&mut WETH9).transferred_value(value.as_u128()).fire().unwrap().unwrap();
             // <&mut Weth9Ref>::call_mut(&mut WETH9).deposit().transferred_value(value).fire().expect("weth9 deposit error!");
             // // TODO add deposit to transfer.
             // Weth9Ref::deposit(&WETH9).unwrap();
-            ink_env::debug_message("&&&&&&&&&&11");
             // IWETH9(WETH9).transfer(recipient, value);
             PSP22Ref::transfer(&mut WETH9, recipient, value.as_u128(), vec![0u8]).unwrap();
-            ink_env::debug_message("&&&&&&&&&&12");
         } else if payer == address_of_this {
-            ink_env::debug_message("&&&&&&&&&&13");
             // pay with tokens already in the contract (for the exact input multihop case)
             // TransferHelper.safeTransfer(token, recipient, value);
             PSP22Ref::transfer(&mut token, recipient, value.as_u128(), vec![0u8]).unwrap();
-            ink_env::debug_message("&&&&&&&&&&14");
         } else {
             // pull payment
             // TransferHelper.safeTransferFrom(token, payer, recipient, value);
-            ink_env::debug_message("&&&&&&&&&&15");
             //Here will make a error.panicked at 'dispatching ink! message failed: could not read input',But the transfer is success.
             let result:Result<(),PSP22Error> = PSP22Ref::transfer_from_builder(&mut token, payer, recipient, value.as_u128(), Vec::<u8>::new())
             .call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
             match result{
-                Ok(s)=>ink_env::debug_message("success!!!!!!!!!!"),
-                Err(e)=>ink_env::debug_message("fail!!!!!!!!!!"),
+                Ok(_s)=>ink_env::debug_message("success!!!!!!!!!!"),
+                Err(_e)=>ink_env::debug_message("fail!!!!!!!!!!"),
             }
-            ink_env::debug_message("&&&&&&&&&&16");
         }
     }
 }

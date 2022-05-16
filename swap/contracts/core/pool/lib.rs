@@ -467,21 +467,16 @@ pub mod crab_swap_pool {
             // (factory, token0, token1, fee, _tickSpacing) = IUniswapV3PoolDeployer(msg.sender).parameters();
             // 
             ink_lang::utils::initialize_contract(|instance: &mut Self| {
-                ink_env::debug_message("----------------1");
                 instance.factory = factory;
                 instance.token0 = token0;
                 instance.token1 = token1;
                 instance.fee = fee;
                 instance.tickSpacing = tickSpacing;
                 instance.fee_growth_global0_x128 = Uint160::new();
-                ink_env::debug_message("----------------2");
                 instance.fee_growth_global1_x128 = Uint160::new();
-                ink_env::debug_message("----------------3");
                 instance.liquidity = Default::default();
-                ink_env::debug_message("----------------4");
                 instance.max_liquidity_per_tick =
                     libs::tick_spacing_to_max_liquidity_per_tick(tickSpacing);
-                ink_env::debug_message("----------------5");
                 instance.slot0 = Default::default();
                 instance.slot0.unlocked = true;
                 instance.observations = Observations::new();

@@ -140,31 +140,24 @@ impl Info {
         maxLiquidity: u128,
     ) -> bool {
         // Tick.Info storage info = self[tick];
-        ink_env::debug_message("````````````1");
         let liquidityGrossBefore: u128 = self.liquidityGross;
-        ink_env::debug_message("````````````2");
         let liquidityGrossAfter: u128 =
         LiquidityMath::addDelta(liquidityGrossBefore, liquidityDelta);
-        ink_env::debug_message("````````````3");
         assert!(liquidityGrossAfter <= maxLiquidity, "LO");
 
         let flipped = (liquidityGrossAfter == 0) != (liquidityGrossBefore == 0);
-        ink_env::debug_message("````````````4");
         if liquidityGrossBefore == 0 {
             // by convention, we assume that all growth before a tick was initialized happened _below_ the tick
             if tick <= tickCurrent {
                 self.feeGrowthOutside0X128 = Uint256::new_with_u256(feeGrowthGlobal0X128);
                 self.feeGrowthOutside1X128 = Uint256::new_with_u256(feeGrowthGlobal1X128);
-                ink_env::debug_message("````````````5");
                 self.secondsPerLiquidityOutsideX128 =
                     Uint256::new_with_u256(secondsPerLiquidityCumulativeX128);
-                    ink_env::debug_message("````````````6");
                 self.tickCumulativeOutside = tickCumulative;
                 self.secondsOutside = time;
             }
             self.initialized = true;
         }
-        ink_env::debug_message("````````````7");
         self.liquidityGross = liquidityGrossAfter;
 
         // when the lower (upper) tick is crossed left to right (right to left), liquidity must be added (removed)
@@ -173,12 +166,9 @@ impl Info {
         //     : int256(info.liquidityNet).add(liquidityDelta).toInt128();
         if upper {
             self.liquidityNet = self.liquidityNet.checked_sub(liquidityDelta).unwrap();
-            ink_env::debug_message("````````````8");
         } else {
             self.liquidityNet = self.liquidityNet.checked_add(liquidityDelta).unwrap();
-            ink_env::debug_message("````````````9");
         }
-        ink_env::debug_message("````````````14");
         flipped
     }
 }

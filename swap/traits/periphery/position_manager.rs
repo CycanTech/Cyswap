@@ -1,4 +1,4 @@
-use brush::modifier_definition;
+use brush::{modifier_definition, contracts::traits::psp34::Id};
 use ink_env::DefaultEnvironment;
 use ink_prelude::string::String;
 use ink_storage::traits::{SpreadAllocate, SpreadLayout};
@@ -12,7 +12,7 @@ use scale::{Decode, Encode};
 pub type PositionManagerRef = dyn PositionManager;
 
 #[modifier_definition]
-pub fn isAuthorizedForToken<T, F, R>(instance: &mut T, body: F, tokenId: u128) -> R
+pub fn isAuthorizedForToken<T, F, R>(instance: &mut T, body: F, tokenId: Id) -> R
 where
     T: PositionManager,
     F: FnOnce(&mut T) -> R,
@@ -61,7 +61,7 @@ pub struct MintParams {
 // #[derive(Default, Debug, Decode, Encode, SpreadAllocate, SpreadLayout)]
 // #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
 pub struct IncreaseLiquidityParams {
-    pub tokenId: u128,
+    pub tokenId: Id,
     pub amount0Desired: U256,
     pub amount1Desired: U256,
     pub amount0Min: U256,
@@ -72,7 +72,7 @@ pub struct IncreaseLiquidityParams {
 // #[derive(Default, Debug, Decode, Encode, SpreadAllocate, SpreadLayout)]
 // #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
 pub struct DecreaseLiquidityParams {
-    pub tokenId: u128,
+    pub tokenId: Id,
     pub liquidity: u128,
     pub amount0Min: U256,
     pub amount1Min: U256,
@@ -80,7 +80,7 @@ pub struct DecreaseLiquidityParams {
 }
 
 pub struct CollectParams {
-    pub tokenId: u128,
+    pub tokenId: Id,
     pub recipient: Address,
     pub amount0Max: u128,
     pub amount1Max: u128,
@@ -109,7 +109,7 @@ pub trait PositionManager {
     #[ink(message, payable)]
     fn increaseLiquidity(
         &mut self,
-        tokenId: u128,
+        tokenId: Id,
         amount0Desired: U256,
         amount1Desired: U256,
         amount0Min: U256,
@@ -128,14 +128,14 @@ pub trait PositionManager {
     #[ink(message, payable)]
     fn decreaseLiquidity(
         &mut self,
-        tokenId: u128,
+        tokenId: Id,
         liquidity: u128,
         amount0Min: U256,
         amount1Min: U256,
         deadline: u64,
     ) -> (U256, U256);
 
-    fn _isApprovedOrOwner(&self, spender: Address, tokenId: u128) -> bool;
+    fn _isApprovedOrOwner(&self, spender: Address, tokenId: Id) -> bool;
     /// @notice Returns the position information associated with a given token ID.
     /// @dev Throws if the token ID is not valid.
     /// @param tokenId The ID of the token that represents the position
@@ -154,7 +154,7 @@ pub trait PositionManager {
     #[ink(message)]
     fn positions(
         &self,
-        tokenId: u128,
+        tokenId: Id,
     ) -> (
         Uint96,
         Address,
@@ -193,7 +193,7 @@ pub trait PositionManager {
         recipient: Address,
         deadline: U256,
     ) -> (
-        u128, //tokenId
+        Id, //tokenId
         u128, //liquidity
         U256, //amount0
         U256, //amount1
@@ -209,7 +209,7 @@ pub trait PositionManager {
     #[ink(message, payable)]
     fn collect(
         &mut self,
-        tokenId: u128,
+        tokenId: Id,
         recipient: Address,
         amount0Max: u128,
         amount1Max: u128,
@@ -219,5 +219,8 @@ pub trait PositionManager {
     /// must be collected first.
     /// @param tokenId The ID of the token that is being burned
     #[ink(message, payable)]
-    fn burn(&mut self,tokenId:u128);
+    fn burn(&mut self,tokenId:Id);
+
+    #[ink(message)]
+    fn getApproved(&self,id:Id)->Address;
 }

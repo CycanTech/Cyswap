@@ -105,16 +105,12 @@ impl Observations {
         liquidity: u128,
         cardinality: u16,
     ) -> (i64, U160) {
-        ink_env::debug_message("^^^^^^^^^1");
         if secondsAgo == 0 {
             let mut last: Observation = self.obs[usize::from(index)];
-            ink_env::debug_message("^^^^^^^^^2");
             // if (last.blockTimestamp != time) last = transform(last, time, tick, liquidity);
             if last.blockTimestamp != time {
-                ink_env::debug_message("^^^^^^^^^3");
                 last = transform(&last, time, tick, liquidity);
             }
-            ink_env::debug_message("^^^^^^^^^4");
             return (
                 last.tickCumulative,
                 last.secondsPerLiquidityCumulativeX128.value,
@@ -122,32 +118,26 @@ impl Observations {
         }
 
         let target: u64 = time - secondsAgo;
-        ink_env::debug_message("^^^^^^^^^5");
         // (Observation memory beforeOrAt, Observation memory atOrAfter) =
         //     getSurroundingObservations(, time, target, tick, index, liquidity, cardinality);
         let (beforeOrAt, atOrAfter) =
             self.getSurroundingObservations(time, target, tick, index, liquidity, cardinality);
-            ink_env::debug_message("^^^^^^^^^6");
         if target == beforeOrAt.blockTimestamp {
-            ink_env::debug_message("^^^^^^^^^7");
             // we're at the left boundary
             return (
                 beforeOrAt.tickCumulative,
                 beforeOrAt.secondsPerLiquidityCumulativeX128.value,
             );
         } else if target == atOrAfter.blockTimestamp {
-            ink_env::debug_message("^^^^^^^^^8");
             // we're at the right boundary
             return (
                 atOrAfter.tickCumulative,
                 beforeOrAt.secondsPerLiquidityCumulativeX128.value,
             );
         } else {
-            ink_env::debug_message("^^^^^^^^^9");
             // we're in the middle
             let observationTimeDelta = atOrAfter.blockTimestamp - beforeOrAt.blockTimestamp;
             let targetDelta = target - beforeOrAt.blockTimestamp;
-            ink_env::debug_message("^^^^^^^^^10");
             // return (
             //     beforeOrAt.tickCumulative +
             //         ((atOrAfter.tickCumulative - beforeOrAt.tickCumulative) / observationTimeDelta) *
@@ -163,7 +153,6 @@ impl Observations {
                 + ((atOrAfter.tickCumulative - beforeOrAt.tickCumulative)
                     / i64::try_from(observationTimeDelta).unwrap())
                     * i64::try_from(targetDelta).unwrap();
-            ink_env::debug_message("^^^^^^^^^11");
 
             let secondsPerLiquidityCumulativeX128 = 
                 beforeOrAt.secondsPerLiquidityCumulativeX128.value
@@ -172,7 +161,6 @@ impl Observations {
                         * U160::from(targetDelta))
                         / U160::from(observationTimeDelta);
 
-            ink_env::debug_message("^^^^^^^^^12");
             return (tickCumulative, secondsPerLiquidityCumulativeX128);
         }
     }

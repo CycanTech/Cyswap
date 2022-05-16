@@ -33,7 +33,6 @@ impl<T:PoolInitializeStorage> Initializer for T{
         // }
 
 
-        ink_env::debug_message("start initial pool");
         assert!(token0<token1,"token0 must less than token1");
         let factory_address = self.get().factory;
         let mut pool_address = FactoryRef::get_pool(&factory_address,fee,token0,token1);
