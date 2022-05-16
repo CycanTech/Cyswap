@@ -6,7 +6,22 @@ import "@redspot/chai";
 import "@redspot/watcher";
 import "@redspot/explorer";
 import "@redspot/decimals";
-
+const types = {
+  ContractsPsp34Id: {
+    _enum: {
+      U8: 'u8',
+      U16: 'u16',
+      U32: 'u32',
+      U64: 'u64',
+      U128: 'u128',
+      Bytes: 'Vec<u8>'
+    }
+  },
+  ContractsDiamondFacetCut: {
+    hash: '[u8; 32]',
+    selectors: 'Vec<[u8; 4]>'
+  }
+}
 export default {
   defaultNetwork: "development",
   contract: {
