@@ -105,7 +105,7 @@ pub mod position_manager {
 
         // /// @dev The token ID position data
         // mapping(uint256 => Position) private _positions;
-        _positions: Mapping<u128, Position>,
+        _positions: Mapping<Id, Position>,
 
         // /// @dev The ID of the next token that will be minted. Skips 0
         // uint176 private _nextId = 1;
@@ -122,7 +122,19 @@ pub mod position_manager {
     impl PSP34 for PositionMangerContract {}
     impl PSP34Mintable for PositionMangerContract {}
     impl PSP34Burnable for PositionMangerContract {}
-    impl IERC721Permit for PositionMangerContract {}
+        
+    impl IERC721Permit for PositionMangerContract {
+        #[ink(message)]
+        fn _getAndIncrementNonce(&mut self, _tokenId: Id) -> u128{
+            let mut position: Position = self
+                ._positions
+                .get(&_tokenId)
+                .expect("token not in _positions!");
+            position.nonce +=1;
+            self._positions.insert(_tokenId,&position);
+            position.nonce
+        }
+    }
     impl PSP34Base for PositionMangerContract {}
     // impl PositionManager for PositionMangerContract{}
     impl LiquidityManagementTrait for PositionMangerContract {
@@ -273,25 +285,21 @@ pub mod position_manager {
     impl PositionMangerContract {
         #[ink(constructor, payable)]
         pub fn new(factory: AccountId, weth9: AccountId, _tokenDescriptor: AccountId) -> Self {
-            // ink_env::debug_message("----------------1");
             // let initializer = PoolInitializeData {
             //     factory,
             //     WETH9: weth9,
             // };
-            // ink_env::debug_message("----------------2");
             // let name = "Crabswap V3 Positions NFT-V1";
             // let symbol = "Crab-V3-POS";
             // let psp34_base = PSP34BaseData {
             //     name: String::from(name),
             //     symbol: String::from(symbol),
             // };
-            // ink_env::debug_message("----------------3");
             // let erc721_permit = ERC721PermitData {
             //     nameHash: ink_lang::blake2x256!("Crabswap V3 Positions NFT-V1"),
             //     versionHash: ink_lang::blake2x256!("1"),
             // };
             // let psp34 = PSP34Data::default();
-            // ink_env::debug_message("----------------4");
             // let instance: PositionMangerContract = PositionMangerContract {
             //     initializer,
             //     erc721_permit,
@@ -304,7 +312,6 @@ pub mod position_manager {
             //     _poolIdToPoolKey: Default::default(),
             //     _poolIds: Default::default(),
             // };
-            // ink_env::debug_message("----------------5");
             // instance
             ink_lang::codegen::initialize_contract(|instance: &mut PositionMangerContract| {
                 instance.initializer.factory = factory;
@@ -341,12 +348,11 @@ pub mod position_manager {
             poolId
         }
 
-        /// @dev Caches a pool key
-        #[ink(message)]
-        pub fn testEvent(&mut self) -> u128 {
-            self.env().emit_event(TestEvent { tokenId: 1 });
-            0
-        }
+        // #[ink(message)]
+        // pub fn testEvent(&mut self) -> u128 {
+        //     self.env().emit_event(TestEvent { tokenId: 1 });
+        //     0
+        // }
     }
 
     impl PositionManager for PositionMangerContract {
@@ -354,7 +360,7 @@ pub mod position_manager {
         #[modifiers(checkDeadline(deadline))]
         fn increaseLiquidity(
             &mut self,
-            tokenId: u128,
+            tokenId: Id,
             amount0Desired: U256,
             amount1Desired: U256,
             amount0Min: U256,
@@ -376,7 +382,7 @@ pub mod position_manager {
             };
             let mut position: Position = self
                 ._positions
-                .get(params.tokenId)
+                .get(params.tokenId.clone())
                 .expect("token not in _positions!");
             // PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
             let poolKey: PoolAddress::PoolKey = self
@@ -460,10 +466,10 @@ pub mod position_manager {
             position.feeGrowthInside1LastX128 = feeGrowthInside1LastX128;
             // position.liquidity += liquidity;
             position.liquidity += liquidity;
-            self._positions.insert(params.tokenId, &position);
+            self._positions.insert(params.tokenId.clone(), &position);
             // emit IncreaseLiquidity(params.tokenId, liquidity, amount0, amount1);
             self.env().emit_event(IncreaseLiquidity {
-                tokenId: params.tokenId,
+                tokenId: params.tokenId.clone(),
                 liquidity,
                 amount0,
                 amount1,
@@ -483,14 +489,14 @@ pub mod position_manager {
         #[modifiers(isAuthorizedForToken(tokenId))]
         fn decreaseLiquidity(
             &mut self,
-            tokenId: u128,
+            tokenId: Id,
             liquidity: u128,
             amount0Min: U256,
             amount1Min: U256,
             deadline: u64,
         ) -> (U256, U256) {
             let params = DecreaseLiquidityParams {
-                tokenId,
+                tokenId:tokenId.clone(),
                 liquidity,
                 amount0Min,
                 amount1Min,
@@ -502,7 +508,7 @@ pub mod position_manager {
             // Position storage position = _positions[params.tokenId];
             let mut position: Position = self
                 ._positions
-                .get(tokenId)
+                .get(tokenId.clone())
                 .expect("tokenId not in _positions!");
             // uint128 positionLiquidity = position.liquidity;
             let positionLiquidity: u128 = position.liquidity;
@@ -585,7 +591,7 @@ pub mod position_manager {
             // // subtraction is safe because we checked positionLiquidity is gte params.liquidity
             // position.liquidity = positionLiquidity - params.liquidity;
             position.liquidity = positionLiquidity - params.liquidity;
-            self._positions.insert(tokenId, &position);
+            self._positions.insert(tokenId.clone(), &position);
             // emit DecreaseLiquidity(params.tokenId, params.liquidity, amount0, amount1);
             self.env().emit_event(DecreaseLiquidity {
                 tokenId: params.tokenId,
@@ -610,11 +616,11 @@ pub mod position_manager {
          *
          * - `tokenId` must exist.
          */
-        fn _isApprovedOrOwner(&self, spender: Address, tokenId: u128) -> bool {
+        fn _isApprovedOrOwner(&self, spender: Address, tokenId: Id) -> bool {
             // require(_exists(tokenId), "ERC721: operator query for nonexistent token");
             // address owner = ERC721.ownerOf(tokenId);
             // return (spender == owner || getApproved(tokenId) == spender || ERC721.isApprovedForAll(owner, spender));
-            let tokenId: Id = Id::U128(tokenId);
+            // let tokenId: Id = Id::U128(tokenId);
             assert!(
                 self._check_token_exists(&tokenId).is_ok(),
                 "ERC721: operator query for nonexistent token"
@@ -626,7 +632,7 @@ pub mod position_manager {
         #[ink(message)]
         fn positions(
             &self,
-            tokenId: u128,
+            tokenId: Id,
         ) -> (
             Uint96,
             Address,
@@ -689,7 +695,7 @@ pub mod position_manager {
             recipient: Address,
             deadline: U256,
         ) -> (
-            u128, //tokenId
+            Id, //tokenId
             u128, //liquidity
             U256, //amount0
             U256, //amount1
@@ -735,8 +741,8 @@ pub mod position_manager {
                 amount1
             );
             self._nextId = self._nextId + 1;
-            let tokenId = self._nextId;
-            self._mint_to(recipient, Id::U128(tokenId)).unwrap();
+            let tokenId = Id::U128(self._nextId);
+            self._mint_to(recipient, tokenId.clone()).expect("mint error!");
             // _mint(params.recipient, (tokenId = _nextId++));
             // bytes32 positionKey = PositionKey.compute(address(this), params.tickLower, params.tickUpper);
             // let positionKey = PositionKey::compute(address_of_this,params.tickLower, params.tickUpper);
@@ -783,9 +789,9 @@ pub mod position_manager {
                 tokensOwed0: 0,
                 tokensOwed1: 0,
             };
-            self._positions.insert(tokenId, &position);
+            self._positions.insert(tokenId.clone(), &position);
             self.env().emit_event(IncreaseLiquidity {
-                tokenId,
+                tokenId:tokenId.clone(),
                 liquidity,
                 amount0,
                 amount1,
@@ -797,14 +803,14 @@ pub mod position_manager {
             //         amount1,
             //     });
             // emit IncreaseLiquidity(tokenId, liquidity, amount0, amount1);
-            (tokenId, liquidity, amount0, amount1)
+            (tokenId.clone(), liquidity, amount0, amount1)
         }
 
         #[ink(message, payable)]
         #[modifiers(isAuthorizedForToken(tokenId))]
         fn collect(
             &mut self,
-            tokenId: u128,
+            tokenId: Id,
             recipient: Address,
             amount0Max: u128,
             amount1Max: u128,
@@ -828,7 +834,7 @@ pub mod position_manager {
             };
             ink_env::debug_println!("$$$$$$$$$$$$$$$$$3");
             // Position storage position = _positions[params.tokenId];
-            let mut position:Position = self._positions.get(params.tokenId).expect("tokenId not exist!");
+            let mut position:Position = self._positions.get(params.tokenId.clone()).expect("tokenId not exist!");
             ink_env::debug_println!("$$$$$$$$$$$$$$$$$4");
             // PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
             let poolKey:PoolAddress::PoolKey = self._poolIdToPoolKey.get(position.poolId).expect("pooId not exist!");
@@ -934,11 +940,11 @@ pub mod position_manager {
             position.tokensOwed0 = tokensOwed0 - amount0Collect;
             position.tokensOwed1 = tokensOwed1 - amount1Collect;
             ink_env::debug_println!("$$$$$$$$$$$$$$$$$19");
-            self._positions.insert(params.tokenId,&position);
+            self._positions.insert(params.tokenId.clone(),&position);
             ink_env::debug_println!("$$$$$$$$$$$$$$$$$20");
             // emit Collect(params.tokenId, recipient, amount0Collect, amount1Collect);
             self.env().emit_event(Collect {
-                tokenId:params.tokenId,
+                tokenId:params.tokenId.clone(),
                 recipient,
                 amount0,
                 amount1,
@@ -955,18 +961,28 @@ pub mod position_manager {
 
         #[ink(message, payable)]
         #[modifiers(isAuthorizedForToken(tokenId))]
-        fn burn(&mut self,tokenId:u128){
+        fn burn(&mut self,tokenId:Id){
             // Position storage position = _positions[tokenId];
-            let position:Position = self._positions.get(tokenId).expect("tokenId not exist!");
+            let position:Position = self._positions.get(tokenId.clone()).expect("tokenId not exist!");
             // require(position.liquidity == 0 && position.tokensOwed0 == 0 && position.tokensOwed1 == 0, 'Not cleared');
             ink_env::debug_println!("position.liquidity is:{:?} && position.tokensOwed0 is:{:?} && position.tokensOwed1 is:{:?}",position.liquidity , position.tokensOwed0 , position.tokensOwed1);
             assert!(position.liquidity == 0 && position.tokensOwed0 == 0 && position.tokensOwed1 == 0, "Not cleared");
             // delete _positions[tokenId];
-            self._positions.remove(tokenId);
+            self._positions.remove(tokenId.clone());
             // _burn(tokenId);
             let caller = ink_env::caller::<DefaultEnvironment>();
-            self._burn_from(caller,Id::U128(tokenId)).expect("burn token failed");
+            self._burn_from(caller,tokenId.clone()).expect("burn token failed");
         }
+
+        #[ink(message)]
+        fn getApproved(&self,tokenId:Id)->Address{
+            //require(_exists(tokenId), 'ERC721: approved query for nonexistent token');
+            assert!(self._check_token_exists(&tokenId).is_ok(), "ERC721: approved query for nonexistent token");
+            //return _positions[tokenId].operator;
+            let position:Position = self._positions.get(tokenId.clone()).expect("tokenId not exist!");
+            position.operator
+        }
+        
     }
 
     /// Event emitted when a token transfer occurs.
@@ -990,8 +1006,8 @@ pub mod position_manager {
     #[ink(event)]
     pub struct Collect{
         #[ink(topic)]
-        tokenId:u128,
-        recipient:Address,
+        tokenId:Id,
+        recipient:AccountId,
         amount0:U256,
         amount1:U256,
     }
@@ -1017,7 +1033,7 @@ pub mod position_manager {
     #[ink(event)]
     pub struct IncreaseLiquidity {
         #[ink(topic)]
-        tokenId: u128,
+        tokenId: Id,
         liquidity: u128,
         amount0: U256,
         amount1: U256,
@@ -1031,7 +1047,7 @@ pub mod position_manager {
     #[ink(event)]
     pub struct DecreaseLiquidity {
         #[ink(topic)]
-        tokenId: u128,
+        tokenId: Id,
         liquidity: u128,
         amount0: U256,
         amount1: U256,
@@ -1040,10 +1056,46 @@ pub mod position_manager {
     #[ink(event)]
     pub struct TestEvent {
         #[ink(topic)]
-        tokenId: u128,
+        tokenId: Id,
     }
 
     impl PSP34Internal for PositionMangerContract {
+
+        fn _approve_for(&mut self, to: AccountId, id: Option<Id>, approved: bool) -> Result<(), PSP34Error> {
+            let mut caller = ink_env::caller::<DefaultEnvironment>();
+            if id.is_some() {
+                let id = id.unwrap();
+                let maybe_owner = self.owner_of(id.clone());
+
+                if maybe_owner.is_none() {
+                    return Err(PSP34Error::TokenNotExists)
+                }
+                let owner = maybe_owner.unwrap();
+
+                if approved && owner == to {
+                    return Err(PSP34Error::SelfApprove)
+                }
+
+                if owner != caller && !self._allowance(&owner, &caller, &None) {
+                    return Err(PSP34Error::NotApproved)
+                };
+                caller = owner;
+
+                // get position and change the operator.
+                let mut position:Position = self._positions.get(id.clone()).expect("tokenId not exist!");
+                if approved {
+                    position.operator = to;
+                    self._positions.insert(id.clone(),&position);
+                } else {
+                    position.operator = ADDRESS0.into();
+                    self._positions.insert(id.clone(),&position);
+                }
+                self._emit_approval_event(caller, to, Some(id.clone()), approved);
+            }
+            
+            Ok(())
+        }
+
         fn _emit_transfer_event(&self, from: Option<AccountId>, to: Option<AccountId>, id: Id) {
             self.env().emit_event(Transfer { from, to, id });
         }
