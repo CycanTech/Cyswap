@@ -1,6 +1,5 @@
 use brush::{contracts::traits::psp34::Id, traits::AccountId};
 use ink_prelude::string::String;
-use primitives::U256;
 
 #[brush::wrapper]
 pub type ERC721PermitRef = dyn IERC721Permit;
@@ -12,8 +11,8 @@ pub type ERC721PermitRef = dyn IERC721Permit;
 pub trait IERC721Permit {
     /// @notice The permit typehash used in the permit signature
     /// @return The typehash for the permit
-    #[ink(message)]
-    fn PERMIT_TYPEHASH(&self) -> String;
+    // #[ink(message)]
+    // fn PERMIT_TYPEHASH(&self) -> String;
 
     /// @notice The domain separator used in the permit signature
     /// @return The domain seperator used in encoding of permit signature
@@ -29,10 +28,10 @@ pub trait IERC721Permit {
     /// @param s Must produce valid secp256k1 signature from the holder along with `r` and `v`
     #[ink(message, payable)]
     fn permit(
-        &self,
+        &mut self,
         spender: AccountId,
-        token_id: U256,
-        deadline: U256,
+        token_id: Id,
+        deadline: u64,
         v: u8,
         r: String,
         s: String,
