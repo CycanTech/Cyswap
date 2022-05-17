@@ -4,3 +4,4 @@ pub mod psp34_base;
 pub mod weth9;
 pub mod core;
 pub mod periphery;
+pub mod periphery_immutable_state;

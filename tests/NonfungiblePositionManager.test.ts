@@ -178,7 +178,7 @@ describe('positionManager initialize', () => {
     // };
     await positionManagerTx.increaseLiquidity(tokenId,100,100,1,1,9652429262733);
     // tokenId: u128,liquidity: u128,amount0Min: U256,amount1Min: U256,deadline: u64,
-    await positionManagerTx.setFactory(factoryContract.address);
+    // await positionManagerTx.setFactory(factoryContract.address);
     await positionManagerTx.decreaseLiquidity(tokenId,2125,6,52,9652429262733);
     try{
       // tokenId: u128,recipient: Address,amount0Max: u128,amount1Max: u128,

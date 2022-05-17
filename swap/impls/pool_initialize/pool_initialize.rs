@@ -7,7 +7,7 @@ use brush::{
     },
 };
 use ink_env::DefaultEnvironment;
-use primitives::{Uint160, ADDRESS0, U256, Address, U160};
+use primitives::{ ADDRESS0,  Address, U160};
 use crate::traits::core::factory::*;
 use crate::traits::core::pool::*;
 

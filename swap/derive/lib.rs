@@ -20,3 +20,5 @@ declare_derive_storage_trait!(derive_position_descriptor_storage, PositionDescri
 
 #[cfg(feature = "position_manager")]
 declare_derive_storage_trait!(derive_position_storage, PositionStorage, PositionStorageField);
+
+declare_derive_storage_trait!(derive_immutable_state_storage, ImmutableStateStorage, ImmutableStateField);

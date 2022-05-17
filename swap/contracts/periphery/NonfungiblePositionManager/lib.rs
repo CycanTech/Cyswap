@@ -93,7 +93,7 @@ pub mod position_manager {
         #[PSP34BaseStorageField]
         psp34_base: PSP34BaseData,
 
-        factory: Option<Address>,
+        // factory: Option<Address>,
 
         // /// @dev IDs of pools assigned by this contract
         // mapping(address => uint80) private _poolIds;
@@ -477,10 +477,10 @@ pub mod position_manager {
             (liquidity, amount0, amount1)
         }
 
-        #[ink(message)]
-        fn setFactory(&mut self, factory: Address) {
-            self.factory = Some(factory);
-        }
+        // #[ink(message)]
+        // fn setFactory(&mut self, factory: Address) {
+        //     self.factory = Some(factory);
+        // }
 
         // isAuthorizedForToken(params.tokenId)
         // checkDeadline(params.deadline)
@@ -523,7 +523,7 @@ pub mod position_manager {
                 .get(position.poolId)
                 .expect("poolId not in _poolIdToPoolKey!");
             // IUniswapV3Pool pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
-            let factoryAddress = self.factory.expect("factory not set");
+            let factoryAddress = self.initializer.factory;
             let pool: Address =
                 FactoryRef::get_pool(&factoryAddress, poolKey.fee, poolKey.token0, poolKey.token1);
 
@@ -840,7 +840,7 @@ pub mod position_manager {
             let poolKey:PoolAddress::PoolKey = self._poolIdToPoolKey.get(position.poolId).expect("pooId not exist!");
             ink_env::debug_println!("$$$$$$$$$$$$$$$$$5");
             // IUniswapV3Pool pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
-            let factoryAddress = self.factory.expect("factory not set");
+            let factoryAddress = self.initializer.factory;
             ink_env::debug_println!("$$$$$$$$$$$$$$$$$6");
             let pool: Address =
                 FactoryRef::get_pool(&factoryAddress, poolKey.fee, poolKey.token0, poolKey.token1);

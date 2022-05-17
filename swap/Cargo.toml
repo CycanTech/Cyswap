@@ -85,6 +85,7 @@ exclude = [
     "contracts/core/factory/",
     "contracts/periphery/NonfungiblePositionManager/",
     "contracts/periphery/NonfungibleTokenPositionDescriptor/",
+    "contracts/periphery/SwapRouter/",
 ]
 
 [profile.dev]

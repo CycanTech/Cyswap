@@ -93,8 +93,8 @@ pub trait PositionManager {
     #[ink(message)]
     fn tokenURI(&self, tokenId: u128) -> String;
 
-    #[ink(message)]
-    fn setFactory(&mut self, factory: Address);
+    // #[ink(message)]
+    // fn setFactory(&mut self, factory: Address);
 
     /// @notice Increases the amount of liquidity in a position, with tokens paid by the `msg.sender`
     /// @param params tokenId The ID of the token for which liquidity is being increased,
