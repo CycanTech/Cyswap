@@ -4,21 +4,22 @@
 
 #[brush::contract]
 pub mod swapper_router {
-    use crabswap::impls::erc721_permit::*;
     use crabswap::impls::periphery_immutable_state::{ImmutableStateStorage,ImmutableStateData};
     use crabswap::traits::periphery::periphery_immutable_state::*;
-    use primitives::{Int24, Uint128, Uint24, Uint256, Uint80, Uint96, ADDRESS0,U160};
+    use primitives::{Uint24, Uint256,U160, Address, U256, Int256, ADDRESS0, Uint160};
     use ink_storage::traits::{SpreadAllocate, SpreadLayout};
-    use libs::PoolKey;
-    use primitives::{Address, U256};
     use scale::{Decode, Encode};
+    use ink_env::DefaultEnvironment;
 
     use crabswap::traits::periphery::swap_router::*;
+    use crabswap::traits::core::factory::FactoryRef;
+    use libs::periphery::path;
+    use crabswap::traits::periphery::PeripheryPayments::*;
 
     #[derive(Default, Decode, Encode, Debug, SpreadAllocate, SpreadLayout)]
-    struct MintCallbackData {
-        poolKey: PoolKey,
-        payer: Address,
+    struct SwapCallbackData {
+        path:String,
+        payer:Address,
     }
 
     /// @dev Used as the placeholder value for amountInCached, because the computed amount in for an exact output swap
@@ -36,6 +37,8 @@ pub mod swapper_router {
     }
 
     impl PeripheryImmutableState for SwapRouterContract{}
+
+    impl PeripheryPaymentsTrait for SwapRouterContract {}
 
     impl SwapRouter for SwapRouterContract {
         #[ink(message, payable)]
@@ -62,6 +65,111 @@ pub mod swapper_router {
                 instance.immutable_state.WETH9 = weth9;
                 instance.amountInCached = Uint256::new_with_u256(DEFAULT_AMOUNT_IN_CACHED);
             })
+        }
+
+        /// @dev Returns the pool for the given token pair and fee. The pool contract may or may not exist.
+        fn getPool(&self,
+            tokenA:Address,
+            tokenB:Address,
+            fee:Uint24
+        ) -> Address {
+                FactoryRef::get_pool(&self.immutable_state.factory, fee, tokenA, tokenB)
+        }
+
+        #[ink(message)]
+        pub fn uniswapV3SwapCallback(&self,
+            amount0Delta:Int256,
+            amount1Delta:Int256,
+            _data:Vec<u8>
+        )  {
+            // require(amount0Delta > 0 || amount1Delta > 0); // swaps entirely within 0-liquidity regions are not supported
+            assert!(amount0Delta > 0 || amount1Delta > 0,"amount0Delta or amount1Delta must bt 0");
+            // SwapCallbackData memory data = abi.decode(_data, (SwapCallbackData));
+            let data: SwapCallbackData =
+                Decode::decode(&mut _data.as_ref()).expect("call back data parse error!");
+            // (address tokenIn, address tokenOut, uint24 fee) = data.path.decodeFirstPool();
+            let ( tokenIn, fee, tokenOut,  ) = path::decodeFirstPool(data.path);
+            let pool = if tokenIn < tokenOut{
+                 self.getPool(tokenIn,tokenOut,u32::try_from(fee).expect("usize error!"))
+            }else{
+                self.getPool(tokenOut,tokenIn,u32::try_from(fee).expect("usize error!"))
+            };
+            // CallbackValidation.verifyCallback(factory, tokenIn, tokenOut, fee);
+            let msg_sender = ink_env::caller::<DefaultEnvironment>();
+            assert!(msg_sender==pool,"call back is not pool");
+            // (bool isExactInput, uint256 amountToPay) =
+            //     amount0Delta > 0
+            //         ? (tokenIn < tokenOut, uint256(amount0Delta))
+            //         : (tokenOut < tokenIn, uint256(amount1Delta));
+            let (isExactInput,amountToPay) = 
+            if amount0Delta > 0 {
+                (tokenIn < tokenOut, U256::from(amount0Delta))
+            }else{
+                (tokenOut < tokenIn, U256::from(amount1Delta))
+            };
+            // if (isExactInput) {
+            //     pay(tokenIn, data.payer, msg.sender, amountToPay);
+            // } else {
+            //     // either initiate the next swap or pay
+            //     if (data.path.hasMultiplePools()) {
+            //         data.path = data.path.skipToken();
+            //         exactOutputInternal(amountToPay, msg.sender, 0, data);
+            //     } else {
+            //         amountInCached = amountToPay;
+            //         tokenIn = tokenOut; // swap in/out because exact output swaps are reversed
+            //         pay(tokenIn, data.payer, msg.sender, amountToPay);
+            //     }
+            // }
+            if isExactInput{
+                self.pay(tokenIn, data.payer,msg_sender, amountToPay);
+            }else{
+                // either initiate the next swap or pay
+                if data.path.hasMultiplePools() {
+                    data.path = data.path.skipToken();
+                    exactOutputInternal(amountToPay, msg_sender, 0, data);
+                } else {
+                    self.amountInCached = amountToPay;
+                    tokenIn = tokenOut; // swap in/out because exact output swaps are reversed
+                    self.pay(tokenIn, data.payer, msg_sender, amountToPay);
+                }
+            }
+        }
+
+        /// @dev Performs a single exact output swap
+        fn exactOutputInternal(
+            amountOut:U256,
+            recipient:Address,
+            sqrtPriceLimitX96:Uint160,
+            data:SwapCallbackData
+        )-> U256 {
+            // allow swapping to the router address with address 0
+            // if (recipient == address(0)) recipient = address(this);
+            if (recipient == ADDRESS0) {
+                recipient = ink_env::account_id::<DefaultEnvironment>();
+            }
+            // (address tokenOut, address tokenIn, uint24 fee) = data.path.decodeFirstPool();
+            let (tokenOut, tokenIn, fee) = data.path.decodeFirstPool();
+
+            // bool zeroForOne = tokenIn < tokenOut;
+
+            // (int256 amount0Delta, int256 amount1Delta) =
+            //     getPool(tokenIn, tokenOut, fee).swap(
+            //         recipient,
+            //         zeroForOne,
+            //         -amountOut.toInt256(),
+            //         sqrtPriceLimitX96 == 0
+            //             ? (zeroForOne ? TickMath.MIN_SQRT_RATIO + 1 : TickMath.MAX_SQRT_RATIO - 1)
+            //             : sqrtPriceLimitX96,
+            //         abi.encode(data)
+            //     );
+
+            // uint256 amountOutReceived;
+            // (amountIn, amountOutReceived) = zeroForOne
+            //     ? (uint256(amount0Delta), uint256(-amount1Delta))
+            //     : (uint256(amount1Delta), uint256(-amount0Delta));
+            // // it's technically possible to not receive the full output amount,
+            // // so if no price limit has been specified, require this possibility away
+            // if (sqrtPriceLimitX96 == 0) require(amountOutReceived == amountOut);
         }
     }
 
