@@ -6,6 +6,7 @@ use ink_storage::traits::StorageLayout;
 use ink_storage::traits::{PackedLayout, SpreadAllocate, SpreadLayout};
 use libs::core::Position;
 use primitives::Int24;
+use primitives::Int256;
 use primitives::Uint8;
 use primitives::{Address, Uint16, Uint160, U160, U256};
 use scale::{Decode, Encode};
@@ -134,4 +135,24 @@ pub trait PoolAction {
         amount0Requested: u128,
         amount1Requested: u128,
     ) -> (u128, u128);
+
+    /// @notice Swap token0 for token1, or token1 for token0
+    /// @dev The caller of this method receives a callback in the form of IUniswapV3SwapCallback#uniswapV3SwapCallback
+    /// @param recipient The address to receive the output of the swap
+    /// @param zeroForOne The direction of the swap, true for token0 to token1, false for token1 to token0
+    /// @param amountSpecified The amount of the swap, which implicitly configures the swap as exact input (positive), or exact output (negative)
+    /// @param sqrtPriceLimitX96 The Q64.96 sqrt price limit. If zero for one, the price cannot be less than this
+    /// value after the swap. If one for zero, the price cannot be greater than this value after the swap
+    /// @param data Any data to be passed through to the callback
+    /// @return amount0 The delta of the balance of token0 of the pool, exact when negative, minimum when positive
+    /// @return amount1 The delta of the balance of token1 of the pool, exact when negative, minimum when positive
+    #[ink(message)]
+    fn swap(
+        &mut self,
+        recipient:Address,
+        zeroForOne:bool,
+        amountSpecified:Int256,
+        sqrtPriceLimitX96:U160,
+        data:Vec<u8>
+    ) -> (Int256,Int256);
 }

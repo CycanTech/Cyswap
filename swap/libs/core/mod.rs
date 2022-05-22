@@ -7,3 +7,5 @@ pub mod UnsafeMath;
 pub mod LiquidityMath;
 pub mod TickBitmap;
 pub mod FixedPoint128;
+pub mod BitMath;
+pub mod SwapMath;

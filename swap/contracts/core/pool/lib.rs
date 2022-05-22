@@ -14,22 +14,29 @@ pub mod crab_swap_pool {
         Mapping,
     };
     use libs::{
-        core::{oracle::Observations, TickMath,Position,SqrtPriceMath,LiquidityMath,Tick,TickBitmap},
-        get_tick_at_sqrt_ratio,
+        core::{
+            oracle::Observations, LiquidityMath, Position, SqrtPriceMath, Tick, TickBitmap,
+            TickMath,
+        },
+        getTickAtSqrtRatio,
     };
-    use primitives::{Int24, Uint160, U160, U256,Int256, Uint256, Address};
+    use primitives::{Address, Int24, Int256, Uint160, Uint256, I256, U160, U256};
     use scale::{Decode, Encode};
     type Uint24 = u32;
-    use ink_lang::codegen::EmitEvent;
     use brush::contracts::psp22::extensions::metadata::*;
     use brush::modifiers;
+    use crabswap::impls::core::no_delegate_call::{NoDelegateCallData, NoDelegateCallStorage};
+    use crabswap::traits::core::no_delegate_call::{noDelegateCall, NoDelegateCall};
     use crabswap::traits::periphery::LiquidityManagement::*;
-    use ink_env::{
-        CallFlags,
-    };
+    use ink_env::CallFlags;
+    use ink_lang::codegen::EmitEvent;
     use ink_prelude::vec;
+    use libs::core::FixedPoint128;
+    use libs::core::SwapMath;
+    use libs::swap::FullMath;
+
     // accumulated protocol fees in token0/token1 units
-    #[derive(Debug, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
+    #[derive(Debug,Default, PartialEq, Eq, Encode, Decode, SpreadLayout, PackedLayout)]
     #[cfg_attr(feature = "std", derive(StorageLayout))]
     struct ProtocolFees {
         token0: u128,
@@ -37,13 +44,15 @@ pub mod crab_swap_pool {
     }
 
     #[ink(storage)]
-    #[derive(SpreadAllocate)]
+    #[derive(SpreadAllocate, NoDelegateCallStorage)]
     pub struct PoolContract {
+        #[NoDelegateCallField]
+        no_delegate_call: NoDelegateCallData,
         // address public immutable override factory;
         // address public immutable override token0;
         // address public immutable override token1;
         // uint24 public immutable override fee;
-        pub maxLiquidityPerTick:u128,
+        pub maxLiquidityPerTick: u128,
 
         // follow six parameter is immutable
         pub factory: Address,
@@ -58,59 +67,25 @@ pub mod crab_swap_pool {
         pub fee_growth_global1_x128: Uint160,
 
         /// @inheritdoc IUniswapV3PoolState
-        pub feeGrowthGlobal0X128:Uint256,
+        pub feeGrowthGlobal0X128: Uint256,
         /// @inheritdoc IUniswapV3PoolState
-        pub feeGrowthGlobal1X128:Uint256,
+        pub feeGrowthGlobal1X128: Uint256,
 
-        
-        // pub protocolFees: ProtocolFees,
+        pub protocolFees:ProtocolFees,
         pub liquidity: u128,
         // mapping(int24 => Tick.Info) pub ticks;
-        pub ticks:Mapping<Int24,Tick::Info>,
+        pub ticks: Mapping<Int24, Tick::Info>,
         // /// @inheritdoc IUniswapV3PoolState
         // mapping(int16 => uint256) public override tickBitmap;
-        pub tickBitmap:Mapping<i16,Uint256>,
+        pub tickBitmap: Mapping<i16, Uint256>,
         // /// @inheritdoc IUniswapV3PoolState
         // mapping(bytes32 => Position.Info) public override positions;
-        pub positions: Mapping<(Address,Int24,Int24), Position::Info>,
+        pub positions: Mapping<(Address, Int24, Int24), Position::Info>,
         /// @inheritdoc IUniswapV3PoolState
         pub observations: Observations,
     }
 
-    /// @notice Emitted exactly once by a pool when #initialize is first called on the pool
-    /// @dev Mint/Burn/Swap cannot be emitted by the pool before Initialize
-    /// @param sqrtPriceX96 The initial sqrt price of the pool, as a Q64.96
-    /// @param tick The initial tick of the pool, i.e. log base 1.0001 of the starting price of the pool
-    #[ink(event)]
-    pub struct Initialize {
-        #[ink(topic)]
-        sqrtPriceX96: U160,
-        #[ink(topic)]
-        tick: Int24,
-    }
-
-    /// @notice Emitted when a position's liquidity is removed
-    /// @dev Does not withdraw any fees earned by the liquidity position, which must be withdrawn via #collect
-    /// @param owner The owner of the position for which liquidity is removed
-    /// @param tickLower The lower tick of the position
-    /// @param tickUpper The upper tick of the position
-    /// @param amount The amount of liquidity to remove
-    /// @param amount0 The amount of token0 withdrawn
-    /// @param amount1 The amount of token1 withdrawn
-    #[ink(event)]
-    pub struct Burn{
-        #[ink(topic)]
-        owner:Address,
-        #[ink(topic)]
-        tickLower:Int24,
-        #[ink(topic)]
-        tickUpper:Int24,
-        amount:u128,
-        amount0:U256,
-        amount1:U256
-    }
-
-
+    impl NoDelegateCall for PoolContract {}
 
     impl PSP22Receiver for PoolContract {
         #[ink(message)]
@@ -132,7 +107,455 @@ pub mod crab_swap_pool {
         }
     }
 
+    struct SwapCache {
+        // the protocol fee for the input token
+        pub feeProtocol: u8,
+        // liquidity at the beginning of the swap
+        pub liquidityStart: u128,
+        // the timestamp of the current block
+        pub blockTimestamp: u64,
+        // the current value of the tick accumulator, computed only if we cross an initialized tick
+        pub tickCumulative: i64,
+        // the current value of seconds per liquidity accumulator, computed only if we cross an initialized tick
+        pub secondsPerLiquidityCumulativeX128: U160,
+        // whether we've computed and cached the above two accumulators
+        pub computedLatestObservation: bool,
+    }
+
+    // the top level state of the swap, the results of which are recorded in storage at the end
+    struct SwapState {
+        // the amount remaining to be swapped in/out of the input/output asset
+        pub amountSpecifiedRemaining: Int256,
+        // the amount already swapped out/in of the output/input asset
+        pub amountCalculated: Int256,
+        // current sqrt(price)
+        pub sqrtPriceX96: U160,
+        // the tick associated with the current price
+        pub tick: Int24,
+        // the global fee growth of the input token
+        pub feeGrowthGlobalX128: U256,
+        // amount of input token paid as protocol fee
+        pub protocolFee: u128,
+        // the current liquidity in range
+        pub liquidity: u128,
+    }
+
+    #[derive(Default)]
+    struct StepComputations {
+        // the price at the beginning of the step
+        pub sqrtPriceStartX96: U160,
+        // the next tick to swap to from the current tick in the swap direction
+        pub tickNext: Int24,
+        // whether tickNext is initialized or not
+        pub initialized: bool,
+        // sqrt(price) for the next tick (1/0)
+        pub sqrtPriceNextX96: U160,
+        // how much is being swapped in in this step
+        pub amountIn: U256,
+        // how much is being swapped out
+        pub amountOut: U256,
+        // how much fee is being paid in
+        pub feeAmount: U256,
+    }
+
     impl PoolAction for PoolContract {
+        /// @inheritdoc IUniswapV3PoolActions
+        // function swap(
+        //     address recipient,
+        //     bool zeroForOne,
+        //     int256 amountSpecified,
+        //     uint160 sqrtPriceLimitX96,
+        //     bytes calldata data
+        // ) external override noDelegateCall returns (int256 amount0, int256 amount1) {
+        #[ink(message)]
+        #[modifiers(noDelegateCall)]
+        fn swap(
+            &mut self,
+            recipient: Address,
+            zeroForOne: bool,
+            amountSpecified: Int256,
+            sqrtPriceLimitX96: U160,
+            data: Vec<u8>,
+        ) -> (Int256, Int256) {
+            let amount0:Int256;
+            let amount1:Int256;
+            //     require(amountSpecified != 0, 'AS');
+            assert!(amountSpecified != 0, "AS");
+
+            let slot0Start: Slot0 = self.slot0.clone();
+
+            //     require(slot0Start.unlocked, 'LOK');
+            assert!(slot0Start.unlocked, "LOK");
+            //     require(
+            //         zeroForOne
+            //             ? sqrtPriceLimitX96 < slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 > TickMath.MIN_SQRT_RATIO
+            //             : sqrtPriceLimitX96 > slot0Start.sqrtPriceX96 && sqrtPriceLimitX96 < TickMath.MAX_SQRT_RATIO,
+            //         'SPL'
+            //     );
+            assert!(
+                if zeroForOne {
+                    sqrtPriceLimitX96 < slot0Start.sqrtPriceX96.value
+                        && sqrtPriceLimitX96 > U256::from(TickMath::MIN_SQRT_RATIO)
+                } else {
+                    sqrtPriceLimitX96 > slot0Start.sqrtPriceX96.value
+                        && sqrtPriceLimitX96 < U256::from(TickMath::MAX_SQRT_RATIO)
+                },
+                "SPL"
+            );
+
+            //     slot0.unlocked = false;
+            self.slot0.unlocked = false;
+            //     SwapCache memory cache =
+            //         SwapCache({
+            //             liquidityStart: liquidity,
+            //             blockTimestamp: _blockTimestamp(),
+            //             feeProtocol: zeroForOne ? (slot0Start.feeProtocol % 16) : (slot0Start.feeProtocol >> 4),
+            //             secondsPerLiquidityCumulativeX128: 0,
+            //             tickCumulative: 0,
+            //             computedLatestObservation: false
+            //         });
+            let mut cache: SwapCache = SwapCache {
+                liquidityStart: self.liquidity,
+                blockTimestamp: ink_env::block_timestamp::<DefaultEnvironment>(),
+                feeProtocol: if zeroForOne {
+                    slot0Start.feeProtocol % 16
+                } else {
+                    slot0Start.feeProtocol >> 4
+                },
+                secondsPerLiquidityCumulativeX128: U256::zero(),
+                tickCumulative: 0,
+                computedLatestObservation: false,
+            };
+
+            //     bool exactInput = amountSpecified > 0;
+            let exactInput: bool = amountSpecified > 0;
+
+            //     SwapState memory state =
+            //         SwapState({
+            //             amountSpecifiedRemaining: amountSpecified,
+            //             amountCalculated: 0,
+            //             sqrtPriceX96: slot0Start.sqrtPriceX96,
+            //             tick: slot0Start.tick,
+            //             feeGrowthGlobalX128: zeroForOne ? feeGrowthGlobal0X128 : feeGrowthGlobal1X128,
+            //             protocolFee: 0,
+            //             liquidity: cache.liquidityStart
+            //         });
+            let mut state: SwapState = SwapState {
+                amountSpecifiedRemaining: amountSpecified,
+                amountCalculated: 0,
+                sqrtPriceX96: slot0Start.sqrtPriceX96.value,
+                tick: slot0Start.tick,
+                feeGrowthGlobalX128: if zeroForOne {
+                    self.feeGrowthGlobal0X128.value
+                } else {
+                    self.feeGrowthGlobal1X128.value
+                },
+                protocolFee: 0,
+                liquidity: cache.liquidityStart,
+            };
+
+            //     // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
+            //     while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != sqrtPriceLimitX96) {
+
+            while state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != sqrtPriceLimitX96 {
+                //StepComputations memory step;
+                let mut step: StepComputations = Default::default();
+
+                //         step.sqrtPriceStartX96 = state.sqrtPriceX96;
+                step.sqrtPriceStartX96 = state.sqrtPriceX96;
+
+                //         (step.tickNext, step.initialized) = tickBitmap.nextInitializedTickWithinOneWord(
+                //             state.tick,
+                //             tickSpacing,
+                //             zeroForOne
+                //         );
+                (step.tickNext, step.initialized) = TickBitmap::nextInitializedTickWithinOneWord(
+                    &mut self.tickBitmap,
+                    state.tick,
+                    self.tickSpacing,
+                    zeroForOne,
+                );
+
+                //         // ensure that we do not overshoot the min/max tick, as the tick bitmap is not aware of these bounds
+                //         if (step.tickNext < TickMath.MIN_TICK) {
+                //             step.tickNext = TickMath.MIN_TICK;
+                //         } else if (step.tickNext > TickMath.MAX_TICK) {
+                //             step.tickNext = TickMath.MAX_TICK;
+                //         }
+                if step.tickNext < TickMath::MIN_TICK {
+                    step.tickNext = TickMath::MIN_TICK;
+                } else if step.tickNext > TickMath::MAX_TICK {
+                    step.tickNext = TickMath::MAX_TICK;
+                }
+
+                //         // get the price for the next tick
+                //         step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.tickNext);
+                step.sqrtPriceNextX96 = TickMath::getSqrtRatioAtTick(step.tickNext);
+
+                //         // compute values to swap to the target tick, price limit, or point where input/output amount is exhausted
+                //         (state.sqrtPriceX96, step.amountIn, step.amountOut, step.feeAmount) = SwapMath.computeSwapStep(
+                //             state.sqrtPriceX96,
+                //             (zeroForOne ? step.sqrtPriceNextX96 < sqrtPriceLimitX96 : step.sqrtPriceNextX96 > sqrtPriceLimitX96)
+                //                 ? sqrtPriceLimitX96
+                //                 : step.sqrtPriceNextX96,
+                //             state.liquidity,
+                //             state.amountSpecifiedRemaining,
+                //             fee
+                //         );
+                (
+                    state.sqrtPriceX96,
+                    step.amountIn,
+                    step.amountOut,
+                    step.feeAmount,
+                ) = SwapMath::computeSwapStep(
+                    state.sqrtPriceX96,
+                    if if zeroForOne {
+                        step.sqrtPriceNextX96 < sqrtPriceLimitX96
+                    } else {
+                        step.sqrtPriceNextX96 > sqrtPriceLimitX96
+                    } {
+                        sqrtPriceLimitX96
+                    } else {
+                        step.sqrtPriceNextX96
+                    },
+                    state.liquidity,
+                    state.amountSpecifiedRemaining,
+                    self.fee,
+                );
+
+                //         if (exactInput) {
+                //             state.amountSpecifiedRemaining -= (step.amountIn + step.feeAmount).toInt256();
+                //             state.amountCalculated = state.amountCalculated.sub(step.amountOut.toInt256());
+                //         } else {
+                //             state.amountSpecifiedRemaining += step.amountOut.toInt256();
+                //             state.amountCalculated = state.amountCalculated.add((step.amountIn + step.feeAmount).toInt256());
+                //         }
+                if exactInput {
+                    // TODO check i128 maybe over MAX of i128
+                    state.amountSpecifiedRemaining -=
+                        I256::try_from((step.amountIn + step.feeAmount).as_u128())
+                            .expect("U256 to I256 error!");
+                    state.amountCalculated = state.amountCalculated
+                        - I256::try_from(step.amountOut.as_u128()).expect("U256 to I256 error!");
+                } else {
+                    state.amountSpecifiedRemaining +=
+                        I256::try_from(step.amountOut.as_u128()).expect("U256 to I256 error!");
+                    state.amountCalculated = state.amountCalculated
+                        + (I256::try_from((step.amountIn + step.feeAmount).as_u128())
+                            .expect("U256 to I256 error!"));
+                }
+
+                //         // if the protocol fee is on, calculate how much is owed, decrement feeAmount, and increment protocolFee
+                //         if (cache.feeProtocol > 0) {
+                //             uint256 delta = step.feeAmount / cache.feeProtocol;
+                //             step.feeAmount -= delta;
+                //             state.protocolFee += uint128(delta);
+                //         }
+                if cache.feeProtocol > 0 {
+                    let delta: U256 = step.feeAmount / cache.feeProtocol;
+                    step.feeAmount -= delta;
+                    state.protocolFee += delta.as_u128();
+                }
+
+                //         // update global fee tracker
+                //         if (state.liquidity > 0)
+                //             state.feeGrowthGlobalX128 += FullMath.mulDiv(step.feeAmount, FixedPoint128.Q128, state.liquidity);
+                if state.liquidity > 0 {
+                    state.feeGrowthGlobalX128 += FullMath::mulDiv(
+                        step.feeAmount,
+                        U256::from(FixedPoint128::Q128),
+                        U256::from(state.liquidity),
+                    );
+                }
+                //         // shift tick if we reached the next price
+                //         if (state.sqrtPriceX96 == step.sqrtPriceNextX96) {
+                if state.sqrtPriceX96 == step.sqrtPriceNextX96 {
+                    //             // if the tick is initialized, run the tick transition
+                    //             if (step.initialized) {
+                    if step.initialized {
+                        //                 // check for the placeholder value, which we replace with the actual value the first time the swap
+                        //                 // crosses an initialized tick
+                        //                 if (!cache.computedLatestObservation) {
+                        //                     (cache.tickCumulative, cache.secondsPerLiquidityCumulativeX128) = observations.observeSingle(
+                        //                         cache.blockTimestamp,
+                        //                         0,
+                        //                         slot0Start.tick,
+                        //                         slot0Start.observationIndex,
+                        //                         cache.liquidityStart,
+                        //                         slot0Start.observationCardinality
+                        //                     );
+                        //                     cache.computedLatestObservation = true;
+                        //                 }
+                        if !cache.computedLatestObservation {
+                            (
+                                cache.tickCumulative,
+                                cache.secondsPerLiquidityCumulativeX128,
+                            ) = self.observations.observeSingle(
+                                cache.blockTimestamp,
+                                0,
+                                slot0Start.tick,
+                                slot0Start.observationIndex,
+                                cache.liquidityStart,
+                                slot0Start.observationCardinality,
+                            );
+                            cache.computedLatestObservation = true;
+                        }
+                        //                 int128 liquidityNet =
+                        //                     ticks.cross(
+                        //                         step.tickNext,
+                        //                         (zeroForOne ? state.feeGrowthGlobalX128 : feeGrowthGlobal0X128),
+                        //                         (zeroForOne ? feeGrowthGlobal1X128 : state.feeGrowthGlobalX128),
+                        //                         cache.secondsPerLiquidityCumulativeX128,
+                        //                         cache.tickCumulative,
+                        //                         cache.blockTimestamp
+                        //                     );
+                        let mut liquidityNet: i128 = Tick::cross(
+                            &mut self.ticks,
+                            step.tickNext,
+                            if zeroForOne {
+                                state.feeGrowthGlobalX128
+                            } else {
+                                self.feeGrowthGlobal0X128.value
+                            },
+                            if zeroForOne {
+                                self.feeGrowthGlobal1X128.value
+                            } else {
+                                state.feeGrowthGlobalX128
+                            },
+                            cache.secondsPerLiquidityCumulativeX128,
+                            cache.tickCumulative,
+                            cache.blockTimestamp,
+                        );
+                        //                 // if we're moving leftward, we interpret liquidityNet as the opposite sign
+                        //                 // safe because liquidityNet cannot be type(int128).min
+                        //                 if (zeroForOne) liquidityNet = -liquidityNet;
+                        if zeroForOne {
+                            liquidityNet = -liquidityNet;
+                        }
+
+                        //                 state.liquidity = LiquidityMath.addDelta(state.liquidity, liquidityNet);
+                        state.liquidity = LiquidityMath::addDelta(state.liquidity, liquidityNet);
+                        //             }
+                    }
+                    //             state.tick = zeroForOne ? step.tickNext - 1 : step.tickNext;
+                    state.tick = if zeroForOne {
+                        step.tickNext - 1
+                    } else {
+                        step.tickNext
+                    };
+                //         } else if (state.sqrtPriceX96 != step.sqrtPriceStartX96) {
+                //             // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
+                //             state.tick = TickMath.getTickAtSqrtRatio(state.sqrtPriceX96);
+                //         }
+                } else if state.sqrtPriceX96 != step.sqrtPriceStartX96 {
+                    // recompute unless we're on a lower tick boundary (i.e. already transitioned ticks), and haven't moved
+                    state.tick = TickMath::getTickAtSqrtRatio(state.sqrtPriceX96);
+                }
+                //     }
+            }
+
+            //     // update tick and write an oracle entry if the tick change
+            //     if (state.tick != slot0Start.tick) {
+            //         (uint16 observationIndex, uint16 observationCardinality) =
+            //             observations.write(
+            //                 slot0Start.observationIndex,
+            //                 cache.blockTimestamp,
+            //                 slot0Start.tick,
+            //                 cache.liquidityStart,
+            //                 slot0Start.observationCardinality,
+            //                 slot0Start.observationCardinalityNext
+            //             );
+            //         (slot0.sqrtPriceX96, slot0.tick, slot0.observationIndex, slot0.observationCardinality) = (
+            //             state.sqrtPriceX96,
+            //             state.tick,
+            //             observationIndex,
+            //             observationCardinality
+            //         );
+            //     } else {
+            //         // otherwise just update the price
+            //         slot0.sqrtPriceX96 = state.sqrtPriceX96;
+            //     }
+                if state.tick != slot0Start.tick {
+                  let  (observationIndex, observationCardinality):(u16,u16) =
+                        self.observations.write(
+                            slot0Start.observationIndex,
+                            cache.blockTimestamp,
+                            slot0Start.tick,
+                            cache.liquidityStart,
+                            slot0Start.observationCardinality,
+                            slot0Start.observationCardinalityNext
+                        );
+                    (self.slot0.sqrtPriceX96.value, self.slot0.tick, self.slot0.observationIndex, self.slot0.observationCardinality) = (
+                        state.sqrtPriceX96,
+                        state.tick,
+                        observationIndex,
+                        observationCardinality
+                    );
+                } else {
+                    // otherwise just update the price
+                    self.slot0.sqrtPriceX96 = Uint256::new_with_u256(state.sqrtPriceX96);
+                }
+
+            //     // update liquidity if it changed
+            //     if (cache.liquidityStart != state.liquidity) liquidity = state.liquidity;
+                if cache.liquidityStart != state.liquidity { self.liquidity = state.liquidity;
+                // update fee growth global and, if necessary, protocol fees
+                // overflow is acceptable, protocol has to withdraw before it hits type(uint128).max fees
+            //     if (zeroForOne) {
+            //         feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
+            //         if (state.protocolFee > 0) protocolFees.token0 += state.protocolFee;
+            //     } else {
+            //         feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
+            //         if (state.protocolFee > 0) protocolFees.token1 += state.protocolFee;
+            //     }
+                if zeroForOne {
+                    self.feeGrowthGlobal0X128 = Uint256::new_with_u256(state.feeGrowthGlobalX128);
+                    if state.protocolFee > 0 {
+                        self.protocolFees.token0 += state.protocolFee;
+                    } 
+                } else {
+                    self.feeGrowthGlobal1X128 = Uint256::new_with_u256(state.feeGrowthGlobalX128);
+                    if state.protocolFee > 0 {
+                        self.protocolFees.token1 += state.protocolFee;
+                    }
+                }
+
+                (amount0, amount1) = if zeroForOne == exactInput{
+                    (amountSpecified - state.amountSpecifiedRemaining, state.amountCalculated)
+                }else{
+                    (state.amountCalculated, amountSpecified - state.amountSpecifiedRemaining)
+                };
+                   
+
+                // do the transfers and collect payment
+                let msg_sender = ink_env::caller::<DefaultEnvironment>();
+                if (zeroForOne) {
+                    if (amount1 < 0){
+                        PSP22Ref::transfer(&mut self.token1, recipient, u128::try_from(-amount1).expect("i128 to 128 error!"), vec![0u8])
+                        .expect("token0 transfer error!");
+                    } 
+
+                    let balance0Before:U256 = self.balance0();
+                    IUniswapV3SwapCallback(msg_sender).uniswapV3SwapCallback(amount0, amount1, data);
+                    assert!(balance0Before+(U256::from(amount0)) <= self.balance0(), "IIA");
+                } else {
+                    if (amount0 < 0) {
+                        PSP22Ref::transfer(&mut self.token0, recipient, u128::try_from(-amount0).expect("i128 to 128 error!"), vec![0u8])
+                        .expect("token0 transfer error!");
+                    }
+                    let balance1Before:U256 = self.balance1();
+                    IUniswapV3SwapCallback(msg_sender).uniswapV3SwapCallback(amount0, amount1, data);
+                    assert!(balance1Before+(U256::from(amount1)) <= self.balance1(), "IIA");
+                }
+
+            //     emit Swap(msg.sender, recipient, amount0, amount1, state.sqrtPriceX96, state.liquidity, state.tick);
+            //     slot0.unlocked = true;
+                }
+
+           
+            (0, 0)
+        }
+
         // function collect(
         //     address recipient,
         //     int24 tickLower,
@@ -150,25 +573,28 @@ pub mod crab_swap_pool {
             tickUpper: Int24,
             amount0Requested: u128,
             amount1Requested: u128,
-        ) -> (u128, u128){
+        ) -> (u128, u128) {
             //     // we don't need to checkTicks here, because invalid positions will never have non-zero tokensOwed{0,1}
             //     Position.Info storage position = positions.get(msg.sender, tickLower, tickUpper);
             ink_env::debug_println!("^^^^^^^^^^^^^^^^1");
-            let msg_sender:AccountId = ink_env::caller::<DefaultEnvironment>();
+            let msg_sender: AccountId = ink_env::caller::<DefaultEnvironment>();
             ink_env::debug_println!("^^^^^^^^^^^^^^^^2");
-            let mut position:Position::Info = self.positions.get((msg_sender, tickLower, tickUpper)).expect("position is not exist!");
+            let mut position: Position::Info = self
+                .positions
+                .get((msg_sender, tickLower, tickUpper))
+                .expect("position is not exist!");
             ink_env::debug_println!("^^^^^^^^^^^^^^^^3");
             //     amount0 = amount0Requested > position.tokensOwed0 ? position.tokensOwed0 : amount0Requested;
             //     amount1 = amount1Requested > position.tokensOwed1 ? position.tokensOwed1 : amount1Requested;
             let amount0 = if amount0Requested > position.tokensOwed0 {
                 position.tokensOwed0
-            }else{
+            } else {
                 amount0Requested
             };
             ink_env::debug_println!("^^^^^^^^^^^^^^^^4");
-            let amount1 = if amount1Requested > position.tokensOwed1{
+            let amount1 = if amount1Requested > position.tokensOwed1 {
                 position.tokensOwed1
-            }else{
+            } else {
                 amount1Requested
             };
             ink_env::debug_println!("^^^^^^^^^^^^^^^^5");
@@ -181,7 +607,8 @@ pub mod crab_swap_pool {
                 position.tokensOwed0 -= amount0;
                 ink_env::debug_println!("^^^^^^^^^^^^^^^^7");
                 // TransferHelper::safeTransfer instead of transfer of PSP22.
-                PSP22Ref::transfer(&mut self.token0, recipient, amount0, vec![0u8]).expect("token0 transfer error!");
+                PSP22Ref::transfer(&mut self.token0, recipient, amount0, vec![0u8])
+                    .expect("token0 transfer error!");
                 ink_env::debug_println!("^^^^^^^^^^^^^^^^8");
             }
             //     if (amount1 > 0) {
@@ -192,19 +619,20 @@ pub mod crab_swap_pool {
                 ink_env::debug_println!("^^^^^^^^^^^^^^^^9");
                 position.tokensOwed1 -= amount1;
                 ink_env::debug_println!("^^^^^^^^^^^^^^^^10");
-                PSP22Ref::transfer(&mut self.token1, recipient, amount1, vec![0u8]).expect("token1 transfer error!");
+                PSP22Ref::transfer(&mut self.token1, recipient, amount1, vec![0u8])
+                    .expect("token1 transfer error!");
                 ink_env::debug_println!("^^^^^^^^^^^^^^^^11");
             }
             //     emit Collect(msg.sender, recipient, tickLower, tickUpper, amount0, amount1);
-            self.env().emit_event(Collect { 
-                owner:msg_sender,
+            self.env().emit_event(Collect {
+                owner: msg_sender,
                 recipient,
                 tickLower,
                 tickUpper,
                 amount0,
                 amount1,
             });
-            // ink_lang::codegen::EmitEvent::<PoolContract>::emit_event(self.env(), Collect { 
+            // ink_lang::codegen::EmitEvent::<PoolContract>::emit_event(self.env(), Collect {
             //         owner:msg_sender,
             //         recipient,
             //         tickLower,
@@ -213,9 +641,10 @@ pub mod crab_swap_pool {
             //         amount1,
             //     });
             ink_env::debug_println!("^^^^^^^^^^^^^^^^12");
-            self.positions.insert((msg_sender, tickLower, tickUpper),&position);
+            self.positions
+                .insert((msg_sender, tickLower, tickUpper), &position);
             ink_env::debug_println!("^^^^^^^^^^^^^^^^13");
-            (amount0,amount1)
+            (amount0, amount1)
         }
 
         /// @inheritdoc IUniswapV3PoolActions
@@ -226,7 +655,7 @@ pub mod crab_swap_pool {
             // require(slot0.sqrtPriceX96 == 0, 'AI');
             assert!(self.slot0.sqrtPriceX96.value.is_zero(), "AI");
             // int24 tick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
-            let tick: Int24 = get_tick_at_sqrt_ratio(sqrtPriceX96);
+            let tick: Int24 = getTickAtSqrtRatio(sqrtPriceX96);
             // (uint16 cardinality, uint16 cardinalityNext) = observations.initialize(_blockTimestamp());
             let time_stamp = self.env().block_timestamp();
             let (cardinality, cardinalityNext) = self.observations.initialize(time_stamp);
@@ -258,22 +687,25 @@ pub mod crab_swap_pool {
         }
 
         #[ink(message)]
-        fn setUnLock(&mut self,unlock:bool){
+        fn setUnLock(&mut self, unlock: bool) {
             self.slot0.unlocked = unlock;
         }
 
         #[ink(message)]
-        fn positions(&self,position_address:Address,tick_lower:Int24,tick_upper:Int24) -> Position::Info {
-            self.positions.get((position_address,tick_lower,tick_upper)).unwrap_or(Default::default())
+        fn positions(
+            &self,
+            position_address: Address,
+            tick_lower: Int24,
+            tick_upper: Int24,
+        ) -> Position::Info {
+            self.positions
+                .get((position_address, tick_lower, tick_upper))
+                .unwrap_or(Default::default())
         }
 
         #[ink(message)]
         #[modifiers(lock)]
-        fn burn(&mut self,
-            tickLower:Int24,
-            tickUpper:Int24,
-            amount:u128,
-        ) -> (U256,U256){
+        fn burn(&mut self, tickLower: Int24, tickUpper: Int24, amount: u128) -> (U256, U256) {
             // (Position.Info storage position, int256 amount0Int, int256 amount1Int) =
             // _modifyPosition(
             //     ModifyPositionParams({
@@ -284,13 +716,13 @@ pub mod crab_swap_pool {
             //     })
             // );
             let msg_sender = ink_env::caller::<DefaultEnvironment>();
-            let (mut position, amount0Int, amount1Int) =self._modifyPosition(ModifyPositionParams{
-                owner:msg_sender,
-                tickLower,
-                tickUpper,
-                liquidityDelta:-i128::try_from(amount).expect("amount to i128 failed!")
-            }
-            );
+            let (mut position, amount0Int, amount1Int) =
+                self._modifyPosition(ModifyPositionParams {
+                    owner: msg_sender,
+                    tickLower,
+                    tickUpper,
+                    liquidityDelta: -i128::try_from(amount).expect("amount to i128 failed!"),
+                });
 
             // amount0 = uint256(-amount0Int);
             // amount1 = uint256(-amount1Int);
@@ -303,23 +735,23 @@ pub mod crab_swap_pool {
             //         position.tokensOwed1 + uint128(amount1)
             //     );
             // }
-            if amount0 > U256::zero(){
+            if amount0 > U256::zero() {
                 position.tokensOwed0 += amount0.as_u128();
             }
-            if amount1 > U256::zero(){
+            if amount1 > U256::zero() {
                 position.tokensOwed1 += amount1.as_u128();
             }
             self.env().emit_event(Burn {
-                owner:msg_sender, 
-                tickLower, 
-                tickUpper, 
-                amount, 
-                amount0, 
-                amount1});
+                owner: msg_sender,
+                tickLower,
+                tickUpper,
+                amount,
+                amount0,
+                amount1,
+            });
             // emit Burn(msg.sender, tickLower, tickUpper, amount, amount0, amount1);
-            (amount0,amount1)
+            (amount0, amount1)
         }
-
 
         /// @inheritdoc IUniswapV3PoolActions
         /// @dev noDelegateCall is applied indirectly via _modifyPosition
@@ -332,7 +764,8 @@ pub mod crab_swap_pool {
             tickUpper: Int24,
             amount: u128,
             data: Vec<u8>,
-        ) -> (U256, U256) { //uint256 amount0, uint256 amount1
+        ) -> (U256, U256) {
+            //uint256 amount0, uint256 amount1
             ink_env::debug_println!("--------------1");
             assert!(amount > 0, "amount must big than 0");
 
@@ -353,11 +786,11 @@ pub mod crab_swap_pool {
             });
             ink_env::debug_println!("--------------2");
 
-            let amount0:U256 = U256::from(amount0Int);
-            let amount1:U256 = U256::from(amount1Int);
+            let amount0: U256 = U256::from(amount0Int);
+            let amount1: U256 = U256::from(amount1Int);
 
-            let mut balance0Before: U256=U256::zero();
-            let mut balance1Before: U256=U256::zero();
+            let mut balance0Before: U256 = U256::zero();
+            let mut balance1Before: U256 = U256::zero();
             // if (amount0 > 0) balance0Before = balance0();
             if amount0 > U256::from(0) {
                 balance0Before = self.balance0();
@@ -367,14 +800,21 @@ pub mod crab_swap_pool {
                 balance1Before = self.balance1();
             }
             ink_env::debug_println!("**************3");
-            let manager_address:AccountId = ink_env::caller::<DefaultEnvironment>();
-            ink_env::debug_println!("manager_address is:{:?}",manager_address);
-            ink_env::debug_println!("amount0 is:{:?}",amount0);
-            ink_env::debug_println!("amount1 is:{:?}",amount1);
-            ink_env::debug_println!("data is:{:?}",data);
+            let manager_address: AccountId = ink_env::caller::<DefaultEnvironment>();
+            ink_env::debug_println!("manager_address is:{:?}", manager_address);
+            ink_env::debug_println!("amount0 is:{:?}", amount0);
+            ink_env::debug_println!("amount1 is:{:?}", amount1);
+            ink_env::debug_println!("data is:{:?}", data);
             // TODO recovery call back
-            LiquidityManagementTraitRef::uniswapV3MintCallback_builder(&manager_address,amount0, amount1, data)
-                .call_flags(CallFlags::default().set_allow_reentry(true)).fire().unwrap();
+            LiquidityManagementTraitRef::uniswapV3MintCallback_builder(
+                &manager_address,
+                amount0,
+                amount1,
+                data,
+            )
+            .call_flags(CallFlags::default().set_allow_reentry(true))
+            .fire()
+            .unwrap();
             ink_env::debug_println!("**************3.1");
             // let address_of_this = ink_env::account_id::<DefaultEnvironment>();
             // let balance = PSP22Ref::balance_of(&self.token0,address_of_this);
@@ -388,20 +828,20 @@ pub mod crab_swap_pool {
             ink_env::debug_println!("**************4");
             // emit Mint(msg.sender, recipient, tickLower, tickUpper, amount, amount0, amount1);
             self.env().emit_event(Mint {
-                sender:manager_address, 
-                owner:recipient, 
-                tickLower, 
-                tickUpper, 
-                amount, 
-                amount0, 
-                amount1});
+                sender: manager_address,
+                owner: recipient,
+                tickLower,
+                tickUpper,
+                amount,
+                amount0,
+                amount1,
+            });
             ink_env::debug_println!("**************5");
-            (amount0,amount1)
-            
+            (amount0, amount1)
         }
     }
 
-        /// @notice Emitted when liquidity is minted for a given position
+    /// @notice Emitted when liquidity is minted for a given position
     /// @param sender The address that minted the liquidity
     /// @param owner The owner of the position and recipient of any minted liquidity
     /// @param tickLower The lower tick of the position
@@ -432,16 +872,16 @@ pub mod crab_swap_pool {
     /// @param amount0 The amount of token0 fees collected
     /// @param amount1 The amount of token1 fees collected
     #[ink(event)]
-    pub struct Collect{
+    pub struct Collect {
         #[ink(topic)]
-        owner:Address,
-        recipient:Address,
+        owner: Address,
+        recipient: Address,
         #[ink(topic)]
-        tickLower:Int24,
+        tickLower: Int24,
         #[ink(topic)]
-        tickUpper:Int24,
-        amount0:u128,
-        amount1:u128,
+        tickUpper: Int24,
+        amount0: u128,
+        amount1: u128,
     }
 
     struct ModifyPositionParams {
@@ -454,9 +894,8 @@ pub mod crab_swap_pool {
         liquidityDelta: i128,
     }
 
-
     impl PoolContract {
-        #[ink(constructor,payable)]
+        #[ink(constructor, payable)]
         pub fn new(
             factory: Address,
             token0: Address,
@@ -465,7 +904,7 @@ pub mod crab_swap_pool {
             tickSpacing: Int24,
         ) -> Self {
             // (factory, token0, token1, fee, _tickSpacing) = IUniswapV3PoolDeployer(msg.sender).parameters();
-            // 
+            //
             ink_lang::utils::initialize_contract(|instance: &mut Self| {
                 instance.factory = factory;
                 instance.token0 = token0;
@@ -481,89 +920,102 @@ pub mod crab_swap_pool {
                 instance.slot0.unlocked = true;
                 instance.observations = Observations::new();
                 instance.maxLiquidityPerTick = Tick::tickSpacingToMaxLiquidityPerTick(tickSpacing);
+                instance.protocolFees = Default::default();
                 ink_env::debug_println!("----------------6");
             })
         }
 
         /// @dev Effect some changes to a position
-    /// @param params the position details and the change to the position's liquidity to effect
-    /// @return position a storage pointer referencing the position with the given owner and tick range
-    /// @return amount0 the amount of token0 owed to the pool, negative if the pool should pay the recipient
-    /// @return amount1 the amount of token1 owed to the pool, negative if the pool should pay the recipient
-    // TODO noDelegateCall add
-    fn _modifyPosition(&mut self,params: ModifyPositionParams) -> (Position::Info, Int256, Int256) {
-        ink_env::debug_println!("--------------5");
-        checkTicks(params.tickLower, params.tickUpper);
+        /// @param params the position details and the change to the position's liquidity to effect
+        /// @return position a storage pointer referencing the position with the given owner and tick range
+        /// @return amount0 the amount of token0 owed to the pool, negative if the pool should pay the recipient
+        /// @return amount1 the amount of token1 owed to the pool, negative if the pool should pay the recipient
+        // TODO noDelegateCall add
+        fn _modifyPosition(
+            &mut self,
+            params: ModifyPositionParams,
+        ) -> (Position::Info, Int256, Int256) {
+            ink_env::debug_println!("--------------5");
+            checkTicks(params.tickLower, params.tickUpper);
 
-        // Slot0 memory _slot0 = slot0;
-        let _slot0 = self.slot0.clone(); // SLOAD for gas optimization
-        ink_env::debug_println!("--------------6");
-        let position = self._updatePosition(
-            params.owner,
-            params.tickLower,
-            params.tickUpper,
-            params.liquidityDelta,
-            _slot0.tick,
-        );
-        let mut amount0=0;
-        let mut amount1=0;
-        ink_env::debug_println!("--------------7");
-        if params.liquidityDelta != 0 {
-            if _slot0.tick < params.tickLower {
-                // current tick is below the passed range; liquidity can only become in range by crossing from left to
-                // right, when we'll need _more_ token0 (it's becoming more valuable) so user must provide it
-                amount0 = SqrtPriceMath::getAmount0Delta(
-                    TickMath::getSqrtRatioAtTick(params.tickLower),
-                    TickMath::getSqrtRatioAtTick(params.tickUpper),
-                    params.liquidityDelta,
-                );
-                ink_env::debug_println!("--------------8");
-            } else if _slot0.tick < params.tickUpper {
-                // current tick is inside the passed range
-                let liquidityBefore = self.liquidity; // Sloan for gas optimization
-                ink_env::debug_println!("--------------9");
-                // write an oracle entry
-                (self.slot0.observationIndex, self.slot0.observationCardinality) = self.observations.write(
-                    _slot0.observationIndex,
-                    self._blockTimestamp(),
-                    _slot0.tick,
-                    liquidityBefore,
-                    _slot0.observationCardinality,
-                    _slot0.observationCardinalityNext,
-                );
-                ink_env::debug_println!("--------------10");
-                amount0 = SqrtPriceMath::getAmount0Delta(
-                    _slot0.sqrtPriceX96.value,
-                    TickMath::getSqrtRatioAtTick(params.tickUpper),
-                    params.liquidityDelta,
-                );
-                amount1 = SqrtPriceMath::getAmount1Delta(
-                    TickMath::getSqrtRatioAtTick(params.tickLower),
-                    _slot0.sqrtPriceX96.value,
-                    params.liquidityDelta,
-                );
-                ink_env::debug_println!("self.liquidity is:{:?},liquidityBefore is:{:?}",self.liquidity,liquidityBefore);
-                self.liquidity = LiquidityMath::addDelta(liquidityBefore, params.liquidityDelta);
-            } else {
-                // current tick is above the passed range; liquidity can only become in range by crossing from right to
-                // left, when we'll need _more_ token1 (it's becoming more valuable) so user must provide it
-                amount1 = SqrtPriceMath::getAmount1Delta(
-                    TickMath::getSqrtRatioAtTick(params.tickLower),
-                    TickMath::getSqrtRatioAtTick(params.tickUpper),
-                    params.liquidityDelta,
-                );
-                ink_env::debug_println!("--------------12");
+            // Slot0 memory _slot0 = slot0;
+            let _slot0 = self.slot0.clone(); // SLOAD for gas optimization
+            ink_env::debug_println!("--------------6");
+            let position = self._updatePosition(
+                params.owner,
+                params.tickLower,
+                params.tickUpper,
+                params.liquidityDelta,
+                _slot0.tick,
+            );
+            let mut amount0 = 0;
+            let mut amount1 = 0;
+            ink_env::debug_println!("--------------7");
+            if params.liquidityDelta != 0 {
+                if _slot0.tick < params.tickLower {
+                    // current tick is below the passed range; liquidity can only become in range by crossing from left to
+                    // right, when we'll need _more_ token0 (it's becoming more valuable) so user must provide it
+                    amount0 = SqrtPriceMath::getAmount0Delta(
+                        TickMath::getSqrtRatioAtTick(params.tickLower),
+                        TickMath::getSqrtRatioAtTick(params.tickUpper),
+                        params.liquidityDelta,
+                    );
+                    ink_env::debug_println!("--------------8");
+                } else if _slot0.tick < params.tickUpper {
+                    // current tick is inside the passed range
+                    let liquidityBefore = self.liquidity; // Sloan for gas optimization
+                    ink_env::debug_println!("--------------9");
+                    // write an oracle entry
+                    (
+                        self.slot0.observationIndex,
+                        self.slot0.observationCardinality,
+                    ) = self.observations.write(
+                        _slot0.observationIndex,
+                        self._blockTimestamp(),
+                        _slot0.tick,
+                        liquidityBefore,
+                        _slot0.observationCardinality,
+                        _slot0.observationCardinalityNext,
+                    );
+                    ink_env::debug_println!("--------------10");
+                    amount0 = SqrtPriceMath::getAmount0Delta(
+                        _slot0.sqrtPriceX96.value,
+                        TickMath::getSqrtRatioAtTick(params.tickUpper),
+                        params.liquidityDelta,
+                    );
+                    amount1 = SqrtPriceMath::getAmount1Delta(
+                        TickMath::getSqrtRatioAtTick(params.tickLower),
+                        _slot0.sqrtPriceX96.value,
+                        params.liquidityDelta,
+                    );
+                    ink_env::debug_println!(
+                        "self.liquidity is:{:?},liquidityBefore is:{:?}",
+                        self.liquidity,
+                        liquidityBefore
+                    );
+                    self.liquidity =
+                        LiquidityMath::addDelta(liquidityBefore, params.liquidityDelta);
+                } else {
+                    // current tick is above the passed range; liquidity can only become in range by crossing from right to
+                    // left, when we'll need _more_ token1 (it's becoming more valuable) so user must provide it
+                    amount1 = SqrtPriceMath::getAmount1Delta(
+                        TickMath::getSqrtRatioAtTick(params.tickLower),
+                        TickMath::getSqrtRatioAtTick(params.tickUpper),
+                        params.liquidityDelta,
+                    );
+                    ink_env::debug_println!("--------------12");
+                }
             }
+            (position, amount0, amount1)
         }
-        (position,amount0,amount1)
-    }
 
         /// @dev Gets and updates a position with the given liquidity delta
         /// @param owner the owner of the position
         /// @param tickLower the lower tick of the position's tick range
         /// @param tickUpper the upper tick of the position's tick range
         /// @param tick the current tick, passed to avoid sloads
-        fn _updatePosition(&mut self,
+        fn _updatePosition(
+            &mut self,
             owner: Address,
             tickLower: Int24,
             tickUpper: Int24,
@@ -571,20 +1023,23 @@ pub mod crab_swap_pool {
             tick: Int24,
         ) -> Position::Info {
             // position = positions.get(owner, tickLower, tickUpper);
-            let mut position:Position::Info = self.positions.get((owner, tickLower, tickUpper)).unwrap_or(Default::default());
+            let mut position: Position::Info = self
+                .positions
+                .get((owner, tickLower, tickUpper))
+                .unwrap_or(Default::default());
             ink_env::debug_println!("++++++++++++7");
             let _feeGrowthGlobal0X128: U256 = self.feeGrowthGlobal0X128.value; // LOAD for gas optimization
             let _feeGrowthGlobal1X128: U256 = self.feeGrowthGlobal1X128.value; // SLOAD for gas optimization
 
             // if we need to update the ticks, do it
-            let flippedLower: bool=false;
-            let flippedUpper: bool=false;
+            let flippedLower: bool = false;
+            let flippedUpper: bool = false;
             if liquidityDelta != 0 {
                 // uint32 time = _blockTimestamp();
                 let time = self.env().block_timestamp();
                 ink_env::debug_println!("++++++++++++8");
-                let (tickCumulative, secondsPerLiquidityCumulativeX128) = self.observations
-                    .observeSingle(
+                let (tickCumulative, secondsPerLiquidityCumulativeX128) =
+                    self.observations.observeSingle(
                         time,
                         0,
                         self.slot0.tick,
@@ -592,7 +1047,8 @@ pub mod crab_swap_pool {
                         self.liquidity,
                         self.slot0.observationCardinality,
                     );
-                let mut tick_info_lower:Tick::Info = self.ticks.get(tickLower).unwrap_or(Default::default());
+                let mut tick_info_lower: Tick::Info =
+                    self.ticks.get(tickLower).unwrap_or(Default::default());
                 ink_env::debug_println!("++++++++++++9");
                 let flippedLower = tick_info_lower.update(
                     tickLower,
@@ -607,7 +1063,7 @@ pub mod crab_swap_pool {
                     self.maxLiquidityPerTick,
                 );
                 ink_env::debug_println!("++++++++++++10");
-                self.ticks.insert(tickLower,&tick_info_lower);
+                self.ticks.insert(tickLower, &tick_info_lower);
 
                 let mut tick_info_upper = self.ticks.get(tickUpper).unwrap_or(Default::default());
                 ink_env::debug_println!("++++++++++++11");
@@ -623,23 +1079,35 @@ pub mod crab_swap_pool {
                     true,
                     self.maxLiquidityPerTick,
                 );
-                self.ticks.insert(tickUpper,&tick_info_upper);
+                self.ticks.insert(tickUpper, &tick_info_upper);
                 ink_env::debug_println!("++++++++++++12");
-                
+
                 if flippedLower {
                     let (wordPos, mask) = TickBitmap::flipTick(tickLower, self.tickSpacing);
                     // TickBitmap self[wordPos] ^= mask; 移到外部进行计算
-                    let tick_new_value = self.tickBitmap.get(wordPos).unwrap_or(Default::default()).value^mask;
+                    let tick_new_value = self
+                        .tickBitmap
+                        .get(wordPos)
+                        .unwrap_or(Default::default())
+                        .value
+                        ^ mask;
                     ink_env::debug_println!("++++++++++++13 flippedLower");
-                    self.tickBitmap.insert(wordPos,&Uint256::new_with_u256(tick_new_value));
+                    self.tickBitmap
+                        .insert(wordPos, &Uint256::new_with_u256(tick_new_value));
                     // self[wordPos] ^= mask;
                 }
                 if flippedUpper {
                     let (wordPos, mask) = TickBitmap::flipTick(tickUpper, self.tickSpacing);
                     // self[wordPos] ^= mask;
-                    let tick_new_value = self.tickBitmap.get(wordPos).unwrap_or(Default::default()).value^mask;
+                    let tick_new_value = self
+                        .tickBitmap
+                        .get(wordPos)
+                        .unwrap_or(Default::default())
+                        .value
+                        ^ mask;
                     ink_env::debug_println!("++++++++++++13 flippedUpper");
-                    self.tickBitmap.insert(wordPos,&Uint256::new_with_u256(tick_new_value));
+                    self.tickBitmap
+                        .insert(wordPos, &Uint256::new_with_u256(tick_new_value));
                 }
             }
             ink_env::debug_println!("++++++++++++14");
@@ -652,7 +1120,8 @@ pub mod crab_swap_pool {
             );
             ink_env::debug_println!("++++++++++++15");
             position.update(liquidityDelta, feeGrowthInside0X128, feeGrowthInside1X128);
-            self.positions.insert((owner, tickLower, tickUpper),&position);
+            self.positions
+                .insert((owner, tickLower, tickUpper), &position);
             // clear any tick data that is no longer needed
             if liquidityDelta < 0 {
                 if flippedLower {
@@ -666,83 +1135,83 @@ pub mod crab_swap_pool {
         }
 
         /// @dev Returns the block timestamp truncated to 32 bits, i.e. mod 2**32. This method is overridden in tests.
-    pub fn _blockTimestamp(&self) -> u64 {
-        // return uint32(block.timestamp); // truncation is desired
-        ink_env::block_timestamp::<DefaultEnvironment>()
-        
-    }
-
-    /// @notice Retrieves fee growth data
-    /// @param self The mapping containing all tick information for initialized ticks
-    /// @param tickLower The lower tick boundary of the position
-    /// @param tickUpper The upper tick boundary of the position
-    /// @param tickCurrent The current tick
-    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
-    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
-    /// @return feeGrowthInside0X128 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
-    /// @return feeGrowthInside1X128 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
-    pub fn getFeeGrowthInside(
-        &mut self,
-        tickLower:Int24,
-        tickUpper:Int24,
-        tickCurrent:Int24,
-        feeGrowthGlobal0X128:U256,
-        feeGrowthGlobal1X128:U256
-    ) -> (U256, U256) {
-        let lower:Tick::Info = self.ticks.get(tickLower).unwrap_or(Default::default());
-        let upper:Tick::Info = self.ticks.get(tickUpper).unwrap_or(Default::default());
-
-        // calculate fee growth below
-        let feeGrowthBelow0X128:U256;
-        let feeGrowthBelow1X128:U256;
-        if tickCurrent >= tickLower {
-            feeGrowthBelow0X128 = lower.feeGrowthOutside0X128.value;
-            feeGrowthBelow1X128 = lower.feeGrowthOutside1X128.value;
-        } else {
-            feeGrowthBelow0X128 = feeGrowthGlobal0X128 - lower.feeGrowthOutside0X128.value;
-            feeGrowthBelow1X128 = feeGrowthGlobal1X128 - lower.feeGrowthOutside1X128.value;
+        pub fn _blockTimestamp(&self) -> u64 {
+            // return uint32(block.timestamp); // truncation is desired
+            ink_env::block_timestamp::<DefaultEnvironment>()
         }
 
-        // calculate fee growth above
-        let feeGrowthAbove0X128:U256;
-        let feeGrowthAbove1X128:U256;
-        if tickCurrent < tickUpper {
-            feeGrowthAbove0X128 = upper.feeGrowthOutside0X128.value;
-            feeGrowthAbove1X128 = upper.feeGrowthOutside1X128.value;
-        } else {
-            feeGrowthAbove0X128 = feeGrowthGlobal0X128 - upper.feeGrowthOutside0X128.value;
-            feeGrowthAbove1X128 = feeGrowthGlobal1X128 - upper.feeGrowthOutside1X128.value;
+        /// @notice Retrieves fee growth data
+        /// @param self The mapping containing all tick information for initialized ticks
+        /// @param tickLower The lower tick boundary of the position
+        /// @param tickUpper The upper tick boundary of the position
+        /// @param tickCurrent The current tick
+        /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
+        /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
+        /// @return feeGrowthInside0X128 The all-time fee growth in token0, per unit of liquidity, inside the position's tick boundaries
+        /// @return feeGrowthInside1X128 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
+        pub fn getFeeGrowthInside(
+            &mut self,
+            tickLower: Int24,
+            tickUpper: Int24,
+            tickCurrent: Int24,
+            feeGrowthGlobal0X128: U256,
+            feeGrowthGlobal1X128: U256,
+        ) -> (U256, U256) {
+            let lower: Tick::Info = self.ticks.get(tickLower).unwrap_or(Default::default());
+            let upper: Tick::Info = self.ticks.get(tickUpper).unwrap_or(Default::default());
+
+            // calculate fee growth below
+            let feeGrowthBelow0X128: U256;
+            let feeGrowthBelow1X128: U256;
+            if tickCurrent >= tickLower {
+                feeGrowthBelow0X128 = lower.feeGrowthOutside0X128.value;
+                feeGrowthBelow1X128 = lower.feeGrowthOutside1X128.value;
+            } else {
+                feeGrowthBelow0X128 = feeGrowthGlobal0X128 - lower.feeGrowthOutside0X128.value;
+                feeGrowthBelow1X128 = feeGrowthGlobal1X128 - lower.feeGrowthOutside1X128.value;
+            }
+
+            // calculate fee growth above
+            let feeGrowthAbove0X128: U256;
+            let feeGrowthAbove1X128: U256;
+            if tickCurrent < tickUpper {
+                feeGrowthAbove0X128 = upper.feeGrowthOutside0X128.value;
+                feeGrowthAbove1X128 = upper.feeGrowthOutside1X128.value;
+            } else {
+                feeGrowthAbove0X128 = feeGrowthGlobal0X128 - upper.feeGrowthOutside0X128.value;
+                feeGrowthAbove1X128 = feeGrowthGlobal1X128 - upper.feeGrowthOutside1X128.value;
+            }
+
+            let feeGrowthInside0X128 =
+                feeGrowthGlobal0X128 - feeGrowthBelow0X128 - feeGrowthAbove0X128;
+            let feeGrowthInside1X128 =
+                feeGrowthGlobal1X128 - feeGrowthBelow1X128 - feeGrowthAbove1X128;
+            (feeGrowthInside0X128, feeGrowthInside1X128)
         }
 
-        let feeGrowthInside0X128 = feeGrowthGlobal0X128 - feeGrowthBelow0X128 - feeGrowthAbove0X128;
-        let feeGrowthInside1X128 = feeGrowthGlobal1X128 - feeGrowthBelow1X128 - feeGrowthAbove1X128;
-        (feeGrowthInside0X128,feeGrowthInside1X128)
-    }
+        /// @dev Get the pool's balance of token0
+        /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
+        /// check
+        fn balance0(&self) -> U256 {
+            // (bool success, bytes memory data) =
+            //     token0.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
+            // require(success && data.length >= 32);
+            // return abi.decode(data, (uint256));
+            let address_of_this = ink_env::account_id::<DefaultEnvironment>();
+            U256::from(PSP22Ref::balance_of(&self.token0, address_of_this))
+        }
 
-    /// @dev Get the pool's balance of token0
-    /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
-    /// check
-    fn balance0(&self)-> U256 {
-        // (bool success, bytes memory data) =
-        //     token0.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
-        // require(success && data.length >= 32);
-        // return abi.decode(data, (uint256));
-        let address_of_this = ink_env::account_id::<DefaultEnvironment>();
-        U256::from(PSP22Ref::balance_of(&self.token0,address_of_this))
-    }
-
-
-    /// @dev Get the pool's balance of token1
-    /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
-    /// check
-    fn balance1(&self) -> U256 {
-        // (bool success, bytes memory data) =
-        //     token1.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
-        // require(success && data.length >= 32);
-        // return abi.decode(data, (uint256));
-        let address_of_this = ink_env::account_id::<DefaultEnvironment>();
-        U256::from(PSP22Ref::balance_of(&self.token1,address_of_this))
-    }
+        /// @dev Get the pool's balance of token1
+        /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
+        /// check
+        fn balance1(&self) -> U256 {
+            // (bool success, bytes memory data) =
+            //     token1.staticcall(abi.encodeWithSelector(IERC20Minimal.balanceOf.selector, address(this)));
+            // require(success && data.length >= 32);
+            // return abi.decode(data, (uint256));
+            let address_of_this = ink_env::account_id::<DefaultEnvironment>();
+            U256::from(PSP22Ref::balance_of(&self.token1, address_of_this))
+        }
 
         // /// @inheritdoc IUniswapV3Factory
         // #[ink(message)]
@@ -750,6 +1219,39 @@ pub mod crab_swap_pool {
         //     self.env().caller();
         //     [0; 32].into()
         // }
+    }
+
+    /// @notice Emitted exactly once by a pool when #initialize is first called on the pool
+    /// @dev Mint/Burn/Swap cannot be emitted by the pool before Initialize
+    /// @param sqrtPriceX96 The initial sqrt price of the pool, as a Q64.96
+    /// @param tick The initial tick of the pool, i.e. log base 1.0001 of the starting price of the pool
+    #[ink(event)]
+    pub struct Initialize {
+        #[ink(topic)]
+        sqrtPriceX96: U160,
+        #[ink(topic)]
+        tick: Int24,
+    }
+
+    /// @notice Emitted when a position's liquidity is removed
+    /// @dev Does not withdraw any fees earned by the liquidity position, which must be withdrawn via #collect
+    /// @param owner The owner of the position for which liquidity is removed
+    /// @param tickLower The lower tick of the position
+    /// @param tickUpper The upper tick of the position
+    /// @param amount The amount of liquidity to remove
+    /// @param amount0 The amount of token0 withdrawn
+    /// @param amount1 The amount of token1 withdrawn
+    #[ink(event)]
+    pub struct Burn {
+        #[ink(topic)]
+        owner: Address,
+        #[ink(topic)]
+        tickLower: Int24,
+        #[ink(topic)]
+        tickUpper: Int24,
+        amount: u128,
+        amount0: U256,
+        amount1: U256,
     }
 
     #[cfg(test)]
@@ -783,7 +1285,7 @@ pub mod crab_swap_pool {
             // assert_eq!(weth9_contract.metadata.name,Some(String::from("weth9")));
         }
     }
-    
+
     /// @dev Common checks for valid tick inputs.
     fn checkTicks(tickLower: Int24, tickUpper: Int24) {
         assert!(tickLower < tickUpper, "TLU");

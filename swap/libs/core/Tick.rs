@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(non_snake_case)]
 
-use ink_storage::traits::{PackedLayout, SpreadLayout, StorageLayout};
+use ink_storage::{traits::{PackedLayout, SpreadLayout, StorageLayout}, Mapping};
 use primitives::{Int24, Uint160, Uint24, Uint256, I56, U160, U256};
 use scale::{Decode, Encode};
 
@@ -33,6 +33,36 @@ pub struct Info {
     // these 8 bits are set to prevent fresh sstores when crossing newly initialized ticks
     pub initialized: bool,
 }
+
+    /// @notice Transitions to next tick as needed by price movement
+    /// @param self The mapping containing all tick information for initialized ticks
+    /// @param tick The destination tick of the transition
+    /// @param feeGrowthGlobal0X128 The all-time global fee growth, per unit of liquidity, in token0
+    /// @param feeGrowthGlobal1X128 The all-time global fee growth, per unit of liquidity, in token1
+    /// @param secondsPerLiquidityCumulativeX128 The current seconds per liquidity
+    /// @param tickCumulative The tick * time elapsed since the pool was first initialized
+    /// @param time The current block.timestamp
+    /// @return liquidityNet The amount of liquidity added (subtracted) when tick is crossed from left to right (right to left)
+    // TODO test mapping value changed
+    pub fn cross(
+        ticks:&mut Mapping<Int24,Info>,
+        tick:Int24,
+         feeGrowthGlobal0X128:U256,
+         feeGrowthGlobal1X128:U256,
+         secondsPerLiquidityCumulativeX128:U160,
+         tickCumulative:i64,
+         time:u64
+    ) -> i128 {
+        let mut info:Info  = ticks.get(tick).expect("token not exist!");
+        info.feeGrowthOutside0X128 = Uint256::new_with_u256(feeGrowthGlobal0X128 - info.feeGrowthOutside0X128.value);
+        info.feeGrowthOutside1X128 = Uint256::new_with_u256(feeGrowthGlobal1X128 - info.feeGrowthOutside1X128.value);
+        info.secondsPerLiquidityOutsideX128 = Uint256::new_with_u256(secondsPerLiquidityCumulativeX128 - info.secondsPerLiquidityOutsideX128.value);
+        info.tickCumulativeOutside = tickCumulative - info.tickCumulativeOutside;
+        info.secondsOutside = time - info.secondsOutside;
+        ticks.insert(tick,&info);
+        let liquidityNet = info.liquidityNet;
+        liquidityNet
+    }
 
 /// @notice Derives max liquidity per tick from given tick spacing
 /// @dev Executed within the pool constructor
@@ -171,6 +201,8 @@ impl Info {
         }
         flipped
     }
+
+    
 }
 
 #[cfg(test)]
@@ -194,6 +226,7 @@ mod tests {
         // time:u32,
         // upper:bool,
         // maxLiquidity:u128
+        
         info.update(
             10,
             100,

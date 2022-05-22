@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(non_snake_case)]
 
 extern crate proc_macro;
 
@@ -22,3 +23,5 @@ declare_derive_storage_trait!(derive_position_descriptor_storage, PositionDescri
 declare_derive_storage_trait!(derive_position_storage, PositionStorage, PositionStorageField);
 
 declare_derive_storage_trait!(derive_immutable_state_storage, ImmutableStateStorage, ImmutableStateField);
+
+declare_derive_storage_trait!(derive_NoDelegateCall_storage, NoDelegateCallStorage, NoDelegateCallField);

@@ -2,6 +2,8 @@
 
 use ink_env::AccountId;
 use primitives::{Address, U256};
+use ink_prelude::string::String;
+
 /// @dev The length of the bytes encoded address
 // uint256 private constant ADDR_SIZE = 20;
 const ADDR_SIZE: usize = 32;
@@ -58,7 +60,7 @@ pub fn getFirstPool(path:String) -> String {
 /// @notice Skips a token + fee element from the buffer and returns the remainder
 /// @param path The swap path
 /// @return The remaining token + fee elements in the path
-pub fn skipToken(path:String) -> (String) {
+pub fn skipToken(path:String) -> String {
     // return path.slice(NEXT_OFFSET, path.length - NEXT_OFFSET);
     let left_str = String::from_utf8(path.as_bytes()[NEXT_OFFSET.. path.len() - NEXT_OFFSET].into()).expect("exchange str to String failed");
     left_str

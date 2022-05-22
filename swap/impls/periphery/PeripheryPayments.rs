@@ -6,11 +6,11 @@ use primitives::{Address, U256};
 use ink_prelude::vec;
 use ink_env::CallFlags;
 use ink_prelude::vec::Vec;
+use crate::impls::periphery_immutable_state::ImmutableStateStorage;
 
-use crate::impls::pool_initialize::PoolInitializeStorage;
 pub use crate::traits::periphery::PeripheryPayments::*;
 
-impl<T: PoolInitializeStorage> PeripheryPaymentsTrait for T {
+impl<T: ImmutableStateStorage> PeripheryPaymentsTrait for T {
     /// @inheritdoc IPeripheryPayments
     default fn refundETH(&mut self) {
         // if (address(this).balance > 0) TransferHelper.safeTransferETH(msg.sender, address(this).balance);
@@ -27,7 +27,7 @@ impl<T: PoolInitializeStorage> PeripheryPaymentsTrait for T {
     /// @param recipient The entity that will receive payment
     /// @param value The amount to pay
     default fn pay(&mut self, mut token: Address, payer: Address, recipient: Address, value: U256) {
-        let mut WETH9 = <Self as PoolInitializeStorage>::get(self).WETH9;
+        let mut WETH9 = self.get().WETH9;
         let balance_of_contract: Balance = ink_env::balance::<DefaultEnvironment>();
         let address_of_this: Address = ink_env::account_id::<DefaultEnvironment>();
         if token == WETH9 && balance_of_contract >= value.as_u128() {

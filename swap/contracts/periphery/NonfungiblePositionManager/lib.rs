@@ -43,7 +43,7 @@ pub mod position_manager {
     use primitives::{Address, U256};
     use scale::{Decode, Encode};
 
-    use crabswap::impls::pool_initialize::PoolInitializeStorage;
+    use crabswap::impls::periphery_immutable_state::{ImmutableStateStorage,ImmutableStateData};
     use crabswap::traits::core::pool::*;
     use ink_env::CallFlags;
 
@@ -78,14 +78,14 @@ pub mod position_manager {
     #[derive(
         Default,
         SpreadAllocate,
-        PoolInitializeStorage,
+        ImmutableStateStorage,
         PSP34Storage,
         ERC721PermitStorage,
         PSP34BaseStorage,
     )]
     pub struct PositionMangerContract {
-        #[PoolInitializeStorageField]
-        initializer: PoolInitializeData,
+        #[ImmutableStateField]
+        immutable_state: ImmutableStateData,
         #[PSP34StorageField]
         psp34: PSP34Data,
         #[ERC721PermitStorageField]
@@ -150,7 +150,7 @@ pub mod position_manager {
             };
 
             // pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
-            let factory = self.initializer.factory;
+            let factory = self.immutable_state.factory;
             // let poolAddress = PoolAddress::computeAddress(factory, poolKey.clone());
             let poolAddress =
                 FactoryRef::get_pool(&factory, params.fee, params.token0, params.token1);
@@ -314,8 +314,8 @@ pub mod position_manager {
             // };
             // instance
             ink_lang::codegen::initialize_contract(|instance: &mut PositionMangerContract| {
-                instance.initializer.factory = factory;
-                instance.initializer.WETH9 = weth9;
+                instance.immutable_state.factory = factory;
+                instance.immutable_state.WETH9 = weth9;
                 let name = "Crabswap V3 Positions NFT-V1";
                 let symbol = "Crab-V3-POS";
                 // let version = "1";
@@ -523,7 +523,7 @@ pub mod position_manager {
                 .get(position.poolId)
                 .expect("poolId not in _poolIdToPoolKey!");
             // IUniswapV3Pool pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
-            let factoryAddress = self.initializer.factory;
+            let factoryAddress = self.immutable_state.factory;
             let pool: Address =
                 FactoryRef::get_pool(&factoryAddress, poolKey.fee, poolKey.token0, poolKey.token1);
 
@@ -840,7 +840,7 @@ pub mod position_manager {
             let poolKey:PoolAddress::PoolKey = self._poolIdToPoolKey.get(position.poolId).expect("pooId not exist!");
             ink_env::debug_println!("$$$$$$$$$$$$$$$$$5");
             // IUniswapV3Pool pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
-            let factoryAddress = self.initializer.factory;
+            let factoryAddress = self.immutable_state.factory;
             ink_env::debug_println!("$$$$$$$$$$$$$$$$$6");
             let pool: Address =
                 FactoryRef::get_pool(&factoryAddress, poolKey.fee, poolKey.token0, poolKey.token1);

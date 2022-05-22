@@ -1,4 +1,3 @@
-pub use super::data::*;
 pub use crate::traits::periphery::pool_initialize::*;
 
 use brush::{
@@ -10,8 +9,9 @@ use ink_env::DefaultEnvironment;
 use primitives::{ ADDRESS0,  Address, U160};
 use crate::traits::core::factory::*;
 use crate::traits::core::pool::*;
+use crate::impls::periphery_immutable_state::ImmutableStateStorage;
 
-impl<T:PoolInitializeStorage> Initializer for T{
+impl<T:ImmutableStateStorage> Initializer for T{
     default fn createAndInitializePoolIfNecessary(
         &mut self,
         token0: AccountId,

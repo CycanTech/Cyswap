@@ -6,7 +6,8 @@
 pub mod swapper_router {
     use crabswap::impls::periphery_immutable_state::{ImmutableStateStorage,ImmutableStateData};
     use crabswap::traits::periphery::periphery_immutable_state::*;
-    use primitives::{Uint24, Uint256,U160, Address, U256, Int256, ADDRESS0, Uint160};
+    use libs::core::TickMath;
+    use primitives::{Uint24, Uint256,U160, Address, U256, Int256, ADDRESS0, Uint160, I256};
     use ink_storage::traits::{SpreadAllocate, SpreadLayout};
     use scale::{Decode, Encode};
     use ink_env::DefaultEnvironment;
@@ -15,6 +16,7 @@ pub mod swapper_router {
     use crabswap::traits::core::factory::FactoryRef;
     use libs::periphery::path;
     use crabswap::traits::periphery::PeripheryPayments::*;
+    use crabswap::traits::core::pool::PoolActionRef;
 
     #[derive(Default, Decode, Encode, Debug, SpreadAllocate, SpreadLayout)]
     struct SwapCallbackData {
@@ -76,6 +78,7 @@ pub mod swapper_router {
                 FactoryRef::get_pool(&self.immutable_state.factory, fee, tokenA, tokenB)
         }
 
+        // this method should move to SwapRouter
         #[ink(message)]
         pub fn uniswapV3SwapCallback(&self,
             amount0Delta:Int256,
@@ -88,7 +91,7 @@ pub mod swapper_router {
             let data: SwapCallbackData =
                 Decode::decode(&mut _data.as_ref()).expect("call back data parse error!");
             // (address tokenIn, address tokenOut, uint24 fee) = data.path.decodeFirstPool();
-            let ( tokenIn, fee, tokenOut,  ) = path::decodeFirstPool(data.path);
+            let ( tokenIn,  tokenOut, fee, ) = path::decodeFirstPool(data.path);
             let pool = if tokenIn < tokenOut{
                  self.getPool(tokenIn,tokenOut,u32::try_from(fee).expect("usize error!"))
             }else{
@@ -124,11 +127,11 @@ pub mod swapper_router {
                 self.pay(tokenIn, data.payer,msg_sender, amountToPay);
             }else{
                 // either initiate the next swap or pay
-                if data.path.hasMultiplePools() {
-                    data.path = data.path.skipToken();
+                if path::hasMultiplePools(data.path) {
+                    data.path = path::skipToken(data.path);
                     exactOutputInternal(amountToPay, msg_sender, 0, data);
                 } else {
-                    self.amountInCached = amountToPay;
+                    self.amountInCached = Uint256::new_with_u256(amountToPay);
                     tokenIn = tokenOut; // swap in/out because exact output swaps are reversed
                     self.pay(tokenIn, data.payer, msg_sender, amountToPay);
                 }
@@ -137,21 +140,22 @@ pub mod swapper_router {
 
         /// @dev Performs a single exact output swap
         fn exactOutputInternal(
+            &self,
             amountOut:U256,
             recipient:Address,
-            sqrtPriceLimitX96:Uint160,
+            sqrtPriceLimitX96:U160,
             data:SwapCallbackData
         )-> U256 {
             // allow swapping to the router address with address 0
             // if (recipient == address(0)) recipient = address(this);
-            if (recipient == ADDRESS0) {
+            if recipient == ADDRESS0.into() {
                 recipient = ink_env::account_id::<DefaultEnvironment>();
             }
             // (address tokenOut, address tokenIn, uint24 fee) = data.path.decodeFirstPool();
-            let (tokenOut, tokenIn, fee) = data.path.decodeFirstPool();
+            let (tokenOut, tokenIn, fee) = path::decodeFirstPool(data.path);
 
             // bool zeroForOne = tokenIn < tokenOut;
-
+            let zeroForOne:bool = tokenIn < tokenOut;
             // (int256 amount0Delta, int256 amount1Delta) =
             //     getPool(tokenIn, tokenOut, fee).swap(
             //         recipient,
@@ -162,6 +166,28 @@ pub mod swapper_router {
             //             : sqrtPriceLimitX96,
             //         abi.encode(data)
             //     );
+            let fee = u32::try_from(fee).expect("usize to u32 error!");
+            let factoryAddress = self.immutable_state.factory;
+            let pool: Address =
+                FactoryRef::get_pool(&factoryAddress, fee, tokenIn, tokenOut);
+            let (amount0Delta, amount1Delta) =
+            PoolActionRef::swap(&pool,
+                    recipient,
+                    zeroForOne,
+                    -I256::try_from(amountOut.as_u128()).expect("exchange u128 to i256 error!"),
+                    if sqrtPriceLimitX96.is_zero() {
+                        if zeroForOne{
+                            U160::from(TickMath::MIN_SQRT_RATIO) + 1
+                        }else{
+                            U160::from(TickMath::MAX_SQRT_RATIO) - 1
+                        }
+                    }else{
+                        sqrtPriceLimitX96
+                    },
+                    //判断data是否已经被改变
+                    scale::Encode::encode(&data)
+                );
+            
 
             // uint256 amountOutReceived;
             // (amountIn, amountOutReceived) = zeroForOne
@@ -170,6 +196,17 @@ pub mod swapper_router {
             // // it's technically possible to not receive the full output amount,
             // // so if no price limit has been specified, require this possibility away
             // if (sqrtPriceLimitX96 == 0) require(amountOutReceived == amountOut);
+            let (amountIn, amountOutReceived) = if zeroForOne{
+                (U256::from(amount0Delta), U256::from(-amount1Delta))
+            }else{
+                (U256::from(amount1Delta), U256::from(-amount0Delta))
+            };
+            // it's technically possible to not receive the full output amount,
+            // so if no price limit has been specified, require this possibility away
+            if sqrtPriceLimitX96.is_zero() {
+                assert!(amountOutReceived == amountOut,"amountOutReceived must equal amountOut");
+            } 
+            
         }
     }
 

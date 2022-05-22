@@ -15,7 +15,7 @@ pub const MIN_SQRT_RATIO:&str = "4295128739";//4295128739;
 /// @dev The maximum value that can be returned from #getSqrtRatioAtTick. Equivalent to getSqrtRatioAtTick(MAX_TICK)
 pub const MAX_SQRT_RATIO:&str = "1461446703485210103287273052203988822378723970342";//1461446703485210103287273052203988822378723970342;
 
-pub fn get_tick_at_sqrt_ratio(sqrt_price_x96:U160)->Int24{
+pub fn getTickAtSqrtRatio(sqrt_price_x96:U160)->Int24{
     // second inequality must be < because the price can never reach the price at the max tick
     // require(sqrtPriceX96 >= MIN_SQRT_RATIO && sqrtPriceX96 < MAX_SQRT_RATIO, 'R');
     // uint256 ratio = uint256(sqrtPriceX96) << 32;
@@ -369,18 +369,18 @@ pub fn getSqrtRatioAtTick(tick:Int24) -> U160 {
 #[cfg(test)]
 mod tests {
     use primitives::U256;
-    use crate::{core::TickMath::get_tick_at_sqrt_ratio, getSqrtRatioAtTick};
+    use crate::{core::TickMath::getTickAtSqrtRatio, getSqrtRatioAtTick};
 
     #[test]
-    fn it_get_tick_at_sqrt_ratio(){
-        let result = get_tick_at_sqrt_ratio(U256::from(0x429511231231231231231228739fu128));
+    fn it_getTickAtSqrtRatio(){
+        let result = getTickAtSqrtRatio(U256::from(0x429511231231231231231228739fu128));
         println!("result is:{}",result);
         // pub const MIN_SQRT_RATIO:&str = "4295128739";//4295128739;
         // pub const MAX_SQRT_RATIO:&str = "1461446703485210103287273052203988822378723970342"
-        let result = get_tick_at_sqrt_ratio(U256::from_dec_str("4295128739").unwrap());
+        let result = getTickAtSqrtRatio(U256::from_dec_str("4295128739").unwrap());
         assert_eq!(result,-887272);
         println!("result is:{}",result);
-        let result = get_tick_at_sqrt_ratio(U256::from_dec_str("1461446703485210103287273052203988822378723970342").unwrap());
+        let result = getTickAtSqrtRatio(U256::from_dec_str("1461446703485210103287273052203988822378723970342").unwrap());
         assert_eq!(result,887272);
         println!("result is:{}",result);
     }
@@ -403,7 +403,7 @@ mod tests {
             println!("tick_index is:{}",tick_index);
             let price = getSqrtRatioAtTick(tick_index);
             println!("price is:{}",price);
-            let tick = get_tick_at_sqrt_ratio(price);
+            let tick = getTickAtSqrtRatio(price);
             println!("ticker_index,tick is :{},{}",tick_index,tick);
             assert_eq!(tick_index,tick,"tick calculate is not correct!");
         }
