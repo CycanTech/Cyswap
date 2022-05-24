@@ -24,7 +24,7 @@ const MULTIPLE_POOLS_MIN_LENGTH: usize = POP_OFFSET + NEXT_OFFSET;
 /// @notice Returns true iff the path contains two or more pools
 /// @param path The encoded swap path
 /// @return True if path contains two or more pools, otherwise false
-pub fn hasMultiplePools(path: String) -> bool {
+pub fn hasMultiplePools(path: &String) -> bool {
     return path.len() >= MULTIPLE_POOLS_MIN_LENGTH;
 }
 
@@ -41,7 +41,7 @@ pub fn numPools(path: String) -> usize {
 /// @return tokenA The first token of the given pool
 /// @return tokenB The second token of the given pool
 /// @return fee The fee level of the pool
-pub fn decodeFirstPool(path: String) -> (Address,Address, usize) {
+pub fn decodeFirstPool(path: &String) -> (Address,Address, usize) {
     let tokenA = path.toAddress(0);
     let fee = path.toUint24(ADDR_SIZE);
     let tokenB = path.toAddress(NEXT_OFFSET);
@@ -66,12 +66,21 @@ pub fn skipToken(path:String) -> String {
     left_str
 }
 
+pub fn formant_fee(fee:u32)->String{
+    let result = format!("{:0FEE_SIZE$}",fee.to_string());
+    result
+}
+
+
 pub trait BytesLib {
     fn toAddress(&self, _start: usize) -> AccountId;
     fn toUint24(&self, _start: usize) -> usize;
 }
 
 impl BytesLib for String {
+
+    
+
     fn toAddress(&self, _start: usize) -> AccountId {
         // require(_start + 20 >= _start, 'toAddress_overflow');
         assert!(_start + 20 >= _start, "toAddress_overflow");
@@ -105,4 +114,27 @@ impl BytesLib for String {
             .expect("u256 exchange error!")
             .as_usize()
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use ink_env::AccountId;
+
+    use crate::periphery::path::formant_fee;
+
+
+    #[test]
+    fn it_works() {
+        let s = formant_fee(500u32);
+        println!("s is:{:?}",s);
+        
+        let a = AccountId::default();
+        let b = AccountId::default();
+        let fee:u32 = 500;
+        let s1 = scale::Encode::encode(&(a, fee, b));
+        println!("s1 is:{:?}",s1);
+        let len = s1.len();
+        println!("len is:{:?}",len);
+    }
+
 }

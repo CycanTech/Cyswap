@@ -8,3 +8,4 @@ pub mod LiquidityManagement;
 pub mod PeripheryPayments;
 pub mod swap_router;
 pub mod periphery_immutable_state;
+pub mod swap_callback;
