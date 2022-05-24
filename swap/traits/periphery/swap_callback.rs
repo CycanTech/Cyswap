@@ -1,4 +1,5 @@
 use primitives::Int256;
+use ink_prelude::vec::Vec;
 
 #[brush::wrapper]
 pub type SwapCallbackRef = dyn SwapCallback;

@@ -23,7 +23,7 @@ pub struct ExactInputSingleParams {
 pub struct ExactInputParams {
     pub path: Vec<u8>,
     pub recipient: Address,
-    pub deadline: U256,
+    pub deadline: u64,
     pub amountIn: U256,
     pub amountOutMinimum: U256,
 }
@@ -34,7 +34,7 @@ pub struct ExactOutputSingleParams {
     pub tokenOut: Address,
     pub fee: Uint24,
     pub recipient: Address,
-    pub deadline: U256,
+    pub deadline: u64,
     pub amountOut: U256,
     pub amountInMaximum: U256,
     pub sqrtPriceLimitX96: U160,
@@ -44,7 +44,7 @@ pub struct ExactOutputSingleParams {
 pub struct ExactOutputParams {
     pub path: Vec<u8>,
     pub recipient: Address,
-    pub deadline: U256,
+    pub deadline: u64,
     pub amountOut: U256,
     pub amountInMaximum: U256,
 }
@@ -67,45 +67,48 @@ pub trait SwapRouter {
         sqrtPriceLimitX96: U160,
     ) -> U256;
 
-    // /// @notice Swaps `amountIn` of one token for as much as possible of another along the specified path
-    // /// @param params The parameters necessary for the multi-hop swap, encoded as `ExactInputParams` in calldata
-    // /// @return amountOut The amount of the received token
-    // #[ink(message, payable)]
-    // fn exactInput(
-    //     &mut self,
-    //     path: Vec<u8>,
-    //     recipient: Address,
-    //     deadline: U256,
-    //     amountIn: U256,
-    //     amountOutMinimum: U256,
-    // ) -> U256;
+
+    /// @notice Swaps `amountIn` of one token for as much as possible of another along the specified path
+    /// @param params The parameters necessary for the multi-hop swap, encoded as `ExactInputParams` in calldata
+    /// @return amountOut The amount of the received token
+    // function exactInput(ExactInputParams calldata params) external payable returns (uint256 amountOut);
+    #[ink(message, payable)]
+    fn exactInput(
+        &mut self,
+        path: Vec<u8>,
+        recipient: Address,
+        deadline: u64,
+        amountIn: U256,
+        amountOutMinimum: U256,
+    ) -> U256;
+    
 
     // /// @notice Swaps as little as possible of one token for `amountOut` of another token
     // /// @param params The parameters necessary for the swap, encoded as `ExactOutputSingleParams` in calldata
     // /// @return amountIn The amount of the input token
-    // #[ink(message, payable)]
-    // fn exactOutputSingle(
-    //     &mut self,
-    //     tokenIn: Address,
-    //     tokenOut: Address,
-    //     fee: Uint24,
-    //     recipient: Address,
-    //     deadline: U256,
-    //     amountOut: U256,
-    //     amountInMaximum: U256,
-    //     sqrtPriceLimitX96: U160,
-    // ) -> U256;
+    #[ink(message, payable)]
+    fn exactOutputSingle(
+        &mut self,
+        tokenIn: Address,
+        tokenOut: Address,
+        fee: Uint24,
+        recipient: Address,
+        deadline: u64,
+        amountOut: U256,
+        amountInMaximum: U256,
+        sqrtPriceLimitX96: U160,
+    ) -> U256;
 
     // /// @notice Swaps as little as possible of one token for `amountOut` of another along the specified path (reversed)
     // /// @param params The parameters necessary for the multi-hop swap, encoded as `ExactOutputParams` in calldata
     // /// @return amountIn The amount of the input token
-    // #[ink(message, payable)]
-    // fn exactOutput(
-    //     &mut self,
-    //     path: Vec<u8>,
-    //     recipient: Address,
-    //     deadline: U256,
-    //     amountOut: U256,
-    //     amountInMaximum: U256,
-    // ) -> U256;
+    #[ink(message, payable)]
+    fn exactOutput(
+        &mut self,
+        path: Vec<u8>,
+        recipient: Address,
+        deadline: u64,
+        amountOut: U256,
+        amountInMaximum: U256,
+    ) -> U256;
 }

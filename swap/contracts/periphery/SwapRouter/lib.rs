@@ -6,7 +6,7 @@
 pub mod swapper_router {
     use crabswap::impls::periphery_immutable_state::{ImmutableStateData, ImmutableStateStorage};
     use crabswap::traits::periphery::periphery_immutable_state::*;
-    use ink_env::DefaultEnvironment;
+    use ink_env::{DefaultEnvironment};
     use ink_storage::traits::{SpreadAllocate, SpreadLayout};
     use libs::core::TickMath;
     use primitives::{Address, Int256, Uint24, Uint256, ADDRESS0, I256, U160, U256};
@@ -18,10 +18,13 @@ pub mod swapper_router {
     use crabswap::traits::periphery::swap_router::*;
     use crabswap::traits::periphery::PeripheryPayments::*;
     use libs::periphery::path;
+    use brush::modifiers;
+    use crabswap::traits::periphery::position_manager::checkDeadline;
+    use ink_prelude::vec::Vec;
 
     #[derive(Default, Decode, Encode, Debug, SpreadAllocate, SpreadLayout)]
     struct SwapCallbackData {
-        path: String,
+        path: Vec<u8>,
         payer: Address,
     }
 
@@ -74,17 +77,186 @@ pub mod swapper_router {
                  sqrtPriceLimitX96,
             };
             let msg_sender = ink_env::caller::<DefaultEnvironment>();
-            
             let amountOut = self.exactInputInternal(
                 params.amountIn,
                 params.recipient,
                 params.sqrtPriceLimitX96,
-                SwapCallbackData{path: scale::Encode::encode(&(params.tokenIn, formant_fee(params.fee), params.tokenOut)), payer: msg_sender}
+                SwapCallbackData{path: scale::Encode::encode(&(params.tokenIn, params.fee, params.tokenOut)), payer: msg_sender}
             );
             assert!(amountOut >= params.amountOutMinimum, "Too little received");
             U256::from(amountOut)
         }
+
+        #[ink(message, payable)]
+        #[modifiers(checkDeadline(deadline))]
+        fn exactInput(&mut self,
+            path: Vec<u8>,
+            recipient: Address,
+            deadline: u64,
+            amountIn: U256,
+            amountOutMinimum: U256,)
+        ->U256
+        {
+            let mut amountOut = Default::default();
+            let mut params:ExactInputParams=ExactInputParams{
+                path,
+                recipient,
+                deadline,
+                amountIn,
+                amountOutMinimum
+            };
+            // address payer = msg.sender; // msg.sender pays for the first hop
+            let mut payer:Address = ink_env::caller::<DefaultEnvironment>();
+            // while (true) {
+            loop {
+                // params.amountIn = exactInputInternal(
+                //     params.amountIn,
+                //     hasMultiplePools ? address(this) : params.recipient, // for intermediate swaps, this contract custodies
+                //     0,
+                //     SwapCallbackData({
+                //         path: params.path.getFirstPool(), // only the first pool in the path is necessary
+                //         payer: payer
+                //     })
+                // );
+                let hasMultiplePools:bool = path::hasMultiplePools(&params.path);
+                // the outputs of prior swaps become the inputs to subsequent ones
+                params.amountIn = self.exactInputInternal(
+                    params.amountIn,
+                    if hasMultiplePools {
+                        ink_env::account_id::<DefaultEnvironment>()
+                    }else{
+                        params.recipient
+                    } , // for intermediate swaps, this contract custodies
+                    U256::zero(),
+                    SwapCallbackData{
+                        path: path::getFirstPool(&params.path), // only the first pool in the path is necessary
+                        payer: payer
+                    }
+                );
+
+            //     // decide whether to continue or terminate
+            //     if (hasMultiplePools) {
+            //         payer = address(this); // at this point, the caller has paid
+            //         params.path = params.path.skipToken();
+            //     } else {
+            //         amountOut = params.amountIn;
+            //         break;
+            //     }
+                if hasMultiplePools {
+                    payer = ink_env::account_id::<DefaultEnvironment>(); // at this point, the caller has paid
+                    params.path = path::skipToken(&params.path);
+                } else {
+                    amountOut = params.amountIn;
+                    break;
+                }
+            }
+
+            assert!(amountOut >= params.amountOutMinimum, "Too little received");
+            amountOut
+        }
+
+        #[ink(message, payable)]
+        #[modifiers(checkDeadline(deadline))]
+        fn exactOutputSingle(
+            &mut self,
+            tokenIn: Address,
+            tokenOut: Address,
+            fee: Uint24,
+            recipient: Address,
+            deadline: u64,
+            amountOut: U256,
+            amountInMaximum: U256,
+            sqrtPriceLimitX96: U160,
+        ) -> U256
+        {
+            // avoid an SLOAD by using the swap return data
+            // amountIn = exactOutputInternal(
+            //     params.amountOut,
+            //     params.recipient,
+            //     params.sqrtPriceLimitX96,
+            //     SwapCallbackData({path: abi.encodePacked(params.tokenOut, params.fee, params.tokenIn), payer: msg.sender})
+            // );
+
+            // require(amountIn <= params.amountInMaximum, 'Too much requested');
+            // // has to be reset even though we don't use it in the single hop case
+            // amountInCached = DEFAULT_AMOUNT_IN_CACHED;
+            let params:ExactOutputSingleParams = ExactOutputSingleParams{
+                 tokenIn,
+                 tokenOut,
+                 fee,
+                 recipient,
+                 deadline,
+                 amountOut,
+                 amountInMaximum,
+                 sqrtPriceLimitX96,
+            };
+            let msg_sender = ink_env::account_id::<DefaultEnvironment>();
+            let amountIn = self.exactOutputInternal(
+                params.amountOut,
+                params.recipient,
+                params.sqrtPriceLimitX96,
+                SwapCallbackData{path: Encode::encode(&(params.tokenOut, params.fee, params.tokenIn)), payer: msg_sender}
+            );
+
+            assert!(amountIn <= params.amountInMaximum, "Too much requested");
+            // has to be reset even though we don't use it in the single hop case
+            self.amountInCached = Uint256::new_with_u256(DEFAULT_AMOUNT_IN_CACHED);
+            amountIn
+        }
+
+        // function exactOutput(ExactOutputParams calldata params)
+        // external
+        // payable
+        // override
+        // checkDeadline(params.deadline)
+        // returns (uint256 amountIn)
+        #[ink(message, payable)]
+        fn exactOutput(
+            &mut self,
+            path: Vec<u8>,
+            recipient: Address,
+            deadline: u64,
+            amountOut: U256,
+            amountInMaximum: U256,
+        ) -> U256
+        {
+        //     // it's okay that the payer is fixed to msg.sender here, as they're only paying for the "final" exact output
+        //     // swap, which happens first, and subsequent swaps are paid for within nested callback frames
+        //     exactOutputInternal(
+        //         params.amountOut,
+        //         params.recipient,
+        //         0,
+        //         SwapCallbackData({path: params.path, payer: msg.sender})
+        //     );
+
+        //     amountIn = amountInCached;
+        //     require(amountIn <= params.amountInMaximum, 'Too much requested');
+        //     amountInCached = DEFAULT_AMOUNT_IN_CACHED;
+            let params:ExactOutputParams = ExactOutputParams{
+                path,
+                recipient,
+                deadline,
+                amountOut,
+                amountInMaximum,
+            };
+            // it's okay that the payer is fixed to msg.sender here, as they're only paying for the "final" exact output
+            // swap, which happens first, and subsequent swaps are paid for within nested callback frames
+            let msg_sender = ink_env::caller::<DefaultEnvironment>();
+            self.exactOutputInternal(
+                params.amountOut,
+                params.recipient,
+                U256::zero(),
+                SwapCallbackData{path: params.path, payer: msg_sender}
+            );
+
+            let amountIn = self.amountInCached.value;
+            assert!(amountIn <= params.amountInMaximum, "Too much requested");
+            self.amountInCached = Uint256::new_with_u256(DEFAULT_AMOUNT_IN_CACHED);
+            amountIn
+        }
+
     }
+    
 
     impl SwapCallback for SwapRouterContract {
         // this method should move to SwapRouter
@@ -99,7 +271,7 @@ pub mod swapper_router {
             let mut data: SwapCallbackData =
                 Decode::decode(&mut _data.as_ref()).expect("call back data parse error!");
             // (address tokenIn, address tokenOut, uint24 fee) = data.path.decodeFirstPool();
-            let (mut tokenIn, tokenOut, fee) = path::decodeFirstPool(&data.path);
+            let (mut tokenIn, fee,tokenOut ) = path::decodeFirstPool(&data.path);
             let pool = if tokenIn < tokenOut {
                 self.getPool(tokenIn, tokenOut, u32::try_from(fee).expect("usize error!"))
             } else {
@@ -135,7 +307,7 @@ pub mod swapper_router {
             } else {
                 // either initiate the next swap or pay
                 if path::hasMultiplePools(&data.path) {
-                    data.path = path::skipToken(data.path);
+                    data.path = path::skipToken(&data.path);
                     self.exactOutputInternal(amountToPay, msg_sender, U160::zero(), data);
                 } else {
                     self.amountInCached = Uint256::new_with_u256(amountToPay);
@@ -177,7 +349,7 @@ pub mod swapper_router {
                 recipient = ink_env::account_id::<DefaultEnvironment>();
             }
             // (address tokenOut, address tokenIn, uint24 fee) = data.path.decodeFirstPool();
-            let (tokenOut, tokenIn, fee) = path::decodeFirstPool(&data.path);
+            let (tokenOut,fee, tokenIn ) = path::decodeFirstPool(&data.path);
 
             // bool zeroForOne = tokenIn < tokenOut;
             let zeroForOne: bool = tokenIn < tokenOut;
@@ -236,6 +408,7 @@ pub mod swapper_router {
             amountIn
         }
 
+
         /// @dev Performs a single exact input swap
         fn exactInputInternal(
             &self,
@@ -249,7 +422,7 @@ pub mod swapper_router {
                 recipient = ink_env::account_id::<DefaultEnvironment>();
             }
 
-            let (tokenIn, tokenOut, fee): (Address, Address, usize) =
+            let (tokenIn,fee, tokenOut, ): (Address,u32, Address) =
                 path::decodeFirstPool(&data.path);
 
             let zeroForOne: bool = tokenIn < tokenOut;
