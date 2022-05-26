@@ -4,7 +4,7 @@
 
 #[brush::contract]
 pub mod crab_swap_pool {
-    use crabswap::traits::core::pool::*;
+    use crabswap::traits::core::pool_action::*;
     use ink_env::DefaultEnvironment;
     use ink_lang::codegen::Env;
     use ink_prelude::vec::Vec;
@@ -37,7 +37,9 @@ pub mod crab_swap_pool {
     use libs::swap::FullMath;
 
     // accumulated protocol fees in token0/token1 units
-    #[derive(Debug, Default, PartialEq, Eq, Encode, Decode, SpreadLayout,SpreadAllocate, PackedLayout)]
+    #[derive(
+        Debug, Default, PartialEq, Eq, Encode, Decode, SpreadLayout, SpreadAllocate, PackedLayout,
+    )]
     #[cfg_attr(feature = "std", derive(StorageLayout))]
     pub struct ProtocolFees {
         token0: u128,
@@ -160,6 +162,113 @@ pub mod crab_swap_pool {
     }
 
     impl PoolAction for PoolContract {
+        #[ink(message)]
+        #[modifiers(lock)]
+        #[modifiers(noDelegateCall)]
+        fn flash(&mut self, recipient: Address, amount0: U256, amount1: U256, data: Vec<u8>) {
+            // uint128 _liquidity = liquidity;
+            // require(_liquidity > 0, 'L');
+            let _liquidity: u128 = self.liquidity;
+            assert!(_liquidity > 0, "L");
+
+            // uint256 fee0 = FullMath.mulDivRoundingUp(amount0, fee, 1e6);
+            // uint256 fee1 = FullMath.mulDivRoundingUp(amount1, fee, 1e6);
+            // uint256 balance0Before = balance0();
+            // uint256 balance1Before = balance1();
+            let fee0: U256 =
+                FullMath::mulDivRoundingUp(amount0, U256::from(self.fee), U256::from(1e6 as u64));
+            let fee1: U256 =
+                FullMath::mulDivRoundingUp(amount1, U256::from(self.fee), U256::from(1e6 as u64));
+            let balance0Before: U256 = self.balance0();
+            let balance1Before: U256 = self.balance1();
+
+            // if (amount0 > 0) TransferHelper.safeTransfer(token0, recipient, amount0);
+            // if (amount1 > 0) TransferHelper.safeTransfer(token1, recipient, amount1);
+            if amount0 > U256::zero() {
+                PSP22Ref::transfer(&mut self.token0, recipient, amount0.as_u128(), vec![0u8])
+                    .expect("token1 transfer error!");
+            }
+            if amount1 > U256::zero() {
+                PSP22Ref::transfer(&mut self.token1, recipient, amount1.as_u128(), vec![0u8])
+                    .expect("token1 transfer error!");
+            }
+
+            let msg_sender = ink_env::caller::<DefaultEnvironment>();
+            // TODO flash call back need finished.
+            // IUniswapV3FlashCallback(msg_sender).uniswapV3FlashCallback(fee0, fee1, data);
+
+            let balance0After: U256 = self.balance0();
+            let balance1After: U256 = self.balance1();
+
+            // require(balance0Before.add(fee0) <= balance0After, 'F0');
+            // require(balance1Before.add(fee1) <= balance1After, 'F1');
+            assert!(balance0Before + fee0 <= balance0After, "F0");
+            assert!(balance1Before + fee1 <= balance1After, "F1");
+
+            // sub is safe because we know balanceAfter is gt balanceBefore by at least fee
+            // uint256 paid0 = balance0After - balance0Before;
+            // uint256 paid1 = balance1After - balance1Before;
+            let paid0: U256 = balance0After - balance0Before;
+            let paid1: U256 = balance1After - balance1Before;
+
+            // if (paid0 > 0) {
+            //     uint8 feeProtocol0 = slot0.feeProtocol % 16;
+            //     uint256 fees0 = feeProtocol0 == 0 ? 0 : paid0 / feeProtocol0;
+            //     if (uint128(fees0) > 0) protocolFees.token0 += uint128(fees0);
+            //     feeGrowthGlobal0X128 += FullMath.mulDiv(paid0 - fees0, FixedPoint128.Q128, _liquidity);
+            // }
+            // if (paid1 > 0) {
+            //     uint8 feeProtocol1 = slot0.feeProtocol >> 4;
+            //     uint256 fees1 = feeProtocol1 == 0 ? 0 : paid1 / feeProtocol1;
+            //     if (uint128(fees1) > 0) protocolFees.token1 += uint128(fees1);
+            //     feeGrowthGlobal1X128 += FullMath.mulDiv(paid1 - fees1, FixedPoint128.Q128, _liquidity);
+            // }
+            if paid0 > U256::zero() {
+                let feeProtocol0: u8 = self.slot0.feeProtocol % 16;
+                let fees0: U256 = if feeProtocol0 == 0 {
+                    U256::zero()
+                } else {
+                    paid0 / feeProtocol0
+                };
+                if fees0 > U256::zero() {
+                    self.protocolFees.token0 += fees0.as_u128();
+                }
+                // TODO check the self.feeGrowthGlobal0X128 changed
+                self.feeGrowthGlobal0X128.value += FullMath::mulDiv(
+                    paid0 - fees0,
+                    U256::from(FixedPoint128::Q128),
+                    U256::from(_liquidity),
+                );
+            }
+            if paid1 > U256::zero() {
+                let feeProtocol1: u8 = self.slot0.feeProtocol >> 4;
+                let fees1: U256 = if feeProtocol1 == 0 {
+                    U256::zero()
+                } else {
+                    paid1 / feeProtocol1
+                };
+                if fees1 > U256::zero() {
+                    self.protocolFees.token1 += fees1.as_u128();
+                }
+                self.feeGrowthGlobal1X128.value += FullMath::mulDiv(
+                    paid1 - fees1,
+                    U256::from(FixedPoint128::Q128),
+                    U256::from(_liquidity),
+                );
+            }
+
+            // emit Flash(msg.sender, recipient, amount0, amount1, paid0, paid1);
+            self.env().emit_event(Flash {
+                sender: msg_sender,
+                recipient,
+                amount0,
+                amount1,
+                paid0,
+                paid1,
+            });
+            todo!();
+        }
+
         /// @inheritdoc IUniswapV3PoolActions
         // function swap(
         //     address recipient,
@@ -178,8 +287,8 @@ pub mod crab_swap_pool {
             sqrtPriceLimitX96: U160,
             data: Vec<u8>,
         ) -> (Int256, Int256) {
-            let mut amount0: Int256=Default::default();
-            let mut amount1: Int256=Default::default();
+            let mut amount0: Int256 = Default::default();
+            let mut amount1: Int256 = Default::default();
             //     require(amountSpecified != 0, 'AS');
             assert!(amountSpecified != 0, "AS");
 
@@ -257,7 +366,7 @@ pub mod crab_swap_pool {
 
             //     // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
             //     while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != sqrtPriceLimitX96) {
-
+            ink_env::debug_println!("state.amountSpecifiedRemaining,state.sqrtPriceX96,sqrtPriceLimitX96 is:{:?},{:?},{:?}",state.amountSpecifiedRemaining,state.sqrtPriceX96,sqrtPriceLimitX96);
             while state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != sqrtPriceLimitX96 {
                 //StepComputations memory step;
                 let mut step: StepComputations = Default::default();
@@ -276,7 +385,7 @@ pub mod crab_swap_pool {
                     self.tickSpacing,
                     zeroForOne,
                 );
-
+                ink_env::debug_println!("step.tickNext,step.initialized is:{:?},{:?}",step.tickNext,step.initialized);
                 //         // ensure that we do not overshoot the min/max tick, as the tick bitmap is not aware of these bounds
                 //         if (step.tickNext < TickMath.MIN_TICK) {
                 //             step.tickNext = TickMath.MIN_TICK;
@@ -323,7 +432,7 @@ pub mod crab_swap_pool {
                     state.amountSpecifiedRemaining,
                     self.fee,
                 );
-
+                ink_env::debug_println!("state.sqrtPriceX96,step.amountIn,step.amountOut,step.feeAmount:{:?},{:?},{:?},{:?}",state.sqrtPriceX96,step.amountIn,step.amountOut,step.feeAmount);
                 //         if (exactInput) {
                 //             state.amountSpecifiedRemaining -= (step.amountIn + step.feeAmount).toInt256();
                 //             state.amountCalculated = state.amountCalculated.sub(step.amountOut.toInt256());
@@ -506,99 +615,111 @@ pub mod crab_swap_pool {
             //     if (cache.liquidityStart != state.liquidity) liquidity = state.liquidity;
             if cache.liquidityStart != state.liquidity {
                 self.liquidity = state.liquidity;
-                // update fee growth global and, if necessary, protocol fees
-                // overflow is acceptable, protocol has to withdraw before it hits type(uint128).max fees
-                //     if (zeroForOne) {
-                //         feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
-                //         if (state.protocolFee > 0) protocolFees.token0 += state.protocolFee;
-                //     } else {
-                //         feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
-                //         if (state.protocolFee > 0) protocolFees.token1 += state.protocolFee;
-                //     }
-                if zeroForOne {
-                    self.feeGrowthGlobal0X128 = Uint256::new_with_u256(state.feeGrowthGlobalX128);
-                    if state.protocolFee > 0 {
-                        self.protocolFees.token0 += state.protocolFee;
-                    }
-                } else {
-                    self.feeGrowthGlobal1X128 = Uint256::new_with_u256(state.feeGrowthGlobalX128);
-                    if state.protocolFee > 0 {
-                        self.protocolFees.token1 += state.protocolFee;
-                    }
+            }
+            // update fee growth global and, if necessary, protocol fees
+            // overflow is acceptable, protocol has to withdraw before it hits type(uint128).max fees
+            //     if (zeroForOne) {
+            //         feeGrowthGlobal0X128 = state.feeGrowthGlobalX128;
+            //         if (state.protocolFee > 0) protocolFees.token0 += state.protocolFee;
+            //     } else {
+            //         feeGrowthGlobal1X128 = state.feeGrowthGlobalX128;
+            //         if (state.protocolFee > 0) protocolFees.token1 += state.protocolFee;
+            //     }
+            if zeroForOne {
+                self.feeGrowthGlobal0X128 = Uint256::new_with_u256(state.feeGrowthGlobalX128);
+                if state.protocolFee > 0 {
+                    self.protocolFees.token0 += state.protocolFee;
                 }
+            } else {
+                self.feeGrowthGlobal1X128 = Uint256::new_with_u256(state.feeGrowthGlobalX128);
+                if state.protocolFee > 0 {
+                    self.protocolFees.token1 += state.protocolFee;
+                }
+            }
+            ink_env::debug_println!("amountSpecified, state.amountSpecifiedRemaining,state.amountCalculated is:{:?},{:?},{:?}", amountSpecified, state.amountSpecifiedRemaining,state.amountCalculated);
+            (amount0, amount1) = if zeroForOne == exactInput {
+                (
+                    amountSpecified - state.amountSpecifiedRemaining,
+                    state.amountCalculated,
+                )
+            } else {
+                (
+                    state.amountCalculated,
+                    amountSpecified - state.amountSpecifiedRemaining,
+                )
+            };
+            ink_env::debug_println!("amount0, amount1 is:{},{}", amount0, amount1);
 
-                (amount0, amount1) = if zeroForOne == exactInput {
-                    (
-                        amountSpecified - state.amountSpecifiedRemaining,
-                        state.amountCalculated,
-                    )
-                } else {
-                    (
-                        state.amountCalculated,
-                        amountSpecified - state.amountSpecifiedRemaining,
-                    )
-                };
-
-                // do the transfers and collect payment
-                // if (zeroForOne) {
+            // do the transfers and collect payment
+            // if (zeroForOne) {
+            let msg_sender = ink_env::caller::<DefaultEnvironment>();
+            if zeroForOne {
                 //     if (amount1 < 0) TransferHelper.safeTransfer(token1, recipient, uint256(-amount1));
-
+                if amount1 < 0 {
+                    PSP22Ref::transfer(
+                        &mut self.token1,
+                        recipient,
+                        u128::try_from(-amount1).expect("i128 to 128 error!"),
+                        vec![0u8],
+                    )
+                    .expect("token0 transfer error!");
+                }
                 //     uint256 balance0Before = balance0();
+                let balance0Before: U256 = self.balance0();
                 //     IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, data);
+                ink_env::debug_println!("-------------+1");
+                SwapCallbackRef::swapCallback_builder(&msg_sender, amount0, amount1, data)
+                .call_flags(CallFlags::default().set_allow_reentry(true))
+                .fire()
+                .unwrap();
+                ink_env::debug_println!("-------------+2");
                 //     require(balance0Before.add(uint256(amount0)) <= balance0(), 'IIA');
+                assert!(
+                    balance0Before + (U256::from(amount0)) <= self.balance0(),
+                    "IIA"
+                );
+            } else {
                 // } else {
-                //     if (amount0 < 0) TransferHelper.safeTransfer(token0, recipient, uint256(-amount0));
-
+                // if (amount0 < 0) TransferHelper.safeTransfer(token0, recipient, uint256(-amount0));
+                if amount0 < 0 {
+                    PSP22Ref::transfer(
+                        &mut self.token0,
+                        recipient,
+                        u128::try_from(-amount0).expect("i128 to 128 error!"),
+                        vec![0u8],
+                    )
+                    .expect("token0 transfer error!");
+                }
                 //     uint256 balance1Before = balance1();
                 //     IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, data);
                 //     require(balance1Before.add(uint256(amount1)) <= balance1(), 'IIA');
-                // }
-                let msg_sender = ink_env::caller::<DefaultEnvironment>();
-                if zeroForOne {
-                    if amount1 < 0 {
-                        PSP22Ref::transfer(
-                            &mut self.token1,
-                            recipient,
-                            u128::try_from(-amount1).expect("i128 to 128 error!"),
-                            vec![0u8],
-                        )
-                        .expect("token0 transfer error!");
-                    }
-
-                    let balance0Before: U256 = self.balance0();
-                    SwapCallbackRef::swapCallback(&msg_sender, amount0, amount1, data);
-                    assert!(
-                        balance0Before + (U256::from(amount0)) <= self.balance0(),
-                        "IIA"
-                    );
-                } else {
-                    if amount0 < 0 {
-                        PSP22Ref::transfer(
-                            &mut self.token0,
-                            recipient,
-                            u128::try_from(-amount0).expect("i128 to 128 error!"),
-                            vec![0u8],
-                        )
-                        .expect("token0 transfer error!");
-                    }
-                    let balance1Before: U256 = self.balance1();
-                    SwapCallbackRef::swapCallback(&msg_sender, amount0, amount1, data);
-                    assert!(
-                        balance1Before + (U256::from(amount1)) <= self.balance1(),
-                        "IIA"
-                    );
-                }
-
-                //     emit Swap(msg.sender, recipient, amount0, amount1, state.sqrtPriceX96, state.liquidity, state.tick);
-                self.env().emit_event(Swap{
-                    sender:msg_sender,recipient,amount0,amount1,sqrtPriceX96:state.sqrtPriceX96, liquidity:state.liquidity, tick:state.tick
-                });
-
-                //     slot0.unlocked = true;
-                self.slot0.unlocked = true;
+                let balance1Before: U256 = self.balance1();
+                ink_env::debug_println!("-------------+3");
+                SwapCallbackRef::swapCallback_builder(&msg_sender, amount0, amount1, data)
+                .call_flags(CallFlags::default().set_allow_reentry(true))
+                .fire()
+                .unwrap();
+                ink_env::debug_println!("-------------+4");
+                assert!(
+                    balance1Before + (U256::from(amount1)) <= self.balance1(),
+                    "IIA"
+                );
             }
 
-            (amount0,amount1)
+            //     emit Swap(msg.sender, recipient, amount0, amount1, state.sqrtPriceX96, state.liquidity, state.tick);
+            self.env().emit_event(Swap {
+                sender: msg_sender,
+                recipient,
+                amount0,
+                amount1,
+                sqrtPriceX96: state.sqrtPriceX96,
+                liquidity: state.liquidity,
+                tick: state.tick,
+            });
+
+            //     slot0.unlocked = true;
+            self.slot0.unlocked = true;
+            (amount0, amount1)
         }
 
         // function collect(
@@ -886,6 +1007,25 @@ pub mod crab_swap_pool {
         }
     }
 
+    /// @notice Emitted by the pool for any flashes of token0/token1
+    /// @param sender The address that initiated the swap call, and that received the callback
+    /// @param recipient The address that received the tokens from flash
+    /// @param amount0 The amount of token0 that was flashed
+    /// @param amount1 The amount of token1 that was flashed
+    /// @param paid0 The amount of token0 paid for the flash, which can exceed the amount0 plus the fee
+    /// @param paid1 The amount of token1 paid for the flash, which can exceed the amount1 plus the fee
+    #[ink(event)]
+    pub struct Flash {
+        #[ink(topic)]
+        sender: Address,
+        #[ink(topic)]
+        recipient: Address,
+        amount0: U256,
+        amount1: U256,
+        paid0: U256,
+        paid1: U256,
+    }
+
     /// @notice Emitted when liquidity is minted for a given position
     /// @param sender The address that minted the liquidity
     /// @param owner The owner of the position and recipient of any minted liquidity
@@ -966,6 +1106,7 @@ pub mod crab_swap_pool {
                 instance.observations = Observations::new();
                 instance.maxLiquidityPerTick = Tick::tickSpacingToMaxLiquidityPerTick(tickSpacing);
                 instance.protocolFees = Default::default();
+                instance.no_delegate_call.original = ink_env::account_id::<DefaultEnvironment>();
                 ink_env::debug_println!("----------------6");
             })
         }

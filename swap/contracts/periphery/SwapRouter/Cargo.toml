@@ -1,5 +1,5 @@
 [package]
-name = "SwapRouter"
+name = "SwapRouterContract"
 version = "3.0.0"
 authors = ["HiTech<cloudweisz@gmail.com>"]
 edition = "2021"
@@ -24,7 +24,7 @@ primitives = {version = "3.0.0-rc9",path="../../../primitives/", default-feature
 libs = {version = "3.0.0",path="../../../libs/", default-features = false}
 
 [lib]
-name = "SwapRouter"
+name = "SwapRouterContract"
 path = "lib.rs"
 crate-type = ["cdylib"]
 

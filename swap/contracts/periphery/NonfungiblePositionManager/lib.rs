@@ -13,7 +13,7 @@ pub mod position_manager {
     use crabswap::impls::periphery::PeripheryPayments::*;
     use crabswap::impls::pool_initialize::*;
     use crabswap::impls::psp34_base::*;
-    use crabswap::traits::core::pool::PoolActionRef;
+    use crabswap::traits::core::pool_action::PoolActionRef;
     use crabswap::traits::periphery::position_manager::*;
     use crabswap::traits::periphery::LiquidityManagement::*;
 
@@ -44,7 +44,7 @@ pub mod position_manager {
     use scale::{Decode, Encode};
 
     use crabswap::impls::periphery_immutable_state::{ImmutableStateStorage,ImmutableStateData};
-    use crabswap::traits::core::pool::*;
+    use crabswap::traits::core::pool_action::*;
     use ink_env::CallFlags;
 
     #[derive(Default, Debug, Encode, Decode, SpreadAllocate, SpreadLayout, PackedLayout)]
