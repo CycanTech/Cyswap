@@ -47,6 +47,7 @@ impl<T: ImmutableStateStorage> PeripheryPaymentsTrait for T {
         } else if payer == address_of_this {
             // pay with tokens already in the contract (for the exact input multihop case)
             // TransferHelper.safeTransfer(token, recipient, value);
+            ink_env::debug_println!("-------------+6");
             PSP22Ref::transfer(&mut token, recipient, value.as_u128(), vec![0u8]).unwrap();
         } else {
             // pull payment

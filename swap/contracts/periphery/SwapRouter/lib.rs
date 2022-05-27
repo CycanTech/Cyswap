@@ -95,6 +95,8 @@ pub mod swapper_router {
             U256::from(amountOut)
         }
 
+
+        // TODO to test
         #[ink(message, payable)]
         #[modifiers(checkDeadline(deadline))]
         fn exactInput(
@@ -197,7 +199,7 @@ pub mod swapper_router {
                 amountInMaximum,
                 sqrtPriceLimitX96,
             };
-            let msg_sender = ink_env::account_id::<DefaultEnvironment>();
+            let msg_sender = ink_env::caller::<DefaultEnvironment>();
             let amountIn = self.exactOutputInternal(
                 params.amountOut,
                 params.recipient,
@@ -220,6 +222,7 @@ pub mod swapper_router {
         // override
         // checkDeadline(params.deadline)
         // returns (uint256 amountIn)
+        // TODO to test
         #[ink(message, payable)]
         fn exactOutput(
             &mut self,
@@ -323,6 +326,7 @@ pub mod swapper_router {
                 } else {
                     self.amountInCached = Uint256::new_with_u256(amountToPay);
                     tokenIn = tokenOut; // swap in/out because exact output swaps are reversed
+                    ink_env::debug_println!("-------------+4");
                     self.pay(tokenIn, data.payer, msg_sender, amountToPay);
                 }
             }
@@ -375,7 +379,7 @@ pub mod swapper_router {
             let fee = u32::try_from(fee).expect("usize to u32 error!");
             let factoryAddress = self.immutable_state.factory;
             let pool: Address = FactoryRef::get_pool(&factoryAddress, fee, tokenIn, tokenOut);
-            let (amount0Delta, amount1Delta) = PoolActionRef::swap(
+            let (amount0Delta, amount1Delta) = PoolActionRef::swap_builder(
                 &pool,
                 recipient,
                 zeroForOne,
@@ -391,7 +395,9 @@ pub mod swapper_router {
                 },
                 //判断data是否已经被改变
                 scale::Encode::encode(&data),
-            );
+            ).call_flags(CallFlags::default().set_allow_reentry(true))
+            .fire()
+            .unwrap();
 
             // uint256 amountOutReceived;
             // (amountIn, amountOutReceived) = zeroForOne

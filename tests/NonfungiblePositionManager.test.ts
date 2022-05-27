@@ -92,7 +92,7 @@ describe('positionManager initialize', () => {
     const { contract:positionDescriptor} = await setupContract('NonfungibleTokenPositionDescriptor','new',weth9Contract.address,"_nativeCurrencyLabelBytes");
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
     const { query:positionManagerQuery,tx:positionManagerTx,alice,defaultSigner,contract:positionMangerContract,bob } = await setupContract('NonfungiblePositionManager','new',factoryContract.address,weth9Contract.address,positionDescriptor.address,{value:1000000000});
-    const { query:swapRouterQuery,tx:swapRouterTx,contract:swapRouterFactory} = await setupContract('SwapRouterContract','new',factoryContract.address,weth9Contract.address,positionDescriptor.address,{value:1000000000});
+    const { query:swapRouterQuery,tx:swapRouterTx,contract:swapRouterContract} = await setupContract('SwapRouterContract','new',factoryContract.address,weth9Contract.address,positionDescriptor.address,{value:1000000000});
     const { contract:CHECoinContract,tx:cheCoinTx} = await setupContract('stable_coin_contract','new',"CHE","CHE");
     const { contract:AAACoinContract,tx:AAACoinTx} = await setupContract('stable_coin_contract','new',"AAA","AAA");
       // &mut self,token0: AccountId,token1: AccountId,fee: u32,sqrt_price_x96: Uint160,) -> Address 
@@ -179,12 +179,12 @@ describe('positionManager initialize', () => {
     // };
     await positionManagerTx.increaseLiquidity(tokenId,100,100,1,1,9652429262733);
 
-    await cheCoinTx.approve(swapRouterFactory.address,1000000);
-    await AAACoinTx.approve(swapRouterFactory.address,1000000);
+    await cheCoinTx.approve(swapRouterContract.address,1000000);
+    await AAACoinTx.approve(swapRouterContract.address,1000000);
     // &mut self, tokenIn: Address,tokenOut: Address,fee: Uint24,recipient: Address,deadline: U256,amountIn: U256,amountOutMinimum: U256,sqrtPriceLimitX96: U160,
     await swapRouterTx.exactInputSingle(token0Address,token1Address,500,alice.address,9652429262733,50,10,new BN("12062189140534161159371081100"));
     // &mut self,tokenIn: Address,tokenOut: Address,fee: Uint24,recipient: Address,deadline: u64,amountOut: U256,amountInMaximum: U256,sqrtPriceLimitX96: U160,
-    // await swapRouterTx.exactOutputSingle(token1Address,token0Address,500,alice.address,9652429262733,50,10,new BN("120621891405341611593710891006"));
+    await swapRouterTx.exactOutputSingle(token1Address,token0Address,500,alice.address,9652429262733,50,1000,new BN("120621891405341611593710891006"));
     console.log("-----------------------10");
 
     // tokenId: u128,liquidity: u128,amount0Min: U256,amount1Min: U256,deadline: u64,
