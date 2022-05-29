@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(non_snake_case)]
 
-use ink_env::AccountId;
 use primitives::{Address};
 use ink_prelude::vec::Vec;
 
@@ -74,7 +73,7 @@ pub fn skipToken(path:&Vec<u8>) -> Vec<u8> {
 
 
 pub trait BytesLib {
-    fn toAddress(&self, _start: usize) -> AccountId;
+    fn toAddress(&self, _start: usize) -> Address;
     fn toUint24(&self, _start: usize) -> u32;
 }
 
@@ -82,7 +81,7 @@ impl BytesLib for Vec<u8> {
 
     
 
-    fn toAddress(&self, _start: usize) -> AccountId {
+    fn toAddress(&self, _start: usize) -> Address {
         // require(_start + 20 >= _start, 'toAddress_overflow');
         assert!(_start + 20 >= _start, "toAddress_overflow");
         // require(_bytes.length >= _start + 20, 'toAddress_outOfBounds');
@@ -95,7 +94,7 @@ impl BytesLib for Vec<u8> {
             .try_into()
             .expect("exchange &[u8] to [u8;32] error!");
         // return tempAddress;
-        AccountId::from(tempAddress)
+        Address::from(tempAddress)
     }
 
     fn toUint24(&self, _start: usize) -> u32 {
@@ -116,7 +115,7 @@ impl BytesLib for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use ink_env::AccountId;
+    use brush::traits::AccountId;
 
     use crate::periphery::path::{decodeFirstPool};
 

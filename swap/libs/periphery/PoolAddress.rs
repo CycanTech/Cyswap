@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use ink_env::AccountId;
 use ink_storage::traits::{SpreadAllocate, SpreadLayout,StorageLayout,PackedLayout};
 use primitives::{Address, Uint24};
 use scale::{Decode, Encode};
@@ -12,8 +13,8 @@ const POOL_INIT_CODE_HASH: &str = "0xe34f199b19b2b4f47f68442619d555527d244f78a32
 #[derive(Default, Clone, Decode, Encode, Debug, SpreadAllocate, SpreadLayout,PackedLayout)]
 #[cfg_attr(feature = "std", derive(TypeInfo,StorageLayout))]
 pub struct PoolKey {
-    pub token0: Address,
-    pub token1: Address,
+    pub token0: AccountId,
+    pub token1: AccountId,
     pub fee: Uint24,
 }
 
@@ -22,9 +23,9 @@ pub struct PoolKey {
 /// @param tokenB The second token of a pool, unsorted
 /// @param fee The fee level of the pool
 /// @return Poolkey The pool details with ordered token0 and token1 assignments
-fn getPoolKey(tokenA: Address, tokenB: Address, fee: Uint24) -> PoolKey {
-    let token0: Address;
-    let token1: Address;
+fn getPoolKey(tokenA: AccountId, tokenB: AccountId, fee: Uint24) -> PoolKey {
+    let token0: AccountId;
+    let token1: AccountId;
 
     if tokenA > tokenB {
         token0 = tokenB;

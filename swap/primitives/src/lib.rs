@@ -1,9 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 
-use ink_env::AccountId;
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+use brush::traits::AccountId;
 #[cfg(feature = "std")]
 use ink_metadata::layout::{StructLayout, Layout, FieldLayout};
 use ink_storage::{

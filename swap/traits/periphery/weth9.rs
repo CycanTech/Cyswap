@@ -1,6 +1,5 @@
 use brush::contracts::psp22::PSP22Error;
 /// base info for PSP34
-
 #[brush::wrapper]
 pub type Weth9Ref = dyn Weth9;
 

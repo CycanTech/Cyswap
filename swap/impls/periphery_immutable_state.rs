@@ -1,7 +1,7 @@
 use brush::{
     declare_storage_trait,
 };
-use ink_env::AccountId;
+use brush::traits::AccountId;
 use ink_storage::traits::{SpreadAllocate, SpreadLayout,StorageLayout};
 
 use primitives::Address;
