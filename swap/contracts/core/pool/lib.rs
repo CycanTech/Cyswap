@@ -24,7 +24,7 @@ pub mod crab_swap_pool {
     use scale::{Decode, Encode};
     type Uint24 = u32;
     use brush::contracts::psp22::extensions::metadata::*;
-    use brush::modifiers;
+    use brush::{modifiers, modifier_definition};
     use crabswap::impls::core::no_delegate_call::{NoDelegateCallData, NoDelegateCallStorage};
     use crabswap::traits::core::no_delegate_call::{noDelegateCall, NoDelegateCall};
     use crabswap::traits::periphery::swap_callback::SwapCallbackRef;
@@ -35,6 +35,9 @@ pub mod crab_swap_pool {
     use libs::core::FixedPoint128;
     use libs::core::SwapMath;
     use libs::swap::FullMath;
+    use crabswap::traits::core::pool_owner_action::PoolOwnerActions;
+    use crabswap::traits::core::pool_owner_action::poolowneractions_external;
+    use brush::contracts::traits::ownable::OwnableRef;
 
     // accumulated protocol fees in token0/token1 units
     #[derive(
@@ -159,6 +162,108 @@ pub mod crab_swap_pool {
         pub amountOut: U256,
         // how much fee is being paid in
         pub feeAmount: U256,
+    }
+
+    #[modifier_definition]
+    pub fn onlyFactoryOwner<T, F, R>(instance: &mut T, body: F) -> R
+    where
+        T: PoolOwnerActions,
+        F: FnOnce(&mut T) -> R,
+    {
+        // require(msg.sender == IUniswapV3Factory(factory).owner());
+        // _;
+        let msg_sender = ink_env::caller::<DefaultEnvironment>();
+        let factory_owner:Address = instance.get_factory();
+        let owner = OwnableRef::owner(&factory_owner);
+        assert!(msg_sender == owner);
+        body(instance)
+    }
+
+    impl PoolOwnerActions for PoolContract {
+        // function setFeeProtocol(uint8 feeProtocol0, uint8 feeProtocol1) external override lock onlyFactoryOwner {
+        #[ink(message)]
+        #[modifiers(lock)]
+        #[modifiers(onlyFactoryOwner)]
+        fn setFeeProtocol(&mut self, feeProtocol0: u8, feeProtocol1: u8) {
+            // require(
+            //     (feeProtocol0 == 0 || (feeProtocol0 >= 4 && feeProtocol0 <= 10)) &&
+            //         (feeProtocol1 == 0 || (feeProtocol1 >= 4 && feeProtocol1 <= 10))
+            // );
+            assert!(
+                (feeProtocol0 == 0 || (feeProtocol0 >= 4 && feeProtocol0 <= 10))
+                    && (feeProtocol1 == 0 || (feeProtocol1 >= 4 && feeProtocol1 <= 10))
+            );
+
+            // uint8 feeProtocolOld = slot0.feeProtocol;
+            let feeProtocolOld: u8 = self.slot0.feeProtocol;
+            // slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4);
+            self.slot0.feeProtocol = feeProtocol0 + (feeProtocol1 << 4);
+            // emit SetFeeProtocol(feeProtocolOld % 16, feeProtocolOld >> 4, feeProtocol0, feeProtocol1);
+            self.env().emit_event(SetFeeProtocol{
+                feeProtocol0Old:feeProtocolOld % 16, feeProtocol1Old:feeProtocolOld >> 4, feeProtocol0New:feeProtocol0, feeProtocol1New:feeProtocol1
+            });
+        }
+
+        #[ink(message)]
+        #[modifiers(lock)]
+        #[modifiers(onlyFactoryOwner)]
+        fn collectProtocol(
+            &mut self,
+            recipient:Address,
+            amount0Requested:u128,
+            amount1Requested:u128
+        )->(u128 , u128){
+            // amount0 = amount0Requested > protocolFees.token0 ? protocolFees.token0 : amount0Requested;
+            // amount1 = amount1Requested > protocolFees.token1 ? protocolFees.token1 : amount1Requested;
+            let mut amount0 = if amount0Requested > self.protocolFees.token0{
+                self.protocolFees.token0
+            }else{
+                amount0Requested
+            };
+            let mut amount1 =if amount1Requested > self.protocolFees.token1{
+                self.protocolFees.token1
+            }else{
+                amount1Requested
+            };
+            
+            // if (amount0 > 0) {
+            //     if (amount0 == protocolFees.token0) amount0--; // ensure that the slot is not cleared, for gas savings
+            //     protocolFees.token0 -= amount0;
+            //     TransferHelper.safeTransfer(token0, recipient, amount0);
+            // }
+            if amount0 > 0 {
+                if amount0 == self.protocolFees.token0 { amount0 = amount0-1;} // ensure that the slot is not cleared, for gas savings
+                self.protocolFees.token0 -= amount0;
+                PSP22Ref::transfer(&mut self.token0, recipient, amount0, vec![0u8])
+                    .expect("token0 transfer error!");
+            }
+            // if (amount1 > 0) {
+            //     if (amount1 == protocolFees.token1) amount1--; // ensure that the slot is not cleared, for gas savings
+            //     protocolFees.token1 -= amount1;
+            //     TransferHelper.safeTransfer(token1, recipient, amount1);
+            // }
+            if amount1 > 0 {
+                if amount1 == self.protocolFees.token1 { amount1 = amount1-1;} // ensure that the slot is not cleared, for gas savings
+                self.protocolFees.token1 -= amount1;
+                PSP22Ref::transfer(&mut self.token1, recipient, amount1, vec![0u8])
+                    .expect("token1 transfer error!");
+            }
+            // emit CollectProtocol(msg.sender, recipient, amount0, amount1);
+            let msg_sender = ink_env::caller::<DefaultEnvironment>();
+            self.env().emit_event(CollectProtocol{
+                sender:msg_sender, 
+                recipient, 
+                amount0, 
+                amount1
+            });
+            (amount0,amount1)
+
+        }
+
+        #[ink(message)]
+        fn get_factory(&self)->Address{
+            self.factory
+        }
     }
 
     impl PoolAction for PoolContract {
@@ -385,7 +490,11 @@ pub mod crab_swap_pool {
                     self.tickSpacing,
                     zeroForOne,
                 );
-                ink_env::debug_println!("step.tickNext,step.initialized is:{:?},{:?}",step.tickNext,step.initialized);
+                ink_env::debug_println!(
+                    "step.tickNext,step.initialized is:{:?},{:?}",
+                    step.tickNext,
+                    step.initialized
+                );
                 //         // ensure that we do not overshoot the min/max tick, as the tick bitmap is not aware of these bounds
                 //         if (step.tickNext < TickMath.MIN_TICK) {
                 //             step.tickNext = TickMath.MIN_TICK;
@@ -669,9 +778,9 @@ pub mod crab_swap_pool {
                 //     IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, data);
                 ink_env::debug_println!("-------------+1");
                 SwapCallbackRef::swapCallback_builder(&msg_sender, amount0, amount1, data)
-                .call_flags(CallFlags::default().set_allow_reentry(true))
-                .fire()
-                .unwrap();
+                    .call_flags(CallFlags::default().set_allow_reentry(true))
+                    .fire()
+                    .unwrap();
                 ink_env::debug_println!("-------------+2");
                 //     require(balance0Before.add(uint256(amount0)) <= balance0(), 'IIA');
                 assert!(
@@ -696,9 +805,9 @@ pub mod crab_swap_pool {
                 let balance1Before: U256 = self.balance1();
                 ink_env::debug_println!("-------------+3");
                 SwapCallbackRef::swapCallback_builder(&msg_sender, amount0, amount1, data)
-                .call_flags(CallFlags::default().set_allow_reentry(true))
-                .fire()
-                .unwrap();
+                    .call_flags(CallFlags::default().set_allow_reentry(true))
+                    .fire()
+                    .unwrap();
                 ink_env::debug_println!("-------------+4");
                 assert!(
                     balance1Before + (U256::from(amount1)) <= self.balance1(),
@@ -1005,6 +1114,34 @@ pub mod crab_swap_pool {
             ink_env::debug_println!("**************5");
             (amount0, amount1)
         }
+    }
+
+    /// @notice Emitted when the collected protocol fees are withdrawn by the factory owner
+    /// @param sender The address that collects the protocol fees
+    /// @param recipient The address that receives the collected protocol fees
+    /// @param amount0 The amount of token0 protocol fees that is withdrawn
+    /// @param amount0 The amount of token1 protocol fees that is withdrawn
+    #[ink(event)]
+    pub struct CollectProtocol{
+        #[ink(topic)]
+        sender:Address, 
+        #[ink(topic)]
+        recipient:Address, 
+        amount0:u128, 
+        amount1:u128
+    }
+
+    /// @notice Emitted when the protocol fee is changed by the pool
+    /// @param feeProtocol0Old The previous value of the token0 protocol fee
+    /// @param feeProtocol1Old The previous value of the token1 protocol fee
+    /// @param feeProtocol0New The updated value of the token0 protocol fee
+    /// @param feeProtocol1New The updated value of the token1 protocol fee
+    #[ink(event)]
+    pub struct SetFeeProtocol {
+        feeProtocol0Old: u8,
+        feeProtocol1Old: u8,
+        feeProtocol0New: u8,
+        feeProtocol1New: u8,
     }
 
     /// @notice Emitted by the pool for any flashes of token0/token1

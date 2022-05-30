@@ -27,4 +27,7 @@ pub trait PoolOwnerActions {
         amount0Requested:u128,
         amount1Requested:u128
     )->(u128 , u128);
+
+    #[ink(message)]
+    fn get_factory(&self)->Address;
 }

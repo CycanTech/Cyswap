@@ -147,13 +147,14 @@ describe('positionManager initialize', () => {
     await AAACoinTx.approve(positionMangerContract.address,1000000);
     console.log("-----------------------6");
     await positionManagerTx.mint(token0Address,token1Address,500,100,10000,1000,1000,10,0,alice.address,10);
+    let poolAddress;
     console.log("-----------------------1");
     if(token0Address.toHuman()<weth9Contract.address.toHuman()) {
       await positionManagerTx.createAndInitializePoolIfNecessary(token0Address,weth9Contract.address,500,new BN("120621891405341611593710811006"),{value:1000000000});
       console.log("-----------------------2");
       await positionManagerTx.mint(token0Address,weth9Contract.address,500,200,10000,1000,1000,10,10,alice.address,10,{value:100000000000});
       console.log("-----------------------3");
-      let poolAddress = await factoryQuery.getPool(500,token0Address,weth9Contract.address);
+      poolAddress = await factoryQuery.getPool(500,token0Address,weth9Contract.address);
       console.log("-----------------------4");
       console.log("poolAddress is:",poolAddress.output?.toHuman());
     }else{
@@ -161,7 +162,7 @@ describe('positionManager initialize', () => {
       console.log("-----------------------5");
       await positionManagerTx.mint(weth9Contract.address,token0Address,500,200,10000,1000,1000,10,10,alice.address,10,{value:100000000000});
       console.log("-----------------------6");
-      let poolAddress = await factoryQuery.getPool(500,weth9Contract.address,token0Address);
+      poolAddress = await factoryQuery.getPool(500,weth9Contract.address,token0Address);
       console.log("-----------------------7");
       console.log("poolAddress is:",poolAddress.output?.toHuman());
     }
