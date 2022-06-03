@@ -16,6 +16,7 @@ pub mod position_manager {
     use crabswap::traits::core::pool_action::PoolActionRef;
     use crabswap::traits::periphery::position_manager::*;
     use crabswap::traits::periphery::LiquidityManagement::*;
+    use crabswap::traits::periphery::periphery_immutable_state::*;
 
     use ink_lang::codegen::EmitEvent;
     use ink_lang::codegen::Env;
@@ -93,8 +94,6 @@ pub mod position_manager {
         #[PSP34BaseStorageField]
         psp34_base: PSP34BaseData,
 
-        // factory: Option<Address>,
-
         // /// @dev IDs of pools assigned by this contract
         // mapping(address => uint80) private _poolIds;
         _poolIds: Mapping<Address, u128>,
@@ -122,6 +121,8 @@ pub mod position_manager {
     impl PSP34 for PositionMangerContract {}
     impl PSP34Mintable for PositionMangerContract {}
     impl PSP34Burnable for PositionMangerContract {}
+    impl PSP34Base for PositionMangerContract {}
+    impl PeripheryImmutableState for PositionMangerContract {}
         
     impl IERC721Permit for PositionMangerContract {
         #[ink(message)]
@@ -135,8 +136,7 @@ pub mod position_manager {
             position.nonce
         }
     }
-    impl PSP34Base for PositionMangerContract {}
-    // impl PositionManager for PositionMangerContract{}
+    
     impl LiquidityManagementTrait for PositionMangerContract {
         // returns (uint128 liquidity,uint256 amount0,uint256 amount1,IUniswapV3Pool pool)
         #[ink(message)]
@@ -355,6 +355,7 @@ pub mod position_manager {
         // }
     }
 
+    // impl PositionManager for PositionMangerContract{}
     impl PositionManager for PositionMangerContract {
         #[ink(message, payable)]
         #[modifiers(checkDeadline(deadline))]

@@ -268,6 +268,11 @@ pub mod crab_swap_pool {
 
     impl PoolAction for PoolContract {
         #[ink(message)]
+        fn get_tickspacing(&self)->Int24{
+            self.tickSpacing
+        }
+
+        #[ink(message)]
         #[modifiers(lock)]
         #[modifiers(noDelegateCall)]
         fn flash(&mut self, recipient: Address, amount0: U256, amount1: U256, data: Vec<u8>) {

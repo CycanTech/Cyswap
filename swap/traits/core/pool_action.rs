@@ -149,12 +149,12 @@ pub trait PoolAction {
     #[ink(message)]
     fn swap(
         &mut self,
-        recipient:Address,
-        zeroForOne:bool,
-        amountSpecified:Int256,
-        sqrtPriceLimitX96:U160,
-        data:Vec<u8>
-    ) -> (Int256,Int256);
+        recipient: Address,
+        zeroForOne: bool,
+        amountSpecified: Int256,
+        sqrtPriceLimitX96: U160,
+        data: Vec<u8>,
+    ) -> (Int256, Int256);
 
     /// @notice Receive token0 and/or token1 and pay it back, plus a fee, in the callback
     /// @dev The caller of this method receives a callback in the form of IUniswapV3FlashCallback#uniswapV3FlashCallback
@@ -165,10 +165,8 @@ pub trait PoolAction {
     /// @param amount1 The amount of token1 to send
     /// @param data Any data to be passed through to the callback
     #[ink(message)]
-    fn flash(&mut self,
-         recipient:Address,
-         amount0:U256,
-         amount1:U256,
-         data:Vec<u8>
-    ) ;
+    fn flash(&mut self, recipient: Address, amount0: U256, amount1: U256, data: Vec<u8>);
+
+    #[ink(message)]
+    fn get_tickspacing(&self)->Int24;
 }

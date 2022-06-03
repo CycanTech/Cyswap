@@ -16,11 +16,12 @@ brush = { tag = "v1.7.1", git = "https://github.com/Supercolony-net/openbrush-co
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-
+hex = { version = "0.4", default-features = false,features = ["alloc"]}
 
 # factory = {version = "3.0.0-rc9",path="../../core/factory", default-features = false,features = ["ink-as-dependency"]}
 crabswap = { path = "../../../", default-features = false,features=["pool_initial","erc721_permit","psp34_base"]}
 primitives = {version = "3.0.0-rc9",path="../../../primitives/", default-features = false}
+libs = {version = "3.0.0",path="../../../libs/", default-features = false}
 [lib]
 name = "NonfungibleTokenPositionDescriptor"
 path = "lib.rs"

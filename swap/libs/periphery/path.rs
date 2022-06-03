@@ -92,7 +92,7 @@ impl BytesLib for Vec<u8> {
         // }
         let tempAddress: [u8; ADDR_SIZE] = self.as_slice()[_start.._start + ADDR_SIZE]
             .try_into()
-            .expect("exchange &[u8] to [u8;32] error!");
+            .expect("exchange &[u8] to [] error!");
         // return tempAddress;
         Address::from(tempAddress)
     }

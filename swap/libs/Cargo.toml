@@ -19,6 +19,7 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 hex = { version = "0.4", default-features = false,features = ["alloc"]}
 primitives = {version = "3.0.0-rc9",path="../primitives/", default-features = false}
 brush = { tag = "v1.7.1", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false }
+base64 = {version="0.13.0", default-features = false,features = ["alloc"]}
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'

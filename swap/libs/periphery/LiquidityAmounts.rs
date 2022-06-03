@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(non_snake_case)]
 
+use brush::traits::Hash;
 use primitives::{U160, U256};
 
 use crate::swap::{FixedPoint96, FullMath};
@@ -113,4 +114,8 @@ fn my_temp_test() {
     let mut liquidity2 = U256::from(100);
     (liquidity1, liquidity2) = arrangeToken(liquidity1, liquidity2);
     println!("liquidity1 is:{:?},liquidity2:{:?}", liquidity1, liquidity2);
+    const CODE_HASH_1: [u8; 32] = [1u8; 32];
+    let hash = Hash::try_from(CODE_HASH_1).unwrap();
+    
+    println!("hash is:{:?}",hash);
 }
