@@ -9,6 +9,7 @@ use super::{HexStrings, NFTSVG};
 use ink_prelude::string::ToString;
 use ink_prelude::string::String;
 use ink_prelude::vec::Vec;
+use ink_prelude::vec;
 
 const sqrt10X128: &'static str = "1076067327063303206878105757264492625226";
 
@@ -96,7 +97,7 @@ pub fn constructTokenURI(params: ConstructTokenURIParams) -> String {
     //             )
     //         )
     //     );
-    return String::from_utf8(scale::Encode::encode(&(
+    return String::from_utf8_lossy(&scale::Encode::encode(&(
         "data:application/json;base64,",
         base64::encode(scale::Encode::encode(&(
             r#"{"name":""#,
@@ -110,7 +111,7 @@ pub fn constructTokenURI(params: ConstructTokenURIParams) -> String {
             r#""}"#,
         ))),
     )))
-    .expect("error!");
+    .to_string();
 }
 
 fn generateSVGImage(params: ConstructTokenURIParams) -> String {
@@ -281,7 +282,7 @@ fn generateName(params: ConstructTokenURIParams, feeTier: String) -> String {
     //             )
     //         )
     //     );
-    return String::from_utf8(scale::Encode::encode(&(
+    return String::from_utf8_lossy(&scale::Encode::encode(&(
         "Uniswap - ",
         feeTier,
         " - ",
@@ -313,7 +314,7 @@ fn generateName(params: ConstructTokenURIParams, feeTier: String) -> String {
             params.flipRatio,
         ),
     )))
-    .expect("from_utf8 error!");
+    .to_string();
 }
 
 fn escapeQuotes(symbol: String) -> String {
@@ -344,8 +345,7 @@ fn escapeQuotes(symbol: String) -> String {
     // }
     // return symbol;
     if quotesCount > 0 {
-        let mut escapedBytes: Vec<u8> =
-            Vec::with_capacity(symbolBytes.len() + usize::from(quotesCount));
+        let mut escapedBytes: Vec<u8> =vec!(0;symbolBytes.len() + usize::from(quotesCount));
         let mut index: U256 = U256::zero();
         for symbol_byte in symbolBytes {
             if symbol_byte == b'"' {
@@ -355,7 +355,7 @@ fn escapeQuotes(symbol: String) -> String {
             index += U256::one();
             escapedBytes[index.as_usize()] = symbol_byte;
         }
-        return String::from_utf8(escapedBytes).expect("string from_utf8 error!");
+        return String::from_utf8_lossy(&escapedBytes).to_string();
     }
     // return symbol;
     return symbol;
@@ -585,8 +585,8 @@ fn generateDescriptionPartOne(
         //         quoteTokenSymbol
         //     )
         // );
-        String::from_utf8(
-            scale::Encode::encode(&(
+        String::from_utf8_lossy(
+            &scale::Encode::encode(&(
                 "This NFT represents a liquidity position in a Uniswap V3 ",
                 quoteTokenSymbol.clone(),
                 "-",
@@ -598,7 +598,7 @@ fn generateDescriptionPartOne(
                 "\\n",
                 quoteTokenSymbol)
             )
-        ).expect("String from_utf8 error!");
+        ).to_string()
 }
 
 fn generateDescriptionPartTwo(
@@ -609,8 +609,8 @@ fn generateDescriptionPartTwo(
     feeTier: String,
 ) -> String {
     return
-        String::from_utf8(
-            scale::Encode::encode(&(
+        String::from_utf8_lossy(
+            &scale::Encode::encode(&(
                 " Address: ",
                 quoteTokenAddress,
                 "\\n",
@@ -624,7 +624,7 @@ fn generateDescriptionPartTwo(
                 "\\n\\n",
                 "⚠️ DISCLAIMER: Due diligence is imperative when assessing this NFT. Make sure token addresses match the expected tokens, as token symbols may be imitated."
             ))
-        ).expect("String from_utf8 error!");
+        ).to_string();
 }
 
 // @notice Returns string as decimal percentage of fee amount.
@@ -722,7 +722,9 @@ fn feeToPercentString(fee: Uint24) -> String {
 fn generateDecimalString(mut params: DecimalStringParams) -> String {
     // bytes memory buffer = new bytes(params.bufferLength);
     let len = usize::from(params.bufferLength);
-    let mut buffer: Vec<u8> = Vec::with_capacity(len);
+    ink_env::debug_println!("len is:{}",len);
+    let mut buffer: Vec<u8> = vec!(0;len);
+    ink_env::debug_println!("buffer.len() is:{}",buffer.len());
     // if params.isPercent {
     //     buffer[buffer.length - 1] = '%';
     // }
@@ -756,15 +758,16 @@ fn generateDecimalString(mut params: DecimalStringParams) -> String {
     // }
     while params.sigfigs > U256::zero() {
         if params.decimalIndex > 0 && params.sigfigIndex == params.decimalIndex {
-            params.sigfigIndex -= 1;
             buffer[usize::from(params.sigfigIndex)] = b'.';
+            params.sigfigIndex -= 1;
         }
-        params.sigfigIndex -= 1;
+        ink_env::debug_println!("params.sigfigIndex is:{:?}",params.sigfigIndex);
         buffer[usize::from(params.sigfigIndex)] =
             u8::try_from((U256::from(48) + (params.sigfigs % U256::from(10))).as_u32())
                 .expect("u8 try_from error!");
+        params.sigfigIndex -= 1;
         params.sigfigs /= 10;
     }
     // return string(buffer);
-    String::from_utf8(buffer).expect("buffer to String error!")
+    String::from_utf8_lossy(&buffer).to_string()
 }

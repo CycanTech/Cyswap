@@ -89,7 +89,7 @@ describe('positionManager initialize', () => {
     console.log("alice1 is:",alice1.address.toString());
     const { contract:weth9Contract} = await setupContract('weth9_contract','new','weth9','weth9');
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
-    const { contract:positionDescriptor} = await setupContract('NonfungibleTokenPositionDescriptor','new',weth9Contract.address,"_nativeCurrencyLabelBytes");
+    const { contract:positionDescriptor,query:positionDescriptorQuery,tx:positionDescriptorTx} = await setupContract('NonfungibleTokenPositionDescriptor','new',weth9Contract.address,"_nativeCurrencyLabelBytes");
     // pub fn new(factory: AccountId, weth9: AccountId,tokenDescriptor:AccountId) -> Self {
     const { query:positionManagerQuery,tx:positionManagerTx,alice,defaultSigner,contract:positionMangerContract,bob } = await setupContract('NonfungiblePositionManager','new',factoryContract.address,weth9Contract.address,positionDescriptor.address,{value:1000000000});
     const { query:swapRouterQuery,tx:swapRouterTx,contract:swapRouterContract} = await setupContract('SwapRouterContract','new',factoryContract.address,weth9Contract.address,positionDescriptor.address,{value:1000000000});
@@ -166,6 +166,18 @@ describe('positionManager initialize', () => {
       console.log("-----------------------7");
       console.log("poolAddress is:",poolAddress.output?.toHuman());
     }
+
+
+
+
+    
+    
+    
+    let uri = await positionDescriptorQuery.tokenURI(positionMangerContract.address,1);
+
+
+
+
     console.log("-----------------------8");
     // await expect(positionManagerQuery.positions(1)).to.
     let tokenId = { "u128": 1 };

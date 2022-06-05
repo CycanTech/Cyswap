@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
 use ink_env::hash::{HashOutput, Sha2x256};
-use primitives::{Address, Int24, U256};
-use ink_prelude::string::ToString;
 use ink_prelude::string::String;
+use ink_prelude::string::ToString;
+use primitives::{Address, Int24, U256};
 
 use crate::core::BitMath;
 
@@ -15,7 +15,7 @@ const curve6: &str = "M1 1C9 81 65 137 145 145";
 const curve7: &str = "M1 1C1 89 57.5 145 145 145";
 const curve8: &str = "M1 1C1 97 49 145 145 145";
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct SVGParams {
     pub quoteToken: String,
     pub baseToken: String,
@@ -68,8 +68,8 @@ pub fn generateSVG(params: SVGParams) -> String {
         //         </svg>'
         //     )
         // );
-        String::from_utf8(
-            scale::Encode::encode(&(
+        String::from_utf8_lossy(
+            &scale::Encode::encode(&(
                 generateSVGDefs(params.clone()),
                 generateSVGBorderText(
                     params.quoteToken,
@@ -87,21 +87,21 @@ pub fn generateSVG(params: SVGParams) -> String {
                 generateSVGRareSparkle(params.tokenId, params.poolAddress),
                 "</svg>"
             ))
-        ).expect("from utf8 error!");
+        ).to_string();
 }
 
 fn generateSVGRareSparkle(tokenId: U256, poolAddress: Address) -> String {
     let svg;
     if isRare(tokenId, poolAddress) {
-        svg = String::from_utf8(
-            scale::Encode::encode(&
+        svg = String::from_utf8_lossy(
+            &scale::Encode::encode(&
                 r#"<g style="transform:translate(226px, 392px)"><rect width="36px" height="36px" rx="8px" ry="8px" fill="none" stroke="rgba(255,255,255,0.2)" />,
                 "<g><path style="transform:translate(6px,6px)" d="M12 0L12.6522 9.56587L18 1.6077L13.7819 10.2181L22.3923 6L14.4341 ,
                 "11.3478L24 12L14.4341 12.6522L22.3923 18L13.7819 13.7819L18 22.3923L12.6522 14.4341L12 24L11.3478 14.4341L6 22.39,
                 "23L10.2181 13.7819L1.6077 18L9.56587 12.6522L0 12L9.56587 11.3478L1.6077 6L10.2181 10.2181L6 1.6077L11.3478 9.56587L12 0Z" fill="white" />,
                 "<animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="10s" repeatCount="indefinite"/></g></g>"#
             )
-        ).expect("error!");
+        ).to_string();
     } else {
         svg = "".to_string();
     }
@@ -131,7 +131,7 @@ fn generateSVGPositionDataAndLocationCurve(
     let str2length = tickLowerStr.len() + 10;
     let str3length = tickUpperStr.len() + 10;
     let (xCoord, yCoord) = rangeLocation(tickLower, tickUpper);
-    let svg = String::from_utf8(
+    let svg = String::from_utf8_lossy(&
         scale::Encode::encode(&(
             scale::Encode::encode(&(r#" <g style="transform:translate(29px, 384px)">"#,
             r#"<rect width=""#,
@@ -165,7 +165,7 @@ fn generateSVGPositionDataAndLocationCurve(
             yCoord,
             r#"px, 0px)" cx="0px" cy="0px" r="4px" fill="white"/></g>"#
         ))
-    ).expect("error!");
+    ).to_string();
     svg
 }
 
@@ -200,8 +200,11 @@ fn tickToString(mut tick: Int24) -> String {
         tick = tick * -1;
         sign = "-".to_string();
     }
-    return String::from_utf8(scale::Encode::encode(&(sign, U256::from(tick).to_string())))
-        .expect("utf8_from error!");
+    return String::from_utf8_lossy(&scale::Encode::encode(&(
+        sign,
+        U256::from(tick).to_string(),
+    )))
+    .to_string();
 }
 
 fn generageSvgCurve(
@@ -218,7 +221,7 @@ fn generageSvgCurve(
         "#none".to_string()
     };
     let curve: String = getCurve(tickLower, tickUpper, tickSpacing);
-    let svg = String::from_utf8(scale::Encode::encode(&(
+    let svg = String::from_utf8_lossy(&scale::Encode::encode(&(
         r#"<g mask="url("#,
         fade.clone(),
         r#")""#,
@@ -237,7 +240,7 @@ fn generageSvgCurve(
         r#"" stroke="rgba(255,255,255,1)" fill="none" stroke-linecap="round" /></g>"#,
         generateSVGCurveCircle(overRange),
     )))
-    .expect("from utf8 error!");
+    .to_string();
     svg
 }
 
@@ -248,7 +251,7 @@ fn generateSVGCurveCircle(overRange: i8) -> String {
     let curvey2: String = "334".to_string();
     let svg;
     if overRange == 1 || overRange == -1 {
-        svg = String::from_utf8(scale::Encode::encode(&(
+        svg = String::from_utf8_lossy(&scale::Encode::encode(&(
             r#"<circle cx=""#,
             if overRange == -1 {
                 curvex1.clone()
@@ -267,9 +270,9 @@ fn generateSVGCurveCircle(overRange: i8) -> String {
             if overRange == -1 { curvey1 } else { curvey2 },
             r#"px" r="24px" fill="none" stroke="white" />"#,
         )))
-        .expect("utf8 error!");
+        .to_string();
     } else {
-        svg = String::from_utf8(scale::Encode::encode(&(
+        svg = String::from_utf8_lossy(&scale::Encode::encode(&(
             r#"<circle cx=""#,
             curvex1,
             r#"px" cy=""#,
@@ -281,7 +284,7 @@ fn generateSVGCurveCircle(overRange: i8) -> String {
             curvey2,
             r#"px" r="4px" fill="white" />"#,
         )))
-        .expect("utf8 error!");
+        .to_string();
     }
     svg
 }
@@ -314,7 +317,7 @@ fn generateSVGCardMantle(
     baseTokenSymbol: String,
     feeTier: String,
 ) -> String {
-    let svg = String::from_utf8(
+    let svg = String::from_utf8_lossy(&
         scale::Encode::encode(&(
             r#"<g mask="url(#fade-symbol)"><rect fill="none" x="0px" y="0px" width="290px" height="200px" /> <text y="70px" x="32px" fill="white" font-family="Courier New, monospace" font-weight="200" font-size="36px">"#,
             quoteTokenSymbol,
@@ -325,7 +328,7 @@ fn generateSVGCardMantle(
             "</text></g>",
             r#"<rect x="16" y="16" width="258" height="468" rx="26" ry="26" fill="rgba(0,0,0,0)" stroke="rgba(255,255,255,0.2)" />"#
         ))
-    ).expect("from_utf8 error!");
+    ).to_string();
     svg
 }
 
@@ -335,7 +338,7 @@ fn generateSVGBorderText(
     quoteTokenSymbol: String,
     baseTokenSymbol: String,
 ) -> String {
-    let svg = String::from_utf8(
+    let svg = String::from_utf8_lossy(&
         scale::Encode::encode(&(
             scale::Encode::encode(&(r##"<text text-rendering="optimizeSpeed">"##,
             r##"<textPath startOffset="-100%" fill="white" font-family="Courier New, monospace" font-size="10px" xlink:href="#text-path-a">"##,
@@ -361,63 +364,51 @@ fn generateSVGBorderText(
             quoteTokenSymbol,
             r##" <animate additive="sum" attributeName="startOffset" from="0%" to="100%" begin="0s" dur="30s" repeatCount="indefinite" /></textPath></text>"##,
         ))
-    ).expect("uft-8 error!");
+    ).to_string();
     svg
 }
 
 fn generateSVGDefs(params: SVGParams) -> String {
-    let svg = String::from_utf8(
-        scale::Encode::encode(&(
-            "<svg width=\"290\" height=\"500\" viewBox=\"0 0 290 500\" xmlns=\"http://www.w3.org/2000/svg\"",
-            " xmlns:xlink='http://www.w3.org/1999/xlink'>",
-            "<defs>",
-            "<filter id=\"f1\"><feImage result=\"p0\" xlink:href=\"data:image/svg+xml;base64,",
-            base64::encode(
-                    scale::Encode::encode(&(
-                        "<svg width='290' height='500' viewBox='0 0 290 500' xmlns='http://www.w3.org/2000/svg'><rect width='290px' height='500px' fill='#",
-                        params.color0.clone(),
-                        "'/></svg>"
-                    ))
-            ),
-            "\"/><feImage result=\"p1\" xlink:href=\"data:image/svg+xml;base64,",
-            base64::encode(
-                    scale::Encode::encode(&(
-                        "<svg width='290' height='500' viewBox='0 0 290 500' xmlns='http://www.w3.org/2000/svg'><circle cx='",
-                        params.x1,
-                        "' cy='",
-                        params.y1,
-                        "' r='120px' fill='#",
-                        params.color1,
-                        "'/></svg>"
-                    ))
-            ),
-            "\"/><feImage result=\"p2\" xlink:href=\"data:image/svg+xml;base64,",
-            base64::encode(
-                    scale::Encode::encode(&(
-                        "<svg width='290' height='500' viewBox='0 0 290 500' xmlns='http://www.w3.org/2000/svg'><circle cx='",
-                        params.x2,
-                        "' cy='",
-                        params.y2,
-                        "' r='120px' fill='#",
-                        params.color2,
-                        "'/></svg>"
-                    ))
-            ),
-        r#"'" />""#,
-            r#"<feImage result="p3" xlink:href="data:image/svg+xml;base64,"#,
-            base64::encode(
-                    scale::Encode::encode(&(
-                        "<svg width='290' height='500' viewBox='0 0 290 500' xmlns='http://www.w3.org/2000/svg'><circle cx='",
-                        params.x3,
-                        "' cy='",
-                        params.y3,
-                        "' r='100px' fill='#",
-                        params.color3,
-                        "'/></svg>"
-                    )
-                )
-            ),
-            r#"" /><feBlend mode="overlay" in="p0" in2="p1" /><feBlend mode="exclusion" in2="p2" /><feBlend mode="overlay" in2="p3" result="blendOut" /><feGaussianBlur '
+    let mut svg = String::from("");
+    svg.push_str("<svg width=\"290\" height=\"500\" viewBox=\"0 0 290 500\" xmlns=\"http://www.w3.org/2000/svg\"");
+    svg.push_str(" xmlns:xlink='http://www.w3.org/1999/xlink'>");
+    svg.push_str("<defs>");
+    svg.push_str(r#"<filter id="f1"><feImage result="p0" xlink:href="data:image/svg+xml;base64,"#);
+    svg.push_str(r#"<svg width='290' height='500' viewBox='0 0 290 500' xmlns='http://www.w3.org/2000/svg'><rect width='290px' height='500px' fill='"#);
+    svg.push_str(&params.color0);
+    svg.push_str("'/></svg>");
+    svg.push_str(r#""/><feImage result="p1" xlink:href="data:image/svg+xml;base64,"#);
+    svg.push_str("<svg width='290' height='500' viewBox='0 0 290 500' xmlns='http://www.w3.org/2000/svg'><circle cx='");
+    svg.push_str(&params.x1);
+    svg.push_str("' cy='");
+    svg.push_str(&params.y1);
+    svg.push_str("' r='120px' fill='#");
+    svg.push_str(&params.color1);
+    svg.push_str("'/></svg>");
+    svg.push_str(r#""/><feImage result="p\" xlink:href="data:image/svg+xml;base64,"#);
+    svg.push_str(r#"<svg width='290' height='500' viewBox='0 0 290 500' xmlns='http://www.w3.org/2000/svg'><circle cx='"#);
+    svg.push_str(&params.x2);
+    svg.push_str("' cy='");
+    svg.push_str(&params.y2);
+    svg.push_str("' r='120px' fill='#");
+    svg.push_str(&params.color2);
+    svg.push_str("'/></svg>");
+    svg.push_str(r#"'" />""#);
+    svg.push_str(r#"<feImage result="p3" xlink:href="data:image/svg+xml;base64,"#);
+    svg.push_str(&base64::encode(
+                    {
+                    let mut base = String::from("");
+                    base.push_str("<svg width='290' height='500' viewBox='0 0 290 500' xmlns='http://www.w3.org/2000/svg'><circle cx='");
+                    base.push_str(&params.x3);
+                    base.push_str("' cy='");
+                    base.push_str(&params.y3);
+                    base.push_str("' r='100px' fill='#");
+                    base.push_str(&params.color3);
+                    base.push_str("'/></svg>");
+                    base
+                }
+        ));
+    svg.push_str(r#"" /><feBlend mode="overlay" in="p0" in2="p1" /><feBlend mode="exclusion" in2="p2" /><feBlend mode="overlay" in2="p3" result="blendOut" /><feGaussianBlur '
             in="blendOut" stdDeviation="42" /></filter> <clipPath id="corners"><rect width="290" height="500" rx="42" ry="42" /></clipPath>',
             <path id="text-path-a" d="M40 12 H250 A28 28 0 0 1 278 40 V460 A28 28 0 0 1 250 488 H40 A28 28 0 0 1 12 460 V40 A28 28 0 0 1 40 12 z" />',
             <path id="minimap" d="M234 444C234 457.949 242.21 463 253 463" />',
@@ -431,15 +422,27 @@ fn generateSVGDefs(params: SVGParams) -> String {
             <linearGradient id="grad-symbol"><stop offset="0.7" stop-color="white" stop-opacity="1" /><stop offset=".95" stop-color="white" stop-opacity="0" /></linearGradient>',
             <mask id="fade-symbol" maskContentUnits="userSpaceOnUse"><rect width="290px" height="200px" fill="url(#grad-symbol)" /></mask></defs>',
             <g clip-path="url(#corners)">',
-            <rect fill=""#,
-            params.color0,
-            r##"" x="0px" y="0px" width="290px" height="500px" />
+            <rect fill=""#);
+    svg.push_str(&params.color0);
+    svg.push_str(r##"" x="0px" y="0px" width="290px" height="500px" />
             <rect style="filter: url(#f1)" x="0px" y="0px" width="290px" height="500px" />
              <g style="filter:url(#top-region-blur); transform:scale(1.5); transform-origin:center top;">
             <rect fill="none" x="0px" y="0px" width="290px" height="500px" />
             <ellipse cx="50%" cy="0px" rx="180px" ry="120px" fill="#000" opacity="0.85" /></g>
-            <rect x="0" y="0" width="290" height="500" rx="42" ry="42" fill="rgba(0,0,0,0)" stroke="rgba(255,255,255,0.2)" /></g>"##
-        )
-    )).expect("from_utf8 error!");
+            <rect x="0" y="0" width="290" height="500" rx="42" ry="42" fill="rgba(0,0,0,0)" stroke="rgba(255,255,255,0.2)" /></g>"##);
     svg
+}
+
+#[cfg(test)]
+pub mod test {
+    use super::{generateSVGDefs, SVGParams};
+
+    #[test]
+    pub fn it_works() {
+        let svf_dfg = generateSVGDefs(SVGParams {
+            color0: String::from("color0"),
+            ..SVGParams::default()
+        });
+        println!("svf_dfg is:{:?}", svf_dfg);
+    }
 }

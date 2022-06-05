@@ -15,13 +15,14 @@ pub mod PositionDescriptor {
     use libs::periphery::{TokenRatioSortOrder, NFTDescriptor};
     use crabswap::traits::core::pool_action::{PoolActionRef, Slot0};
     use ink_prelude::vec::Vec;
+    use ink_prelude::vec;
 
     // TODO decode the hex to accountId
-    static DAI:&'static str = "e4678b676433e1f6f3f6a77730f4ede1737ad4b828b229def437e3e2ab46eb0";
-    static USDC:&'static str = "e4678b676433e1f6f3f6a77730f4ede1737ad4b828b229def437e3e2ab46eb0";
-    static USDT:&'static str = "e4678b676433e1f6f3f6a77730f4ede1737ad4b828b229def437e3e2ab46eb0";
-    static TBTC:&'static str = "e4678b676433e1f6f3f6a77730f4ede1737ad4b828b229def437e3e2ab46eb0";
-    static WBTC:&'static str = "e4678b676433e1f6f3f6a77730f4ede1737ad4b828b229def437e3e2ab46eb0";
+    static DAI:&'static str = "e4678b676433e1f6f3f6a77730f4ede1737ad4b828b229def437e3e2ab46eb01";
+    static USDC:&'static str = "e4678b676433e1f6f3f6a77730f4ede1737ad4b828b229def437e3e2ab46eb01";
+    static USDT:&'static str = "e4678b676433e1f6f3f6a77730f4ede1737ad4b828b229def437e3e2ab46eb01";
+    static TBTC:&'static str = "e4678b676433e1f6f3f6a77730f4ede1737ad4b828b229def437e3e2ab46eb01";
+    static WBTC:&'static str = "e4678b676433e1f6f3f6a77730f4ede1737ad4b828b229def437e3e2ab46eb01";
     static CHAIN_ID:u8 = 1;
     // address private constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     // address private constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
@@ -151,7 +152,7 @@ pub mod PositionDescriptor {
             while len < 32 && self.nativeCurrencyLabelBytes[len] != 0 {
                 len+=1;
             }
-            let mut b:Vec<u8> = Vec::with_capacity(len);
+            let mut b:Vec<u8> = vec!(0;len);
             for i in 0..len {
                 b[i] = self.nativeCurrencyLabelBytes[i];
             }
