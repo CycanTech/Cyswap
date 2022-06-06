@@ -174,11 +174,11 @@ describe('positionManager initialize', () => {
     
     
     let uri = await positionDescriptorQuery.tokenURI(positionMangerContract.address,1);
+    console.log("-----------------------uri is",uri.output?.toHuman());
 
 
 
-
-    console.log("-----------------------8");
+    
     // await expect(positionManagerQuery.positions(1)).to.
     let tokenId = { "u128": 1 };
     let position1 = await positionManagerQuery.positions(tokenId);

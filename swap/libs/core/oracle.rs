@@ -5,8 +5,9 @@
 use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
 #[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
-use ink_storage::traits::{SpreadAllocate, SpreadLayout};
+use ink_storage::{traits::{SpreadAllocate, SpreadLayout, PackedLayout}, Mapping};
 use primitives::{Int24, Uint256, U160, U256, Uint160};
+use scale::{Decode, Encode};
 
 /// @title Oracle
 /// @notice Provides price and liquidity data useful for a wide variety of system designs
@@ -15,8 +16,8 @@ use primitives::{Int24, Uint256, U160, U256, Uint160};
 /// maximum length of the oracle array. New slots will be added when the array is fully populated.
 /// Observations are overwritten when the full length of the oracle array is populated.
 /// The most recent observation is available, independent of the length of the oracle array, by passing 0 to observe()
-#[derive(Default, Debug, Copy, Clone, SpreadAllocate, SpreadLayout)]
-#[cfg_attr(feature = "std", derive(StorageLayout))]
+#[derive(Default, Debug,Decode,Encode, Copy, Clone, SpreadAllocate, SpreadLayout,PackedLayout)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo,StorageLayout))]
 pub struct Observation {
     // the block timestamp of the observation
     pub blockTimestamp: u64,
@@ -28,31 +29,30 @@ pub struct Observation {
     pub initialized: bool,
 }
 
-#[derive(Debug, SpreadAllocate, SpreadLayout)]
-// #[cfg_attr(feature = "std", derive(StorageLayout))]
+#[derive(Debug,SpreadAllocate, SpreadLayout)]
+#[cfg_attr(feature = "std", derive(StorageLayout))]
 pub struct Observations {
-    pub obs: [Observation; 16],
+    pub obs: Mapping<u16,Observation>,
     // pub obs: [Observation;65535],
 }
 
-#[cfg(feature = "std")]
-impl StorageLayout for Observations {
-    fn layout(key_ptr: &mut ink_primitives::KeyPtr) -> Layout {
-        Layout::Struct(StructLayout::new([
-            FieldLayout::new("len", <[Observation; 16] as StorageLayout>::layout(key_ptr)),
-            FieldLayout::new(
-                "elems",
-                <[Observation; 16] as StorageLayout>::layout(key_ptr),
-            ),
-        ]))
-    }
-}
+// #[cfg(feature = "std")]
+// impl StorageLayout for Observations {
+//     fn layout(key_ptr: &mut ink_primitives::KeyPtr) -> Layout {
+//         Layout::Struct(StructLayout::new([
+//             FieldLayout::new("len", <Mapping<usize,Observation> as StorageLayout>::layout(key_ptr)),
+//             FieldLayout::new(
+//                 "elems",
+//                 <Mapping<usize,Observation> as StorageLayout>::layout(key_ptr),
+//             ),
+//         ]))
+//     }
+// }
 
 impl Observations {
     pub fn new() -> Self {
-        let observation: Observation = Default::default();
         Observations {
-            obs: [observation; 16],
+            obs: Default::default(),
         }
     }
     /// @notice Initialize the oracle array by writing the first slot. Called once for the lifecycle of the observations array
@@ -74,12 +74,12 @@ impl Observations {
         //     initialized: true
         // });
         // return (1, 1);
-        self.obs[0] = Observation {
+        self.obs.insert(0, &Observation {
             blockTimestamp: time,
             tickCumulative: 0,
             secondsPerLiquidityCumulativeX128: Uint160::new(),
             initialized: true,
-        };
+        });
         return (1, 1);
     }
 
@@ -106,7 +106,7 @@ impl Observations {
         cardinality: u16,
     ) -> (i64, U160) {
         if secondsAgo == 0 {
-            let mut last: Observation = self.obs[usize::from(index)];
+            let mut last: Observation = self.obs.get(index).expect("error!");
             // if (last.blockTimestamp != time) last = transform(last, time, tick, liquidity);
             if last.blockTimestamp != time {
                 last = transform(&last, time, tick, liquidity);
@@ -188,7 +188,7 @@ impl Observations {
     ) -> (Observation, Observation) {
         // optimistically set before to the newest observation
         // beforeOrAt = self[index];
-        let mut beforeOrAt: Observation = self.obs[usize::from(index)];
+        let mut beforeOrAt: Observation = self.obs.get(index).expect("error!");
         let atOrAfter: Observation;
         // if the target is chronologically at or after the newest observation, we can early return
         if lte(time, beforeOrAt.blockTimestamp, target) {
@@ -204,10 +204,10 @@ impl Observations {
 
         // now, set before to the oldest observation
         // beforeOrAt = self[(index + 1) % cardinality];
-        beforeOrAt = self.obs[usize::from((index + 1) % cardinality)];
+        beforeOrAt = self.obs.get((index + 1) % cardinality).expect("error!");
         // if (!beforeOrAt.initialized) beforeOrAt = self[0];
         if !beforeOrAt.initialized {
-            beforeOrAt = self.obs[0usize];
+            beforeOrAt = self.obs.get(0_u16).expect("error!");
         }
 
         // ensure that the target is chronologically at or after the oldest observation
@@ -237,7 +237,7 @@ impl Observations {
     ) -> (Observation, Observation) {
         // uint256 l = (index + 1) % cardinality; // oldest observation
         let mut l: U256 = U256::from((index + 1) % cardinality); // oldest observation
-                                                                 // uint256 r = l + cardinality - 1; // newest observation
+        // uint256 r = l + cardinality - 1; // newest observation
         let mut r: U256 = l + cardinality - 1; // newest observation
         let mut i: U256;
         let mut beforeOrAt: Observation;
@@ -245,7 +245,7 @@ impl Observations {
         loop {
             i = (l + r) / 2;
 
-            beforeOrAt = self.obs[i.as_usize() % usize::from(cardinality)];
+            beforeOrAt = self.obs.get((i.as_usize() % usize::from(cardinality)) as u16).expect("error!");
 
             // we've landed on an uninitialized tick, keep searching higher (more recently)
             if !beforeOrAt.initialized {
@@ -254,7 +254,7 @@ impl Observations {
             }
 
             // atOrAfter = self[(i + 1) % cardinality];
-            atOrAfter = self.obs[(i + 1).as_usize() % usize::from(cardinality)];
+            atOrAfter = self.obs.get(((i + 1).as_usize() % usize::from(cardinality)) as u16).expect("error!");
 
             // bool targetAtOrAfter = lte(time, beforeOrAt.blockTimestamp, target);
             let targetAtOrAfter: bool = lte(time, beforeOrAt.blockTimestamp, target);
@@ -297,7 +297,7 @@ impl Observations {
         cardinality:u16,
         cardinalityNext:u16
     ) -> (u16, u16) {
-        let  last:Observation = self.obs[usize::from(index)];
+        let  last:Observation = self.obs.get(index).expect("error!");
 
         // early return if we've already written an observation this block
         if last.blockTimestamp == blockTimestamp{
@@ -313,7 +313,7 @@ impl Observations {
         }
 
         let indexUpdated = (index + 1) % cardinalityUpdated;
-        self.obs[usize::from(indexUpdated)] = transform(&last, blockTimestamp, tick, liquidity);
+        self.obs.insert(indexUpdated, &transform(&last, blockTimestamp, tick, liquidity));
         (indexUpdated,cardinalityUpdated)
     }
 }
