@@ -13,18 +13,22 @@
         "@redspot/gas-reporter": "^0.13.6",
         "@redspot/patract": "^0.13.6",
         "@redspot/watcher": "^0.13.6",
+        "@typechain/ethers-v5": "^4.0.0",
         "@types/chai": "^4.3.0",
         "@types/chai-as-promised": "^7.1.5",
         "@types/mocha": "^8.0.3",
         "@typescript-eslint/eslint-plugin": "^4.8.2",
         "@typescript-eslint/parser": "^4.8.2",
+        "bignumber.js": "^9.0.2",
         "chai": "^4.3.6",
         "chai-as-promised": "^7.1.1",
+        "mocha-chai-jest-snapshot": "^1.1.0",
+        "decimal.js": "^10.2.1",
         "eslint": "^7.26.0",
         "eslint-plugin-import": "^2.22.1",
         "eslint-plugin-node": "^11.1.0",
         "eslint-plugin-promise": "^5.1.0",
-        "redspot": "^0.13.6"
+        "ethers": "^5.0.8"
     },
     "scripts": {
         "build:release": "npx redspot compile --release",

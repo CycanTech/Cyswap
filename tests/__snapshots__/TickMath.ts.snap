@@ -1,0 +1,469 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TickMath #getTickAtSqrtRatio ratio 4295128739 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19829139552,
+  "gasRequired": 74999922688,
+  "output": 4257995563,
+  "result": Object {
+    "ok": Object {
+      "data": "0x2bdbcbfd00000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 4295128739 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19822795599,
+  "gasRequired": 74999922688,
+  "output": -887272,
+  "result": Object {
+    "ok": Object {
+      "data": "0x1876f2ff",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 79228162514264337593543 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19564494748,
+  "gasRequired": 74999922688,
+  "output": 3993350759,
+  "result": Object {
+    "ok": Object {
+      "data": "0x67b205ee00000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 79228162514264337593543 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19558150795,
+  "gasRequired": 74999922688,
+  "output": -276324,
+  "result": Object {
+    "ok": Object {
+      "data": "0x9cc8fbff",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 79228162514264337593543950 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19464262538,
+  "gasRequired": 74999922688,
+  "output": 3893118549,
+  "result": Object {
+    "ok": Object {
+      "data": "0x55460ce800000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 79228162514264337593543950 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19457918585,
+  "gasRequired": 74999922688,
+  "output": -138162,
+  "result": Object {
+    "ok": Object {
+      "data": "0x4ee4fdff",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 9903520314283042199192993792 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 18395900832,
+  "gasRequired": 74999922688,
+  "output": 2824756843,
+  "result": Object {
+    "ok": Object {
+      "data": "0x6b5e5ea800000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 9903520314283042199192993792 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 18389556879,
+  "gasRequired": 74999922688,
+  "output": -41590,
+  "result": Object {
+    "ok": Object {
+      "data": "0x8a5dffff",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 28011385487393069959365969113 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19380621596,
+  "gasRequired": 74999922688,
+  "output": 3809477607,
+  "result": Object {
+    "ok": Object {
+      "data": "0xe70310e300000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 28011385487393069959365969113 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19374277643,
+  "gasRequired": 74999922688,
+  "output": -20796,
+  "result": Object {
+    "ok": Object {
+      "data": "0xc4aeffff",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 56022770974786139918731938227 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19277707503,
+  "gasRequired": 74999922688,
+  "output": 3706563514,
+  "result": Object {
+    "ok": Object {
+      "data": "0xbaabeddc00000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 56022770974786139918731938227 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19271363550,
+  "gasRequired": 74999922688,
+  "output": -6932,
+  "result": Object {
+    "ok": Object {
+      "data": "0xece4ffff",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 79228162514264337593543950336 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 18140197472,
+  "gasRequired": 74999922688,
+  "output": 2569053483,
+  "result": Object {
+    "ok": Object {
+      "data": "0x2ba5209900000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 79228162514264337593543950336 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 18133853519,
+  "gasRequired": 74999922688,
+  "output": 0,
+  "result": Object {
+    "ok": Object {
+      "data": "0x00000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 112045541949572279837463876454 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19220035554,
+  "gasRequired": 74999922688,
+  "output": 3648891565,
+  "result": Object {
+    "ok": Object {
+      "data": "0xadaa7dd900000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 112045541949572279837463876454 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19213691601,
+  "gasRequired": 74999922688,
+  "output": 6931,
+  "result": Object {
+    "ok": Object {
+      "data": "0x131b0000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 224091083899144559674927752909 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19324408844,
+  "gasRequired": 74999922688,
+  "output": 3753264855,
+  "result": Object {
+    "ok": Object {
+      "data": "0xd746b6df00000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 224091083899144559674927752909 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19318064891,
+  "gasRequired": 74999922688,
+  "output": 20795,
+  "result": Object {
+    "ok": Object {
+      "data": "0x3b510000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 633825300114114700748351602688 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19397974198,
+  "gasRequired": 74999922688,
+  "output": 3826830209,
+  "result": Object {
+    "ok": Object {
+      "data": "0x81cb18e400000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 633825300114114700748351602688 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19391630245,
+  "gasRequired": 74999922688,
+  "output": 41590,
+  "result": Object {
+    "ok": Object {
+      "data": "0x76a20000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 79228162514264337593543950336000 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19620256604,
+  "gasRequired": 74999922688,
+  "output": 4049112615,
+  "result": Object {
+    "ok": Object {
+      "data": "0x278e58f100000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 79228162514264337593543950336000 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19613912651,
+  "gasRequired": 74999922688,
+  "output": 138162,
+  "result": Object {
+    "ok": Object {
+      "data": "0xb21b0200",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 79228162514264337593543950336000000 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19610361194,
+  "gasRequired": 74999922688,
+  "output": 4039217205,
+  "result": Object {
+    "ok": Object {
+      "data": "0x3590c1f000000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 79228162514264337593543950336000000 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19604017241,
+  "gasRequired": 74999922688,
+  "output": 276324,
+  "result": Object {
+    "ok": Object {
+      "data": "0x64370400",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 1461446703485210103287273052203988822378723970341 gas 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19867827286,
+  "gasRequired": 74999922688,
+  "output": 4296683297,
+  "result": Object {
+    "ok": Object {
+      "data": "0x212f1a0001000000",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
+
+exports[`TickMath #getTickAtSqrtRatio ratio 1461446703485210103287273052203988822378723970341 result 1`] = `
+Object {
+  "debugMessage": "",
+  "gasConsumed": 19861483333,
+  "gasRequired": 74999922688,
+  "output": 887271,
+  "result": Object {
+    "ok": Object {
+      "data": "0xe7890d00",
+      "flags": Array [],
+    },
+  },
+  "storageDeposit": Object {
+    "charge": 0,
+  },
+}
+`;
