@@ -2,19 +2,16 @@
 #![feature(min_specialization)]
 #![allow(non_snake_case)]
 
-/// This is a simple `PSP-22` which will be used as a stable coin and a collateral token in our lending contract
 #[brush::contract]
 pub mod OracleTest {
-    use ink_storage::traits::{PackedLayout, SpreadAllocate, SpreadLayout};
-    use primitives::Int24;
-    use scale::{Decode, Encode};
     use ink_env::DefaultEnvironment;
-    // use lending_project::traits::stable_coin::*;
-    use libs::core::{
-        oracle::{ Observations},
-        
-    };
-    use primitives::{ U160,  I56};
+    
+    use ink_prelude::vec::Vec;
+    use ink_storage::traits::SpreadAllocate;
+    use ink_storage::traits::{PackedLayout, SpreadLayout};
+    use libs::core::oracle::Observations;
+    use primitives::{Int24, I56, U160};
+    use scale::{Decode, Encode};
 
     #[derive(
         Default, Debug, Decode, Encode, Copy, Clone, SpreadAllocate, SpreadLayout, PackedLayout,
@@ -25,7 +22,7 @@ pub mod OracleTest {
         tick: Int24,
         liquidity: u128,
     }
-    
+
     // struct UpdateParams {
     //     uint32 advanceTimeBy;
     //     int24 tick;
@@ -53,9 +50,6 @@ pub mod OracleTest {
         pub observations: Observations,
     }
 
-    // It forces the compiler to check that you implemented all super traits
-    // impl StableCoin for StableCoinContract {}
-
     impl OracleTestContract {
         /// constructor with name and symbol
         #[ink(constructor)]
@@ -73,6 +67,8 @@ pub mod OracleTest {
             self.tick = params.tick;
             self.liquidity = params.liquidity;
             let (cardinality, cardinalityNext) = self.observations.initialize(params.time);
+            self.cardinality = cardinality;
+            self.cardinalityNext = cardinalityNext;
         }
 
         // function advanceTime(uint32 by) public {
@@ -100,6 +96,8 @@ pub mod OracleTest {
                 self.cardinality,
                 self.cardinalityNext,
             );
+            self.index = index;
+            self.cardinality = cardinality;
             self.tick = params.tick;
             self.liquidity = params.liquidity;
         }
@@ -109,9 +107,9 @@ pub mod OracleTest {
         pub fn batchUpdate(&mut self, params: Vec<UpdateParams>) {
             //     // sload everything
             //     int24 _tick = tick;
-            let _tick: Int24 = self.tick;
+            let mut _tick: Int24 = self.tick;
             // uint128 _liquidity = liquidity;
-            let _liquidity: u128 = self.liquidity;
+            let mut _liquidity: u128 = self.liquidity;
             //     uint16 _index = index;
             let _index: u16 = self.index;
             //     uint16 _cardinality = cardinality;
@@ -119,7 +117,7 @@ pub mod OracleTest {
             //     uint16 _cardinalityNext = cardinalityNext;
             let _cardinalityNext: u16 = self.cardinalityNext;
             //     uint32 _time = time;
-            let _time: u64 = self.time;
+            let mut _time: u64 = self.time;
 
             //     for (uint256 i = 0; i < params.length; i++) {
             for param in params {
@@ -158,13 +156,12 @@ pub mod OracleTest {
 
         #[ink(message)]
         pub fn grow(&mut self, _cardinalityNext: u16) {
-            self.cardinalityNext = self
-                .observations
-                .grow(self.cardinalityNext, _cardinalityNext);
+            self.cardinalityNext =
+                (&mut self.observations).grow(self.cardinalityNext, _cardinalityNext);
         }
 
-        pub fn observe(&self, secondsAgos: Vec<u64>) -> (Vec<I56>, Vec<U160>) {
-            return self.observations.observe(
+        pub fn observe(&mut self, secondsAgos: Vec<u64>) -> (Vec<I56>, Vec<U160>) {
+            return (&mut self.observations).observe(
                 self.time,
                 secondsAgos,
                 self.tick,
@@ -180,10 +177,18 @@ pub mod OracleTest {
         //     observations.observe(_time, secondsAgos, _tick, _index, _liquidity, cardinality);
         //     return gasBefore - gasleft();
         // }
-        pub fn getGasCostOfObserve(&self,secondsAgos:Vec<u64>) -> u64 {
-            let (_time,_tick,_liquidity, _index) = (self.time, self.tick, self.liquidity, self.index);
-            let gasBefore:u64 = ink_env::gas_left::<DefaultEnvironment>();
-            self.observations.observe(_time, secondsAgos, _tick, _index, _liquidity, self.cardinality);
+        pub fn getGasCostOfObserve(&mut self, secondsAgos: Vec<u64>) -> u64 {
+            let (_time, _tick, _liquidity, _index) =
+                (self.time, self.tick, self.liquidity, self.index);
+            let gasBefore: u64 = ink_env::gas_left::<DefaultEnvironment>();
+            (&mut self.observations).observe(
+                _time,
+                secondsAgos,
+                _tick,
+                _index,
+                _liquidity,
+                self.cardinality,
+            );
             return gasBefore - ink_env::gas_left::<DefaultEnvironment>();
         }
     }
