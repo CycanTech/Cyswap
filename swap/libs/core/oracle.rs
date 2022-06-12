@@ -1,13 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(non_snake_case)]
 
-#[cfg(feature = "std")]
-use ink_metadata::layout::{FieldLayout, Layout, StructLayout};
-#[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
-use ink_storage::{traits::{SpreadAllocate, SpreadLayout, PackedLayout}, Mapping};
-use primitives::{Int24, Uint256, U160, U256, Uint160};
+use ink_storage::{
+    traits::{PackedLayout, SpreadAllocate, SpreadLayout},
+    Mapping,
+};
+use primitives::{Int24, Uint160,  U160, U256,  I56};
 use scale::{Decode, Encode};
+use ink_prelude::vec::Vec;
 
 /// @title Oracle
 /// @notice Provides price and liquidity data useful for a wide variety of system designs
@@ -16,8 +17,10 @@ use scale::{Decode, Encode};
 /// maximum length of the oracle array. New slots will be added when the array is fully populated.
 /// Observations are overwritten when the full length of the oracle array is populated.
 /// The most recent observation is available, independent of the length of the oracle array, by passing 0 to observe()
-#[derive(Default, Debug,Decode,Encode, Copy, Clone, SpreadAllocate, SpreadLayout,PackedLayout)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo,StorageLayout))]
+#[derive(
+    Default, Debug, Decode, Encode, Copy, Clone, SpreadAllocate, SpreadLayout, PackedLayout,
+)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
 pub struct Observation {
     // the block timestamp of the observation
     pub blockTimestamp: u64,
@@ -29,10 +32,10 @@ pub struct Observation {
     pub initialized: bool,
 }
 
-#[derive(Debug,SpreadAllocate, SpreadLayout)]
-#[cfg_attr(feature = "std", derive(StorageLayout))]
+#[derive(Debug, Default, SpreadAllocate, SpreadLayout)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo,StorageLayout))]
 pub struct Observations {
-    pub obs: Mapping<u16,Observation>,
+    pub obs: Mapping<u16, Observation>,
     // pub obs: [Observation;65535],
 }
 
@@ -74,12 +77,15 @@ impl Observations {
         //     initialized: true
         // });
         // return (1, 1);
-        self.obs.insert(0, &Observation {
-            blockTimestamp: time,
-            tickCumulative: 0,
-            secondsPerLiquidityCumulativeX128: Uint160::new(),
-            initialized: true,
-        });
+        self.obs.insert(
+            0,
+            &Observation {
+                blockTimestamp: time,
+                tickCumulative: 0,
+                secondsPerLiquidityCumulativeX128: Uint160::new(),
+                initialized: true,
+            },
+        );
         return (1, 1);
     }
 
@@ -97,7 +103,7 @@ impl Observations {
     /// @return tickCumulative The tick * time elapsed since the pool was first initialized, as of `secondsAgo`
     /// @return secondsPerLiquidityCumulativeX128 The time elapsed / max(1, liquidity) since the pool was first initialized, as of `secondsAgo`
     pub fn observeSingle(
-        &mut self,
+        &self,
         time: u64,
         secondsAgo: u64,
         tick: Int24,
@@ -154,7 +160,7 @@ impl Observations {
                     / i64::try_from(observationTimeDelta).unwrap())
                     * i64::try_from(targetDelta).unwrap();
 
-            let secondsPerLiquidityCumulativeX128 = 
+            let secondsPerLiquidityCumulativeX128 =
                 beforeOrAt.secondsPerLiquidityCumulativeX128.value
                     + ((atOrAfter.secondsPerLiquidityCumulativeX128.value
                         - beforeOrAt.secondsPerLiquidityCumulativeX128.value)
@@ -237,7 +243,7 @@ impl Observations {
     ) -> (Observation, Observation) {
         // uint256 l = (index + 1) % cardinality; // oldest observation
         let mut l: U256 = U256::from((index + 1) % cardinality); // oldest observation
-        // uint256 r = l + cardinality - 1; // newest observation
+                                                                 // uint256 r = l + cardinality - 1; // newest observation
         let mut r: U256 = l + cardinality - 1; // newest observation
         let mut i: U256;
         let mut beforeOrAt: Observation;
@@ -245,7 +251,10 @@ impl Observations {
         loop {
             i = (l + r) / 2;
 
-            beforeOrAt = self.obs.get((i.as_usize() % usize::from(cardinality)) as u16).expect("error!");
+            beforeOrAt = self
+                .obs
+                .get((i.as_usize() % usize::from(cardinality)) as u16)
+                .expect("error!");
 
             // we've landed on an uninitialized tick, keep searching higher (more recently)
             if !beforeOrAt.initialized {
@@ -254,7 +263,10 @@ impl Observations {
             }
 
             // atOrAfter = self[(i + 1) % cardinality];
-            atOrAfter = self.obs.get(((i + 1).as_usize() % usize::from(cardinality)) as u16).expect("error!");
+            atOrAfter = self
+                .obs
+                .get(((i + 1).as_usize() % usize::from(cardinality)) as u16)
+                .expect("error!");
 
             // bool targetAtOrAfter = lte(time, beforeOrAt.blockTimestamp, target);
             let targetAtOrAfter: bool = lte(time, beforeOrAt.blockTimestamp, target);
@@ -290,21 +302,21 @@ impl Observations {
     /// @return cardinalityUpdated The new cardinality of the oracle array
     pub fn write(
         &mut self,
-        index:u16,
-        blockTimestamp:u64,
-        tick:Int24,
-        liquidity:u128,
-        cardinality:u16,
-        cardinalityNext:u16
+        index: u16,
+        blockTimestamp: u64,
+        tick: Int24,
+        liquidity: u128,
+        cardinality: u16,
+        cardinalityNext: u16,
     ) -> (u16, u16) {
-        let  last:Observation = self.obs.get(index).expect("error!");
+        let last: Observation = self.obs.get(index).expect("error!");
 
         // early return if we've already written an observation this block
-        if last.blockTimestamp == blockTimestamp{
+        if last.blockTimestamp == blockTimestamp {
             return (index, cardinality);
-        } 
+        }
 
-        let cardinalityUpdated:u16;
+        let cardinalityUpdated: u16;
         // if the conditions are right, we can bump the cardinality
         if cardinalityNext > cardinality && index == (cardinality - 1) {
             cardinalityUpdated = cardinalityNext;
@@ -313,8 +325,81 @@ impl Observations {
         }
 
         let indexUpdated = (index + 1) % cardinalityUpdated;
-        self.obs.insert(indexUpdated, &transform(&last, blockTimestamp, tick, liquidity));
-        (indexUpdated,cardinalityUpdated)
+        self.obs.insert(
+            indexUpdated,
+            &transform(&last, blockTimestamp, tick, liquidity),
+        );
+        (indexUpdated, cardinalityUpdated)
+    }
+
+    /// @notice Prepares the oracle array to store up to `next` observations
+    /// @param self The stored oracle array
+    /// @param current The current next cardinality of the oracle array
+    /// @param next The proposed next cardinality which will be populated in the oracle array
+    /// @return next The next cardinality which will be populated in the oracle array
+    pub fn grow(& mut self, current: u16, next: u16) -> u16 {
+        assert!(current > 0, "I");
+        // no-op if the passed next value isn't greater than the current next value
+        if next <= current {
+            return current;
+        }
+        // store in each slot to prevent fresh SSTOREs in swaps
+        // this data will not be used because the initialized boolean is still false
+        for i in current..next {
+            self.obs.get(&i).expect("current is None").blockTimestamp = 1;
+        }
+        return next;
+    }
+
+    /// @notice Returns the accumulator values as of each time seconds ago from the given time in the array of `secondsAgos`
+    /// @dev Reverts if `secondsAgos` > oldest observation
+    /// @param self The stored oracle array
+    /// @param time The current block.timestamp
+    /// @param secondsAgos Each amount of time to look back, in seconds, at which point to return an observation
+    /// @param tick The current tick
+    /// @param index The index of the observation that was most recently written to the observations array
+    /// @param liquidity The current in-range pool liquidity
+    /// @param cardinality The number of populated elements in the oracle array
+    /// @return tickCumulatives The tick * time elapsed since the pool was first initialized, as of each `secondsAgo`
+    /// @return secondsPerLiquidityCumulativeX128s The cumulative seconds / max(1, liquidity) since the pool was first initialized, as of each `secondsAgo`
+    pub fn observe(
+        &mut self,
+        time:u64,
+        secondsAgos:Vec<u64>,
+        tick:Int24,
+        index:u16,
+        liquidity:u128,
+        cardinality:u16
+    )->(Vec<I56>, Vec<U160>) {
+        assert!(cardinality > 0, "I");
+
+        // tickCumulatives = new int56[](secondsAgos.length);
+        let mut tickCumulatives = <Vec::<I56>>::with_capacity(secondsAgos.len());
+        let mut secondsPerLiquidityCumulativeX128s =Vec::<U160>::with_capacity(secondsAgos.len());
+        // for (uint256 i = 0; i < secondsAgos.length; i++) {
+        //     (tickCumulatives[i], secondsPerLiquidityCumulativeX128s[i]) = observeSingle(
+        //         self,
+        //         time,
+        //         secondsAgos[i],
+        //         tick,
+        //         index,
+        //         liquidity,
+        //         cardinality
+        //     );
+        // }
+        for secondsAgo in secondsAgos {
+            let (tickCumulative, secondsPerLiquidityCumulativeX128) = self.observeSingle(
+                time,
+                secondsAgo,
+                tick,
+                index,
+                liquidity,
+                cardinality
+            );
+            tickCumulatives.push(tickCumulative);
+            secondsPerLiquidityCumulativeX128s.push(secondsPerLiquidityCumulativeX128);
+        }
+        (tickCumulatives,secondsPerLiquidityCumulativeX128s)
     }
 }
 
@@ -349,9 +434,11 @@ fn transform(
     Observation {
         blockTimestamp: blockTimestamp,
         tickCumulative: last.tickCumulative + (i64::from(tick) * delta),
-        secondsPerLiquidityCumulativeX128: Uint160::new_with_u256(last.secondsPerLiquidityCumulativeX128.value
-            .saturating_add((U256::from(delta) << 128) / liquidity))
-            ,
+        secondsPerLiquidityCumulativeX128: Uint160::new_with_u256(
+            last.secondsPerLiquidityCumulativeX128
+                .value
+                .saturating_add((U256::from(delta) << 128) / liquidity),
+        ),
         initialized: true,
     }
 }

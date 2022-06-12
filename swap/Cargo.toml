@@ -86,6 +86,8 @@ exclude = [
     "contracts/periphery/NonfungibleTokenPositionDescriptor/",
     "contracts/periphery/SwapRouter/",
     "contracts/test/TickMathTest/",
+    "contracts/test/OracleTest/",
+    "contracts/test/PoolTest/",
 ]
 
 [profile.dev]
