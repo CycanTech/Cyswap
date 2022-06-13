@@ -1,0 +1,52 @@
+[package]
+name = "weth9_contract"
+version = "1.5.0"
+authors = ["Supercolony <dominik.krizo@supercolony.net>"]
+edition = "2021"
+
+[dependencies]
+ink_primitives = { version = "3.2.0", default-features = false }
+ink_metadata = { version = "3.2.0", default-features = false, features = ["derive"], optional = true }
+ink_env = { version = "3.2.0", default-features = false }
+ink_storage = { version = "3.2.0", default-features = false }
+ink_lang = { version = "3.2.0", default-features = false }
+ink_prelude = { version = "3.2.0", default-features = false }
+
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+
+# These dependencies
+brush = { tag = "v1.7.1", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false, features = ["psp22"] }
+crabswap = { path = "../../../../", default-features = false}
+[lib]
+name = "weth9_contract"
+path = "lib.rs"
+crate-type = [
+    "cdylib",
+]
+
+[features]
+default = ["std"]
+std = [
+    "ink_primitives/std",
+    "ink_metadata",
+    "ink_metadata/std",
+    "ink_env/std",
+    "ink_storage/std",
+    "ink_lang/std",
+    "scale/std",
+    "scale-info",
+    "scale-info/std",
+    "crabswap/std",
+
+    # These dependencies
+    "brush/std",
+]
+ink-as-dependency = []
+
+[profile.dev]
+codegen-units = 16
+overflow-checks = false
+
+[profile.release]
+overflow-checks = false

@@ -1,9 +1,21 @@
 {
     "cSpell.words": [
+        "codegen",
+        "crabswap",
+        "elems",
         "encodable",
+        "IERC",
         "inheritdoc",
+        "IWETH",
+        "Mintable",
+        "multihop",
+        "Nonfungible",
         "patract",
         "polkadot",
-        "redspot"
+        "postions",
+        "redspot",
+        "secp",
+        "seperator",
+        "TYPEHASH"
     ]
 }

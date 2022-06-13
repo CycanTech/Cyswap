@@ -1,0 +1,3 @@
+
+pub const RESOLUTION: u8 = 96;
+pub const Q96:u128 = 0x1000000000000000000000000;

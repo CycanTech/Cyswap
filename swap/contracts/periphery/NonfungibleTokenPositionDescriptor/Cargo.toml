@@ -1,0 +1,50 @@
+[package]
+name = "NonfungibleTokenPositionDescriptor"
+version = "3.0.0"
+authors = ["HiTech<cloudweisz@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+ink_primitives = { version = "3.2.0", default-features = false }
+ink_metadata = { version = "3.2.0", default-features = false, features = ["derive"], optional = true }
+ink_env = { version = "3.2.0", default-features = false }
+ink_storage = { version = "3.2.0", default-features = false }
+ink_lang = { version = "3.2.0", default-features = false }
+ink_prelude = { version = "3.2.0", default-features = false }
+
+brush = { tag = "v1.7.1", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false,features = ["psp34","ownable"]}
+
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+hex = { version = "0.4", default-features = false,features = ["alloc"]}
+
+# factory = {version = "3.0.0-rc9",path="../../core/factory", default-features = false,features = ["ink-as-dependency"]}
+crabswap = { path = "../../../", default-features = false,features=["pool_initial","erc721_permit","psp34_base"]}
+primitives = {version = "3.0.0-rc9",path="../../../primitives/", default-features = false}
+libs = {version = "3.0.0",path="../../../libs/", default-features = false}
+[lib]
+name = "NonfungibleTokenPositionDescriptor"
+path = "lib.rs"
+crate-type = ["cdylib"]
+
+[features]
+default = ["std"]
+std = [
+    "ink_primitives/std",
+    "ink_metadata",
+    "ink_metadata/std",
+    "ink_env/std",
+    "ink_storage/std",
+    "ink_lang/std",
+    "scale/std",
+    "scale-info",
+    "scale-info/std",
+    "crabswap/std",
+]
+ink-as-dependency = []
+[profile.dev]
+codegen-units = 16
+overflow-checks = false
+
+[profile.release]
+overflow-checks = false
