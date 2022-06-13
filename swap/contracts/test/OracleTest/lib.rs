@@ -55,7 +55,14 @@ pub mod OracleTest {
         #[ink(constructor)]
         pub fn new() -> Self {
             ink_lang::codegen::initialize_contract(|instance: &mut OracleTestContract| {
-                instance;
+                instance.time = 0;
+                instance.tick = 0;
+                instance.liquidity = 0;
+                instance.index = 0;
+                instance.cardinality = 0;
+                instance.cardinalityNext = 0;
+                instance.observations = Default::default();
+
             })
         }
 
@@ -78,6 +85,11 @@ pub mod OracleTest {
         #[ink(message)]
         pub fn advanceTime(&mut self, by: u64) {
             self.time += by;
+        }
+
+        #[ink(message)]
+        pub fn index(&self) ->u16{
+            self.index
         }
 
         // // write an observation, then change tick and liquidity

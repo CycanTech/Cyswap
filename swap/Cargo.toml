@@ -87,7 +87,7 @@ exclude = [
     "contracts/periphery/SwapRouter/",
     "contracts/test/TickMathTest/",
     "contracts/test/OracleTest/",
-    "contracts/test/PoolTest/",
+    # "contracts/test/PoolTest/",
 ]
 
 [profile.dev]
