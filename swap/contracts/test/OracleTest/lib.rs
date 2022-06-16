@@ -7,11 +7,13 @@ pub mod OracleTest {
     use ink_env::DefaultEnvironment;
     
     use ink_prelude::vec::Vec;
-    use ink_storage::traits::SpreadAllocate;
+    use ink_storage::traits::{SpreadAllocate};
+    use ink_storage::{Mapping};
     use ink_storage::traits::{PackedLayout, SpreadLayout};
     use libs::core::oracle::Observations;
     use primitives::{Int24, I56, U160};
     use scale::{Decode, Encode};
+    use libs::core::oracle::Observation;
 
     #[derive(
         Default, Debug, Decode, Encode, Copy, Clone, SpreadAllocate, SpreadLayout, PackedLayout,
@@ -66,6 +68,19 @@ pub mod OracleTest {
             })
         }
 
+        #[ink(message)]
+        pub fn observations(&self,index:u16)->Observation{
+            self.observations.obs.get(index).unwrap()
+        }
+        #[ink(message)]
+        pub fn cardinality(&self)->u16{
+            self.cardinality
+        }
+
+        #[ink(message)]
+        pub fn cardinalityNext(&self)->u16{
+            self.cardinalityNext
+        }
         #[ink(message)]
         pub fn initialize(&mut self, params: InitializeParams) {
             // require(self.cardinality == 0, "already initialized");

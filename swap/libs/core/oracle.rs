@@ -32,7 +32,7 @@ pub struct Observation {
     pub initialized: bool,
 }
 
-#[derive(Debug, Default, SpreadAllocate, SpreadLayout)]
+#[derive(Debug, Default,SpreadAllocate, SpreadLayout)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo,StorageLayout))]
 pub struct Observations {
     pub obs: Mapping<u16, Observation>,

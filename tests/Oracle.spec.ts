@@ -1,14 +1,13 @@
 // import { BigNumber, BigNumberish, Wallet } from 'ethers'
 // import { ethers, waffle } from 'hardhat'
 // import { OracleTest } from '../typechain/OracleTest'
-// import checkObservationEquals from './shared/checkObservationEquals'
-// import { expect } from './shared/expect'
 // import { TEST_POOL_START_TIME } from './shared/fixtures'
 // import snapshotGasCost from './shared/snapshotGasCost'
 // import { MaxUint128 } from './shared/utilities'
 import BN from 'bn.js'
 import { BigNumber } from 'ethers'
 import { expect } from './shared/expect'
+import checkObservationEquals  from "./shared/checkObservationEquals";
 import { artifacts, network, patract } from 'redspot';
 import Decimal from 'decimal.js';
 
@@ -64,26 +63,29 @@ describe('Oracle', () => {
     // })
     it('index is 0', async () => {
       const { query: oracleTestQuery, tx: oracleTestTx, } = await setupContract("OracleTest", "new");
-      // await tx.initialize({ liquidity: 1, tick: 1, time: 1 });
-      // expect (await (await query.index()).output).to.eq(0);
+      await oracleTestTx.initialize({ liquidity: 1, tick: 1, time: 1 });
+      expect (await (await oracleTestQuery.index()).output).to.eq(0);
     });
-    // it('cardinality is 1', async () => {
-    //   await oracle.initialize({ liquidity: 1, tick: 1, time: 1 })
-    //   expect(await oracle.cardinality()).to.eq(1)
-    // })
-    // it('cardinality next is 1', async () => {
-    //   await oracle.initialize({ liquidity: 1, tick: 1, time: 1 })
-    //   expect(await oracle.cardinalityNext()).to.eq(1)
-    // })
-    // it('sets first slot timestamp only', async () => {
-    //   await oracle.initialize({ liquidity: 1, tick: 1, time: 1 })
-    //   checkObservationEquals(await oracle.observations(0), {
-    //     initialized: true,
-    //     blockTimestamp: 1,
-    //     tickCumulative: 0,
-    //     secondsPerLiquidityCumulativeX128: 0,
-    //   })
-    // })
+    it('cardinality is 1', async () => {
+      const { query: oracleTestQuery, tx: oracleTestTx, } = await setupContract("OracleTest", "new");
+      await oracleTestTx.initialize({ liquidity: 1, tick: 1, time: 1 });
+      await expect(oracleTestQuery.cardinality()).to.have.output(1);
+    })
+    it('cardinality next is 1', async () => {
+      const { query: oracleTestQuery, tx: oracleTestTx, } = await setupContract("OracleTest", "new");
+      await oracleTestTx.initialize({ liquidity: 1, tick: 1, time: 1 })
+      expect(await oracleTestQuery.cardinalityNext()).to.have.output(1);
+    })
+    it('sets first slot timestamp only', async () => {
+      const { query: oracleTestQuery, tx: oracleTestTx, } = await setupContract("OracleTest", "new");
+      await oracleTestTx.initialize({ liquidity: 1, tick: 1, time: 1 })
+      checkObservationEquals(await (await oracleTestQuery.observations(0)).output, {
+        initialized: true,
+        blockTimestamp: 1,
+        tickCumulative: 0,
+        secondsPerLiquidityCumulativeX128: 0,
+      })
+    })
     // it('gas', async () => {
     //   await snapshotGasCost(oracle.initialize({ liquidity: 1, tick: 1, time: 1 }))
     // })
