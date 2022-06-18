@@ -5,15 +5,15 @@
 #[brush::contract]
 pub mod OracleTest {
     use ink_env::DefaultEnvironment;
-    
+    use ink_storage::traits::StorageLayout;
     use ink_prelude::vec::Vec;
     use ink_storage::traits::{SpreadAllocate};
-    use ink_storage::{Mapping};
     use ink_storage::traits::{PackedLayout, SpreadLayout};
     use libs::core::oracle::Observations;
     use primitives::{Int24, I56, U160};
     use scale::{Decode, Encode};
     use libs::core::oracle::Observation;
+    use ink_prelude::string::String;
 
     #[derive(
         Default, Debug, Decode, Encode, Copy, Clone, SpreadAllocate, SpreadLayout, PackedLayout,
@@ -52,6 +52,32 @@ pub mod OracleTest {
         pub observations: Observations,
     }
 
+    #[derive(
+        Default, Debug, Decode, Encode, Clone, SpreadAllocate, SpreadLayout, PackedLayout,
+    )]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
+    pub struct ObservationOutput {
+        // the block timestamp of the observation
+        pub blockTimestamp: u64,
+        // the tick accumulator, i.e. tick * time elapsed since the pool was first initialized
+        pub tickCumulative: i64,
+        // the seconds per liquidity, i.e. seconds elapsed / max(1, liquidity) since the pool was first initialized
+        pub secondsPerLiquidityCumulativeX128: String,
+        // whether or not the observation is initialized
+        pub initialized: bool,
+    }
+
+    impl From<Observation> for ObservationOutput{
+        fn from(obs:Observation)->ObservationOutput{
+            ObservationOutput{
+                blockTimestamp:obs.blockTimestamp,
+                tickCumulative:obs.tickCumulative,
+                secondsPerLiquidityCumulativeX128:obs.secondsPerLiquidityCumulativeX128.value.to_string(),
+                initialized:obs.initialized
+            }
+        }
+    }
+
     impl OracleTestContract {
         /// constructor with name and symbol
         #[ink(constructor)]
@@ -70,7 +96,19 @@ pub mod OracleTest {
 
         #[ink(message)]
         pub fn observations(&self,index:u16)->Observation{
-            self.observations.obs.get(index).unwrap()
+            // Observation1{
+            //     blockTimestamp: 10,
+            //     // the tick accumulator, i.e. tick * time elapsed since the pool was first initialized
+            //     tickCumulative: 20,
+            //     // the seconds per liquidity, i.e. seconds elapsed / max(1, liquidity) since the pool was first initialized
+            //     secondsPerLiquidityCumulativeX128: 100,
+            //     // whether or not the observation is initialized
+            //     initialized: true,
+            // }
+
+            let result = self.observations.obs.get(index).unwrap();
+            ink_env::debug_println!("result is:{:?}",result);
+            return result;
         }
         #[ink(message)]
         pub fn cardinality(&self)->u16{

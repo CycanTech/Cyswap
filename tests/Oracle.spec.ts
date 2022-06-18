@@ -79,7 +79,9 @@ describe('Oracle', () => {
     it('sets first slot timestamp only', async () => {
       const { query: oracleTestQuery, tx: oracleTestTx, } = await setupContract("OracleTest", "new");
       await oracleTestTx.initialize({ liquidity: 1, tick: 1, time: 1 })
-      checkObservationEquals(await (await oracleTestQuery.observations(0)).output, {
+      let observation = await (await oracleTestQuery.observations(0)).output?.toString();
+      console.log("observation is:",observation);
+      checkObservationEquals(JSON.parse(observation?observation:""), {
         initialized: true,
         blockTimestamp: 1,
         tickCumulative: 0,
