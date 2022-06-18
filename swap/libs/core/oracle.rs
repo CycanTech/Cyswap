@@ -338,16 +338,23 @@ impl Observations {
     /// @param next The proposed next cardinality which will be populated in the oracle array
     /// @return next The next cardinality which will be populated in the oracle array
     pub fn grow(& mut self, current: u16, next: u16) -> u16 {
+        // require(current > 0, 'I');
         assert!(current > 0, "I");
         // no-op if the passed next value isn't greater than the current next value
+        // if (next <= current) return current;
+        // for (uint16 i = current; i < next; i++) self[i].blockTimestamp = 1;
         if next <= current {
             return current;
         }
         // store in each slot to prevent fresh SSTOREs in swaps
         // this data will not be used because the initialized boolean is still false
+        // for (uint16 i = current; i < next; i++) self[i].blockTimestamp = 1;
         for i in current..next {
-            self.obs.get(&i).expect("current is None").blockTimestamp = 1;
+            let mut observation = Observation::default();
+            observation.blockTimestamp = 1;
+            self.obs.insert(i,&observation);
         }
+        // return next;
         return next;
     }
 

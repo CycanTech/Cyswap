@@ -14,6 +14,7 @@ pub mod OracleTest {
     use scale::{Decode, Encode};
     use libs::core::oracle::Observation;
     use ink_prelude::string::String;
+    use ink_prelude::string::ToString;
 
     #[derive(
         Default, Debug, Decode, Encode, Copy, Clone, SpreadAllocate, SpreadLayout, PackedLayout,
@@ -95,20 +96,11 @@ pub mod OracleTest {
         }
 
         #[ink(message)]
-        pub fn observations(&self,index:u16)->Observation{
-            // Observation1{
-            //     blockTimestamp: 10,
-            //     // the tick accumulator, i.e. tick * time elapsed since the pool was first initialized
-            //     tickCumulative: 20,
-            //     // the seconds per liquidity, i.e. seconds elapsed / max(1, liquidity) since the pool was first initialized
-            //     secondsPerLiquidityCumulativeX128: 100,
-            //     // whether or not the observation is initialized
-            //     initialized: true,
-            // }
-
+        pub fn observations(&self,index:u16)->ObservationOutput{
             let result = self.observations.obs.get(index).unwrap();
-            ink_env::debug_println!("result is:{:?}",result);
-            return result;
+            let output:ObservationOutput = result.into(); 
+            ink_env::debug_println!("output is:{:?}",output);
+            return output;
         }
         #[ink(message)]
         pub fn cardinality(&self)->u16{

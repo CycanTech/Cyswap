@@ -86,85 +86,94 @@ describe('Oracle', () => {
         blockTimestamp: 1,
         tickCumulative: 0,
         secondsPerLiquidityCumulativeX128: 0,
+      });
+    });
+    // it('gas', async () => {
+    //   const { query: oracleTestQuery, tx: oracleTestTx, } = await setupContract("OracleTest", "new");
+    //   await snapshotGasCost(oracleTestTx.initialize({ liquidity: 1, tick: 1, time: 1 }))
+    // })
+  });
+
+  describe('#grow', () => {
+    let oracleTestQuery,oracleTestTx;
+    beforeEach('deploy initialized test oracle', async () => {
+      const { query, tx } = await setupContract("OracleTest", "new");
+      oracleTestQuery = query;
+      oracleTestTx = tx;
+      await oracleTestTx.initialize({
+        time: 0,
+        tick: 0,
+        liquidity: 0,
+      })
+      // oracle = await loadFixture(initializedOracleFixture)
+    })
+
+    it('increases the cardinality next for the first call', async () => {
+      await oracleTestTx.grow(5)
+      expect(await oracleTestQuery.index()).to.have.output(0)
+      expect(await oracleTestQuery.cardinality()).to.have.output(1)
+      expect(await oracleTestQuery.cardinalityNext()).to.have.output(5)
+    })
+
+    it('does not touch the first slot', async () => {
+      await oracleTestTx.grow(5)
+      checkObservationEquals(JSON.parse((await oracleTestQuery.observations(0)).output), {
+        secondsPerLiquidityCumulativeX128: 0,
+        tickCumulative: 0,
+        blockTimestamp: 0,
+        initialized: true,
       })
     })
-    // it('gas', async () => {
-    //   await snapshotGasCost(oracle.initialize({ liquidity: 1, tick: 1, time: 1 }))
+
+    // it('is no op if oracle is already gte that size', async () => {
+    //   await oracle.grow(5)
+    //   await oracle.grow(3)
+    //   expect(await oracle.index()).to.eq(0)
+    //   expect(await oracle.cardinality()).to.eq(1)
+    //   expect(await oracle.cardinalityNext()).to.eq(5)
+    // })
+
+    // it('adds data to all the slots', async () => {
+    //   await oracle.grow(5)
+    //   for (let i = 1; i < 5; i++) {
+    //     checkObservationEquals(await oracle.observations(i), {
+    //       secondsPerLiquidityCumulativeX128: 0,
+    //       tickCumulative: 0,
+    //       blockTimestamp: 1,
+    //       initialized: false,
+    //     })
+    //   }
+    // })
+
+    // it('grow after wrap', async () => {
+    //   await oracle.grow(2)
+    //   await oracle.update({ advanceTimeBy: 2, liquidity: 1, tick: 1 }) // index is now 1
+    //   await oracle.update({ advanceTimeBy: 2, liquidity: 1, tick: 1 }) // index is now 0 again
+    //   expect(await oracle.index()).to.eq(0)
+    //   await oracle.grow(3)
+    //   expect(await oracle.index()).to.eq(0)
+    //   expect(await oracle.cardinality()).to.eq(2)
+    //   expect(await oracle.cardinalityNext()).to.eq(3)
+    // })
+
+    // it('gas for growing by 1 slot when index == cardinality - 1', async () => {
+    //   await snapshotGasCost(oracle.grow(2))
+    // })
+
+    // it('gas for growing by 10 slots when index == cardinality - 1', async () => {
+    //   await snapshotGasCost(oracle.grow(11))
+    // })
+
+    // it('gas for growing by 1 slot when index != cardinality - 1', async () => {
+    //   await oracle.grow(2)
+    //   await snapshotGasCost(oracle.grow(3))
+    // })
+
+    // it('gas for growing by 10 slots when index != cardinality - 1', async () => {
+    //   await oracle.grow(2)
+    //   await snapshotGasCost(oracle.grow(12))
     // })
   })
-
-  // describe('#grow', () => {
-  //   let oracle: OracleTest
-  //   beforeEach('deploy initialized test oracle', async () => {
-  //     oracle = await loadFixture(initializedOracleFixture)
-  //   })
-
-  //   it('increases the cardinality next for the first call', async () => {
-  //     await oracle.grow(5)
-  //     expect(await oracle.index()).to.eq(0)
-  //     expect(await oracle.cardinality()).to.eq(1)
-  //     expect(await oracle.cardinalityNext()).to.eq(5)
-  //   })
-
-  //   it('does not touch the first slot', async () => {
-  //     await oracle.grow(5)
-  //     checkObservationEquals(await oracle.observations(0), {
-  //       secondsPerLiquidityCumulativeX128: 0,
-  //       tickCumulative: 0,
-  //       blockTimestamp: 0,
-  //       initialized: true,
-  //     })
-  //   })
-
-  //   it('is no op if oracle is already gte that size', async () => {
-  //     await oracle.grow(5)
-  //     await oracle.grow(3)
-  //     expect(await oracle.index()).to.eq(0)
-  //     expect(await oracle.cardinality()).to.eq(1)
-  //     expect(await oracle.cardinalityNext()).to.eq(5)
-  //   })
-
-  //   it('adds data to all the slots', async () => {
-  //     await oracle.grow(5)
-  //     for (let i = 1; i < 5; i++) {
-  //       checkObservationEquals(await oracle.observations(i), {
-  //         secondsPerLiquidityCumulativeX128: 0,
-  //         tickCumulative: 0,
-  //         blockTimestamp: 1,
-  //         initialized: false,
-  //       })
-  //     }
-  //   })
-
-  //   it('grow after wrap', async () => {
-  //     await oracle.grow(2)
-  //     await oracle.update({ advanceTimeBy: 2, liquidity: 1, tick: 1 }) // index is now 1
-  //     await oracle.update({ advanceTimeBy: 2, liquidity: 1, tick: 1 }) // index is now 0 again
-  //     expect(await oracle.index()).to.eq(0)
-  //     await oracle.grow(3)
-  //     expect(await oracle.index()).to.eq(0)
-  //     expect(await oracle.cardinality()).to.eq(2)
-  //     expect(await oracle.cardinalityNext()).to.eq(3)
-  //   })
-
-  //   it('gas for growing by 1 slot when index == cardinality - 1', async () => {
-  //     await snapshotGasCost(oracle.grow(2))
-  //   })
-
-  //   it('gas for growing by 10 slots when index == cardinality - 1', async () => {
-  //     await snapshotGasCost(oracle.grow(11))
-  //   })
-
-  //   it('gas for growing by 1 slot when index != cardinality - 1', async () => {
-  //     await oracle.grow(2)
-  //     await snapshotGasCost(oracle.grow(3))
-  //   })
-
-  //   it('gas for growing by 10 slots when index != cardinality - 1', async () => {
-  //     await oracle.grow(2)
-  //     await snapshotGasCost(oracle.grow(12))
-  //   })
-  // })
 
   // describe('#write', () => {
   //   let oracle: OracleTest
