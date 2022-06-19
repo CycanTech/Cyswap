@@ -125,36 +125,36 @@ describe('Oracle', () => {
       })
     })
 
-    // it('is no op if oracle is already gte that size', async () => {
-    //   await oracle.grow(5)
-    //   await oracle.grow(3)
-    //   expect(await oracle.index()).to.eq(0)
-    //   expect(await oracle.cardinality()).to.eq(1)
-    //   expect(await oracle.cardinalityNext()).to.eq(5)
-    // })
+    it('is no op if oracle is already gte that size', async () => {
+      await oracleTestTx.grow(5)
+      await oracleTestTx.grow(3)
+      expect(await oracleTestQuery.index()).to.have.output(0)
+      expect(await oracleTestQuery.cardinality()).to.have.output(1)
+      expect(await oracleTestQuery.cardinalityNext()).to.have.output(5)
+    })
 
-    // it('adds data to all the slots', async () => {
-    //   await oracle.grow(5)
-    //   for (let i = 1; i < 5; i++) {
-    //     checkObservationEquals(await oracle.observations(i), {
-    //       secondsPerLiquidityCumulativeX128: 0,
-    //       tickCumulative: 0,
-    //       blockTimestamp: 1,
-    //       initialized: false,
-    //     })
-    //   }
-    // })
+    it('adds data to all the slots', async () => {
+      await oracleTestTx.grow(5)
+      for (let i = 1; i < 5; i++) {
+        checkObservationEquals(JSON.parse((await oracleTestQuery.observations(i)).output), {
+          secondsPerLiquidityCumulativeX128: 0,
+          tickCumulative: 0,
+          blockTimestamp: 1,
+          initialized: false,
+        })
+      }
+    })
 
-    // it('grow after wrap', async () => {
-    //   await oracle.grow(2)
-    //   await oracle.update({ advanceTimeBy: 2, liquidity: 1, tick: 1 }) // index is now 1
-    //   await oracle.update({ advanceTimeBy: 2, liquidity: 1, tick: 1 }) // index is now 0 again
-    //   expect(await oracle.index()).to.eq(0)
-    //   await oracle.grow(3)
-    //   expect(await oracle.index()).to.eq(0)
-    //   expect(await oracle.cardinality()).to.eq(2)
-    //   expect(await oracle.cardinalityNext()).to.eq(3)
-    // })
+    it('grow after wrap', async () => {
+      await oracleTestTx.grow(2)
+      await oracleTestTx.update({ advanceTimeBy: 2, liquidity: 1, tick: 1 }) // index is now 1
+      await oracleTestTx.update({ advanceTimeBy: 2, liquidity: 1, tick: 1 }) // index is now 0 again
+      expect(await oracleTestQuery.index()).to.have.output(0);
+      await oracleTestTx.grow(3);
+      expect(await oracleTestQuery.index()).to.have.output(0);
+      expect(await oracleTestQuery.cardinality()).to.have.output(2);
+      expect(await oracleTestQuery.cardinalityNext()).to.have.output(3);
+    });
 
     // it('gas for growing by 1 slot when index == cardinality - 1', async () => {
     //   await snapshotGasCost(oracle.grow(2))
@@ -175,131 +175,138 @@ describe('Oracle', () => {
     // })
   })
 
-  // describe('#write', () => {
-  //   let oracle: OracleTest
+  describe('#write', () => {
+    let oracleTestQuery,oracleTestTx;
+    beforeEach('deploy initialized test oracle', async () => {
+      const { query, tx } = await setupContract("OracleTest", "new");
+      oracleTestQuery = query;
+      oracleTestTx = tx;
+      await oracleTestTx.initialize({
+        time: 0,
+        tick: 0,
+        liquidity: 0,
+      })
+      // oracle = await loadFixture(initializedOracleFixture)
+    })
 
-  //   beforeEach('deploy initialized test oracle', async () => {
-  //     oracle = await loadFixture(initializedOracleFixture)
-  //   })
+    it('single element array gets overwritten', async () => {
+      await oracleTestTx.update({ advanceTimeBy: 1, tick: 2, liquidity: 5 })
+      expect(await oracleTestQuery.index()).to.have.output(0)
+      checkObservationEquals(JSON.parse((await oracleTestQuery.observations(0)).output), {
+        initialized: true,
+        secondsPerLiquidityCumulativeX128: '340282366920938463463374607431768211456',
+        tickCumulative: 0,
+        blockTimestamp: 1,
+      })
+      // await oracle.update({ advanceTimeBy: 5, tick: -1, liquidity: 8 })
+      // expect(await oracle.index()).to.eq(0)
+      // checkObservationEquals(await oracle.observations(0), {
+      //   initialized: true,
+      //   secondsPerLiquidityCumulativeX128: '680564733841876926926749214863536422912',
+      //   tickCumulative: 10,
+      //   blockTimestamp: 6,
+      // })
+      // await oracle.update({ advanceTimeBy: 3, tick: 2, liquidity: 3 })
+      // expect(await oracle.index()).to.eq(0)
+      // checkObservationEquals(await oracle.observations(0), {
+      //   initialized: true,
+      //   secondsPerLiquidityCumulativeX128: '808170621437228850725514692650449502208',
+      //   tickCumulative: 7,
+      //   blockTimestamp: 9,
+      // })
+    })
 
-  //   it('single element array gets overwritten', async () => {
-  //     await oracle.update({ advanceTimeBy: 1, tick: 2, liquidity: 5 })
-  //     expect(await oracle.index()).to.eq(0)
-  //     checkObservationEquals(await oracle.observations(0), {
-  //       initialized: true,
-  //       secondsPerLiquidityCumulativeX128: '340282366920938463463374607431768211456',
-  //       tickCumulative: 0,
-  //       blockTimestamp: 1,
-  //     })
-  //     await oracle.update({ advanceTimeBy: 5, tick: -1, liquidity: 8 })
-  //     expect(await oracle.index()).to.eq(0)
-  //     checkObservationEquals(await oracle.observations(0), {
-  //       initialized: true,
-  //       secondsPerLiquidityCumulativeX128: '680564733841876926926749214863536422912',
-  //       tickCumulative: 10,
-  //       blockTimestamp: 6,
-  //     })
-  //     await oracle.update({ advanceTimeBy: 3, tick: 2, liquidity: 3 })
-  //     expect(await oracle.index()).to.eq(0)
-  //     checkObservationEquals(await oracle.observations(0), {
-  //       initialized: true,
-  //       secondsPerLiquidityCumulativeX128: '808170621437228850725514692650449502208',
-  //       tickCumulative: 7,
-  //       blockTimestamp: 9,
-  //     })
-  //   })
+    // it('does nothing if time has not changed', async () => {
+    //   await oracle.grow(2)
+    //   await oracle.update({ advanceTimeBy: 1, tick: 3, liquidity: 2 })
+    //   expect(await oracle.index()).to.eq(1)
+    //   await oracle.update({ advanceTimeBy: 0, tick: -5, liquidity: 9 })
+    //   expect(await oracle.index()).to.eq(1)
+    // })
 
-  //   it('does nothing if time has not changed', async () => {
-  //     await oracle.grow(2)
-  //     await oracle.update({ advanceTimeBy: 1, tick: 3, liquidity: 2 })
-  //     expect(await oracle.index()).to.eq(1)
-  //     await oracle.update({ advanceTimeBy: 0, tick: -5, liquidity: 9 })
-  //     expect(await oracle.index()).to.eq(1)
-  //   })
+    // it('writes an index if time has changed', async () => {
+    //   await oracle.grow(3)
+    //   await oracle.update({ advanceTimeBy: 6, tick: 3, liquidity: 2 })
+    //   expect(await oracle.index()).to.eq(1)
+    //   await oracle.update({ advanceTimeBy: 4, tick: -5, liquidity: 9 })
 
-  //   it('writes an index if time has changed', async () => {
-  //     await oracle.grow(3)
-  //     await oracle.update({ advanceTimeBy: 6, tick: 3, liquidity: 2 })
-  //     expect(await oracle.index()).to.eq(1)
-  //     await oracle.update({ advanceTimeBy: 4, tick: -5, liquidity: 9 })
+    //   expect(await oracle.index()).to.eq(2)
+    //   checkObservationEquals(await oracle.observations(1), {
+    //     tickCumulative: 0,
+    //     secondsPerLiquidityCumulativeX128: '2041694201525630780780247644590609268736',
+    //     initialized: true,
+    //     blockTimestamp: 6,
+    //   })
+    // })
 
-  //     expect(await oracle.index()).to.eq(2)
-  //     checkObservationEquals(await oracle.observations(1), {
-  //       tickCumulative: 0,
-  //       secondsPerLiquidityCumulativeX128: '2041694201525630780780247644590609268736',
-  //       initialized: true,
-  //       blockTimestamp: 6,
-  //     })
-  //   })
+    // it('grows cardinality when writing past', async () => {
+    //   await oracle.grow(2)
+    //   await oracle.grow(4)
+    //   expect(await oracle.cardinality()).to.eq(1)
+    //   await oracle.update({ advanceTimeBy: 3, tick: 5, liquidity: 6 })
+    //   expect(await oracle.cardinality()).to.eq(4)
+    //   await oracle.update({ advanceTimeBy: 4, tick: 6, liquidity: 4 })
+    //   expect(await oracle.cardinality()).to.eq(4)
+    //   expect(await oracle.index()).to.eq(2)
+    //   checkObservationEquals(await oracle.observations(2), {
+    //     secondsPerLiquidityCumulativeX128: '1247702012043441032699040227249816775338',
+    //     tickCumulative: 20,
+    //     initialized: true,
+    //     blockTimestamp: 7,
+    //   })
+    // })
 
-  //   it('grows cardinality when writing past', async () => {
-  //     await oracle.grow(2)
-  //     await oracle.grow(4)
-  //     expect(await oracle.cardinality()).to.eq(1)
-  //     await oracle.update({ advanceTimeBy: 3, tick: 5, liquidity: 6 })
-  //     expect(await oracle.cardinality()).to.eq(4)
-  //     await oracle.update({ advanceTimeBy: 4, tick: 6, liquidity: 4 })
-  //     expect(await oracle.cardinality()).to.eq(4)
-  //     expect(await oracle.index()).to.eq(2)
-  //     checkObservationEquals(await oracle.observations(2), {
-  //       secondsPerLiquidityCumulativeX128: '1247702012043441032699040227249816775338',
-  //       tickCumulative: 20,
-  //       initialized: true,
-  //       blockTimestamp: 7,
-  //     })
-  //   })
+    // it('wraps around', async () => {
+    //   await oracle.grow(3)
+    //   await oracle.update({ advanceTimeBy: 3, tick: 1, liquidity: 2 })
+    //   await oracle.update({ advanceTimeBy: 4, tick: 2, liquidity: 3 })
+    //   await oracle.update({ advanceTimeBy: 5, tick: 3, liquidity: 4 })
 
-  //   it('wraps around', async () => {
-  //     await oracle.grow(3)
-  //     await oracle.update({ advanceTimeBy: 3, tick: 1, liquidity: 2 })
-  //     await oracle.update({ advanceTimeBy: 4, tick: 2, liquidity: 3 })
-  //     await oracle.update({ advanceTimeBy: 5, tick: 3, liquidity: 4 })
+    //   expect(await oracle.index()).to.eq(0)
 
-  //     expect(await oracle.index()).to.eq(0)
+    //   checkObservationEquals(await oracle.observations(0), {
+    //     secondsPerLiquidityCumulativeX128: '2268549112806256423089164049545121409706',
+    //     tickCumulative: 14,
+    //     initialized: true,
+    //     blockTimestamp: 12,
+    //   })
+    // })
 
-  //     checkObservationEquals(await oracle.observations(0), {
-  //       secondsPerLiquidityCumulativeX128: '2268549112806256423089164049545121409706',
-  //       tickCumulative: 14,
-  //       initialized: true,
-  //       blockTimestamp: 12,
-  //     })
-  //   })
+    // it('accumulates liquidity', async () => {
+    //   await oracle.grow(4)
 
-  //   it('accumulates liquidity', async () => {
-  //     await oracle.grow(4)
+    //   await oracle.update({ advanceTimeBy: 3, tick: 3, liquidity: 2 })
+    //   await oracle.update({ advanceTimeBy: 4, tick: -7, liquidity: 6 })
+    //   await oracle.update({ advanceTimeBy: 5, tick: -2, liquidity: 4 })
 
-  //     await oracle.update({ advanceTimeBy: 3, tick: 3, liquidity: 2 })
-  //     await oracle.update({ advanceTimeBy: 4, tick: -7, liquidity: 6 })
-  //     await oracle.update({ advanceTimeBy: 5, tick: -2, liquidity: 4 })
+    //   expect(await oracle.index()).to.eq(3)
 
-  //     expect(await oracle.index()).to.eq(3)
-
-  //     checkObservationEquals(await oracle.observations(1), {
-  //       initialized: true,
-  //       tickCumulative: 0,
-  //       secondsPerLiquidityCumulativeX128: '1020847100762815390390123822295304634368',
-  //       blockTimestamp: 3,
-  //     })
-  //     checkObservationEquals(await oracle.observations(2), {
-  //       initialized: true,
-  //       tickCumulative: 12,
-  //       secondsPerLiquidityCumulativeX128: '1701411834604692317316873037158841057280',
-  //       blockTimestamp: 7,
-  //     })
-  //     checkObservationEquals(await oracle.observations(3), {
-  //       initialized: true,
-  //       tickCumulative: -23,
-  //       secondsPerLiquidityCumulativeX128: '1984980473705474370203018543351981233493',
-  //       blockTimestamp: 12,
-  //     })
-  //     checkObservationEquals(await oracle.observations(4), {
-  //       initialized: false,
-  //       tickCumulative: 0,
-  //       secondsPerLiquidityCumulativeX128: 0,
-  //       blockTimestamp: 0,
-  //     })
-  //   })
-  // })
+    //   checkObservationEquals(await oracle.observations(1), {
+    //     initialized: true,
+    //     tickCumulative: 0,
+    //     secondsPerLiquidityCumulativeX128: '1020847100762815390390123822295304634368',
+    //     blockTimestamp: 3,
+    //   })
+    //   checkObservationEquals(await oracle.observations(2), {
+    //     initialized: true,
+    //     tickCumulative: 12,
+    //     secondsPerLiquidityCumulativeX128: '1701411834604692317316873037158841057280',
+    //     blockTimestamp: 7,
+    //   })
+    //   checkObservationEquals(await oracle.observations(3), {
+    //     initialized: true,
+    //     tickCumulative: -23,
+    //     secondsPerLiquidityCumulativeX128: '1984980473705474370203018543351981233493',
+    //     blockTimestamp: 12,
+    //   })
+    //   checkObservationEquals(await oracle.observations(4), {
+    //     initialized: false,
+    //     tickCumulative: 0,
+    //     secondsPerLiquidityCumulativeX128: 0,
+    //     blockTimestamp: 0,
+    //   })
+    // })
+  })
 
   // describe('#observe', () => {
   //   describe('before initialization', async () => {
