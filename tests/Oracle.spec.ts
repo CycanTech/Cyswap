@@ -198,22 +198,22 @@ describe('Oracle', () => {
         tickCumulative: 0,
         blockTimestamp: 1,
       })
-      // await oracle.update({ advanceTimeBy: 5, tick: -1, liquidity: 8 })
-      // expect(await oracle.index()).to.eq(0)
-      // checkObservationEquals(await oracle.observations(0), {
-      //   initialized: true,
-      //   secondsPerLiquidityCumulativeX128: '680564733841876926926749214863536422912',
-      //   tickCumulative: 10,
-      //   blockTimestamp: 6,
-      // })
-      // await oracle.update({ advanceTimeBy: 3, tick: 2, liquidity: 3 })
-      // expect(await oracle.index()).to.eq(0)
-      // checkObservationEquals(await oracle.observations(0), {
-      //   initialized: true,
-      //   secondsPerLiquidityCumulativeX128: '808170621437228850725514692650449502208',
-      //   tickCumulative: 7,
-      //   blockTimestamp: 9,
-      // })
+      await oracleTestTx.update({ advanceTimeBy: 5, tick: -1, liquidity: 8 })
+      expect(await oracleTestQuery.index()).to.have.output(0)
+      checkObservationEquals(JSON.parse(await oracleTestQuery.observations(0)).output, {
+        initialized: true,
+        secondsPerLiquidityCumulativeX128: '680564733841876926926749214863536422912',
+        tickCumulative: 10,
+        blockTimestamp: 6,
+      })
+      await oracleTestTx.update({ advanceTimeBy: 3, tick: 2, liquidity: 3 })
+      expect(await oracleTestQuery.index()).to.eq(0)
+      checkObservationEquals(JSON.parse(await oracleTestQuery.observations(0)).output, {
+        initialized: true,
+        secondsPerLiquidityCumulativeX128: '808170621437228850725514692650449502208',
+        tickCumulative: 7,
+        blockTimestamp: 9,
+      })
     })
 
     // it('does nothing if time has not changed', async () => {
