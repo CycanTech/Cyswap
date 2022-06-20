@@ -9,6 +9,7 @@ use ink_storage::{
 use primitives::{Int24, Uint160,  U160, U256,  I56};
 use scale::{Decode, Encode};
 use ink_prelude::vec::Vec;
+use ink_prelude::string::ToString;
 
 /// @title Oracle
 /// @notice Provides price and liquidity data useful for a wide variety of system designs
@@ -309,22 +310,31 @@ impl Observations {
         cardinality: u16,
         cardinalityNext: u16,
     ) -> (u16, u16) {
+        // Observation memory last = self[index];
         let last: Observation = self.obs.get(index).expect("error!");
 
         // early return if we've already written an observation this block
+        // if (last.blockTimestamp == blockTimestamp) return (index, cardinality);
         if last.blockTimestamp == blockTimestamp {
             return (index, cardinality);
         }
 
         let cardinalityUpdated: u16;
         // if the conditions are right, we can bump the cardinality
+        // if (cardinalityNext > cardinality && index == (cardinality - 1)) {
+        //     cardinalityUpdated = cardinalityNext;
+        // } else {
+        //     cardinalityUpdated = cardinality;
+        // }
         if cardinalityNext > cardinality && index == (cardinality - 1) {
             cardinalityUpdated = cardinalityNext;
         } else {
             cardinalityUpdated = cardinality;
         }
 
+        // indexUpdated = (index + 1) % cardinalityUpdated;
         let indexUpdated = (index + 1) % cardinalityUpdated;
+        // self[indexUpdated] = transform(last, blockTimestamp, tick, liquidity);
         self.obs.insert(
             indexUpdated,
             &transform(&last, blockTimestamp, tick, liquidity),
@@ -433,8 +443,8 @@ fn transform(
     //             ((uint160(delta) << 128) / (liquidity > 0 ? liquidity : 1)),
     //         initialized: true
     //     });
-
-    if !liquidity > 0 {
+    // here have very error! for !liquidity > 0 先对liquid做了取反的运算。导致liquid取反为负数。
+    if !(liquidity > 0) {
         liquidity = 1;
     }
     let delta: i64 = delta.try_into().unwrap();

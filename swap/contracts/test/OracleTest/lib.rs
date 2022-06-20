@@ -145,7 +145,6 @@ pub mod OracleTest {
             // tick = params.tick;
             // liquidity = params.liquidity;
             self.advanceTime(params.advanceTimeBy);
-            ink_env::debug_println!("index is:{:?},time is:{:?},,tick is:{:?},liquid is:{:?}",self.index,self.time,self.tick,self.liquidity);
             let (index, cardinality) = self.observations.write(
                 self.index,
                 self.time,
