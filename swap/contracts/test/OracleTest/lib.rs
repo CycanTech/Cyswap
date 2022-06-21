@@ -97,7 +97,7 @@ pub mod OracleTest {
 
         #[ink(message)]
         pub fn observations(&self,index:u16)->ObservationOutput{
-            let result = self.observations.obs.get(index).unwrap();
+            let result = self.observations.obs.get(index).unwrap_or(Default::default());
             let output:ObservationOutput = result.into(); 
             ink_env::debug_println!("output is:{:?}",output);
             return output;
@@ -217,6 +217,7 @@ pub mod OracleTest {
                 (&mut self.observations).grow(self.cardinalityNext, _cardinalityNext);
         }
 
+        #[ink(message)]
         pub fn observe(&mut self, secondsAgos: Vec<u64>) -> (Vec<I56>, Vec<U160>) {
             return (&mut self.observations).observe(
                 self.time,
