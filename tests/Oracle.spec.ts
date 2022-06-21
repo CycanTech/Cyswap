@@ -216,13 +216,13 @@ describe('Oracle', () => {
       })
     })
 
-    // it('does nothing if time has not changed', async () => {
-    //   await oracle.grow(2)
-    //   await oracle.update({ advanceTimeBy: 1, tick: 3, liquidity: 2 })
-    //   expect(await oracle.index()).to.eq(1)
-    //   await oracle.update({ advanceTimeBy: 0, tick: -5, liquidity: 9 })
-    //   expect(await oracle.index()).to.eq(1)
-    // })
+    it('does nothing if time has not changed', async () => {
+      await oracleTestTx.grow(2)
+      await oracleTestTx.update({ advanceTimeBy: 1, tick: 3, liquidity: 2 })
+      expect(await oracleTestQuery.index()).to.have.output(1)
+      await oracleTestTx.update({ advanceTimeBy: 0, tick: -5, liquidity: 9 })
+      expect(await oracleTestQuery.index()).to.have.output(1)
+    })
 
     // it('writes an index if time has changed', async () => {
     //   await oracle.grow(3)
