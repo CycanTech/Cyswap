@@ -318,16 +318,15 @@ describe('Oracle', () => {
       const { query, tx } = await setupContract("OracleTest", "new");
       oracleTestQuery = query;
       oracleTestTx = tx;
-      await oracleTestTx.initialize({
-        time: 0,
-        tick: 0,
-        liquidity: 0,
-      })
+      // await oracleTestTx.initialize({
+      //   time: 0,
+      //   tick: 0,
+      //   liquidity: 0,
+      // })
       // oracle = await loadFixture(initializedOracleFixture)
     })
 
       const observeSingle = async (secondsAgo: number) => {
-        console.log("(await oracleTestTx.observe([secondsAgo])).output:",(await oracleTestTx.observe([secondsAgo])).output);
         const {
           tickCumulatives: [tickCumulative],
           secondsPerLiquidityCumulativeX128s: [secondsPerLiquidityCumulativeX128],
@@ -338,13 +337,15 @@ describe('Oracle', () => {
       }
 
       it('fails before initialize', async () => {
-        await expect(observeSingle(0)).to.eventually.be.rejectedWith('I')
+        await expect(observeSingle(0)).to.eventually.be.rejectedWith('I');
+        // await expect(oracleTestTx.observe([0])).to.eventually.be.rejectedWith('I')
+        // await expect(oracleTestTx.observe([0])).to.have.output(5);
       })
 
-    //   it('fails if an older observation does not exist', async () => {
-    //     await oracle.initialize({ liquidity: 4, tick: 2, time: 5 })
-    //     await expect(observeSingle(1)).to.be.revertedWith('OLD')
-    //   })
+      it('fails if an older observation does not exist', async () => {
+        await oracleTestTx.initialize({ liquidity: 4, tick: 2, time: 5 })
+        await expect(observeSingle(1)).to.eventually.be.rejectedWith('OLD');
+      })
 
     //   it('does not fail across overflow boundary', async () => {
     //     await oracle.initialize({ liquidity: 4, tick: 2, time: 2 ** 32 - 1 })
