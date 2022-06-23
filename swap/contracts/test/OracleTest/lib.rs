@@ -218,8 +218,9 @@ pub mod OracleTest {
         }
 
         #[ink(message)]
-        pub fn observe(&mut self, secondsAgos: Vec<u64>) -> (Vec<I56>, Vec<u128>) {
-            let (v1,v2) = (&mut self.observations).observe(
+        pub fn observe(&self, secondsAgos: Vec<u64>) -> (Vec<I56>, Vec<U160>) {
+            // return observations.observe(time, secondsAgos, tick, index, liquidity, cardinality);
+            return (&self.observations).observe(
                 self.time,
                 secondsAgos,
                 self.tick,
@@ -227,8 +228,6 @@ pub mod OracleTest {
                 self.liquidity,
                 self.cardinality,
             );
-            let v2:Vec<u128> = v2.iter().map(|v|v.as_u128()).collect();
-            (v1,v2)
         }
             
         // function getGasCostOfObserve(uint32[] calldata secondsAgos) external view returns (uint256) {

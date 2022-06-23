@@ -112,6 +112,11 @@ impl Observations {
         liquidity: u128,
         cardinality: u16,
     ) -> (i64, U160) {
+        // if (secondsAgo == 0) {
+        //     Observation memory last = self[index];
+        //     if (last.blockTimestamp != time) last = transform(last, time, tick, liquidity);
+        //     return (last.tickCumulative, last.secondsPerLiquidityCumulativeX128);
+        // }
         if secondsAgo == 0 {
             let mut last: Observation = self.obs.get(index).expect("error!");
             // if (last.blockTimestamp != time) last = transform(last, time, tick, liquidity);
@@ -124,11 +129,37 @@ impl Observations {
             );
         }
 
+        // uint32 target = time - secondsAgo;
         let target: u64 = time - secondsAgo;
         // (Observation memory beforeOrAt, Observation memory atOrAfter) =
         //     getSurroundingObservations(, time, target, tick, index, liquidity, cardinality);
         let (beforeOrAt, atOrAfter) =
             self.getSurroundingObservations(time, target, tick, index, liquidity, cardinality);
+
+        // if (target == beforeOrAt.blockTimestamp) {
+        //     // we're at the left boundary
+        //     return (beforeOrAt.tickCumulative, beforeOrAt.secondsPerLiquidityCumulativeX128);
+        // } else if (target == atOrAfter.blockTimestamp) {
+        //     // we're at the right boundary
+        //     return (atOrAfter.tickCumulative, atOrAfter.secondsPerLiquidityCumulativeX128);
+        // } else {
+        //     // we're in the middle
+        //     uint32 observationTimeDelta = atOrAfter.blockTimestamp - beforeOrAt.blockTimestamp;
+        //     uint32 targetDelta = target - beforeOrAt.blockTimestamp;
+        //     return (
+        //         beforeOrAt.tickCumulative +
+        //             ((atOrAfter.tickCumulative - beforeOrAt.tickCumulative) / observationTimeDelta) *
+        //             targetDelta,
+        //         beforeOrAt.secondsPerLiquidityCumulativeX128 +
+        //             uint160(
+        //                 (uint256(
+        //                     atOrAfter.secondsPerLiquidityCumulativeX128 - beforeOrAt.secondsPerLiquidityCumulativeX128
+        //                 ) * targetDelta) / observationTimeDelta
+        //             )
+        //     );
+        // }
+
+
         if target == beforeOrAt.blockTimestamp {
             // we're at the left boundary
             return (
@@ -380,7 +411,7 @@ impl Observations {
     /// @return tickCumulatives The tick * time elapsed since the pool was first initialized, as of each `secondsAgo`
     /// @return secondsPerLiquidityCumulativeX128s The cumulative seconds / max(1, liquidity) since the pool was first initialized, as of each `secondsAgo`
     pub fn observe(
-        &mut self,
+        &self,
         time:u64,
         secondsAgos:Vec<u64>,
         tick:Int24,

@@ -327,10 +327,10 @@ describe('Oracle', () => {
     })
 
       const observeSingle = async (secondsAgo: number) => {
-        const {
-          tickCumulatives: [tickCumulative],
-          secondsPerLiquidityCumulativeX128s: [secondsPerLiquidityCumulativeX128],
-        } = (await oracleTestTx.observe([secondsAgo])).output;
+        const [
+           [tickCumulative],
+           [secondsPerLiquidityCumulativeX128],
+         ] = (await oracleTestQuery.observe([secondsAgo])).output;
         console.log("tickCumulative is:",tickCumulative);
         console.log("secondsPerLiquidityCumulativeX128 is:",secondsPerLiquidityCumulativeX128);
         return { secondsPerLiquidityCumulativeX128, tickCumulative }
@@ -344,16 +344,21 @@ describe('Oracle', () => {
 
       it('fails if an older observation does not exist', async () => {
         await oracleTestTx.initialize({ liquidity: 4, tick: 2, time: 5 })
-        await expect(observeSingle(1)).to.eventually.be.rejectedWith('OLD');
+        await expect(oracleTestTx.observe([1])).to.eventually.be.rejected;
       })
 
-    //   it('does not fail across overflow boundary', async () => {
-    //     await oracle.initialize({ liquidity: 4, tick: 2, time: 2 ** 32 - 1 })
-    //     await oracle.advanceTime(2)
-    //     const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(1)
-    //     expect(tickCumulative).to.be.eq(2)
-    //     expect(secondsPerLiquidityCumulativeX128).to.be.eq('85070591730234615865843651857942052864')
-    //   })
+      it('does not fail across overflow boundary', async () => {
+        // await oracle.initialize({ liquidity: 4, tick: 2, time: 2 ** 32 - 1 })
+        // await oracle.advanceTime(2)
+        // const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(1)
+        // expect(tickCumulative).to.be.eq(2)
+        // expect(secondsPerLiquidityCumulativeX128).to.be.eq('85070591730234615865843651857942052864')
+        await oracleTestTx.initialize({ liquidity: 4, tick: 2, time: 2 ** 32 - 1 })
+        await oracleTestTx.advanceTime(2)
+        const { tickCumulative, secondsPerLiquidityCumulativeX128 } = await observeSingle(1)
+        expect(tickCumulative).to.be.eq(2)
+        expect(secondsPerLiquidityCumulativeX128).to.be.eq('85070591730234615865843651857942052864')
+      })
 
     //   it('interpolates correctly at max liquidity', async () => {
     //     await oracle.initialize({ liquidity: MaxUint128, tick: 0, time: 0 })
