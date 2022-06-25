@@ -113,22 +113,23 @@ impl Observations {
         cardinality: u16,
     ) -> (i64, U160) {
         // if (secondsAgo == 0) {
-        //     Observation memory last = self[index];
-        //     if (last.blockTimestamp != time) last = transform(last, time, tick, liquidity);
-        //     return (last.tickCumulative, last.secondsPerLiquidityCumulativeX128);
-        // }
         if secondsAgo == 0 {
+            ink_env::debug_println!("secondsAgo is----------------:{:?}",secondsAgo);
+            //     Observation memory last = self[index];
             let mut last: Observation = self.obs.get(index).expect("error!");
-            // if (last.blockTimestamp != time) last = transform(last, time, tick, liquidity);
+            //     if (last.blockTimestamp != time) last = transform(last, time, tick, liquidity);
             if last.blockTimestamp != time {
                 last = transform(&last, time, tick, liquidity);
             }
+            //     return (last.tickCumulative, last.secondsPerLiquidityCumulativeX128);
+            // }
             return (
                 last.tickCumulative,
                 last.secondsPerLiquidityCumulativeX128.value,
             );
         }
 
+        ink_env::debug_println!("time is----------------:{:?},secondsAgo is-------------:{:?}",time,secondsAgo);
         // uint32 target = time - secondsAgo;
         let target: u64 = time - secondsAgo;
         // (Observation memory beforeOrAt, Observation memory atOrAfter) =
@@ -419,10 +420,12 @@ impl Observations {
         liquidity:u128,
         cardinality:u16
     )->(Vec<I56>, Vec<U160>) {
+        // require(cardinality > 0, 'I');
         assert!(cardinality > 0, "I");
 
         // tickCumulatives = new int56[](secondsAgos.length);
         let mut tickCumulatives = <Vec::<I56>>::with_capacity(secondsAgos.len());
+        // secondsPerLiquidityCumulativeX128s = new uint160[](secondsAgos.length);
         let mut secondsPerLiquidityCumulativeX128s =Vec::<U160>::with_capacity(secondsAgos.len());
         // for (uint256 i = 0; i < secondsAgos.length; i++) {
         //     (tickCumulatives[i], secondsPerLiquidityCumulativeX128s[i]) = observeSingle(

@@ -327,6 +327,12 @@ describe('Oracle', () => {
     })
 
       const observeSingle = async (secondsAgo: number) => {
+        // const {
+        //   tickCumulatives: [tickCumulative],
+        //   secondsPerLiquidityCumulativeX128s: [secondsPerLiquidityCumulativeX128],
+        // } = await oracle.observe([secondsAgo])
+        // return { secondsPerLiquidityCumulativeX128, tickCumulative }
+
         const [
            [tickCumulative],
            [secondsPerLiquidityCumulativeX128],

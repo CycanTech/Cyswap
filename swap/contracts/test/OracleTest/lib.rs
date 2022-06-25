@@ -115,9 +115,13 @@ pub mod OracleTest {
         pub fn initialize(&mut self, params: InitializeParams) {
             // require(self.cardinality == 0, "already initialized");
             assert!(self.cardinality == 0, "already initialized");
+            // time = params.time;
             self.time = params.time;
+            // tick = params.tick;
             self.tick = params.tick;
+            // liquidity = params.liquidity;
             self.liquidity = params.liquidity;
+            // (cardinality, cardinalityNext) = observations.initialize(params.time);
             let (cardinality, cardinalityNext) = self.observations.initialize(params.time);
             self.cardinality = cardinality;
             self.cardinalityNext = cardinalityNext;
