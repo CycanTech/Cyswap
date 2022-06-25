@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-use brush::modifier_definition;
+use openbrush::modifier_definition;
 use ink_prelude::vec::Vec;
 #[cfg(feature = "std")]
 use ink_storage::traits::StorageLayout;
@@ -12,7 +12,7 @@ use primitives::{Address, Uint16, Uint160, U160, U256};
 use scale::{Decode, Encode};
 //this interface is PoolActions
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type PoolActionRef = dyn PoolAction;
 
 #[derive(
@@ -60,7 +60,7 @@ where
     result
 }
 
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait PoolAction {
     // fn new(factory:Address,token0: Address, token1: Address, fee: Uint24, tick_spacing: Int24) -> Self;
     /// @inheritdoc IUniswapV3PoolActions

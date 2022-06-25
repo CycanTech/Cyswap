@@ -1,9 +1,9 @@
-use brush::contracts::psp22::PSP22Error;
+use openbrush::contracts::psp22::PSP22Error;
 /// base info for PSP34
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type Weth9Ref = dyn Weth9;
 
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait Weth9 {
     /// @notice Deposit ether to get wrapped ether
     #[ink(message,payable)]

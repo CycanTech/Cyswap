@@ -1,10 +1,10 @@
 /// base info for PSP34
 use ink_prelude::string::String;
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type PSP34BaseRef = dyn PSP34Base;
 
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait PSP34Base {
     /**
      * @dev See {IERC721Metadata-name}.

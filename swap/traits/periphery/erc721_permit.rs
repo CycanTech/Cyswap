@@ -1,13 +1,13 @@
-use brush::{contracts::traits::psp34::Id, traits::AccountId};
+use openbrush::{contracts::traits::psp34::Id, traits::AccountId};
 use ink_prelude::string::String;
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type ERC721PermitRef = dyn IERC721Permit;
 
 /// @title Creates and initializes V3 Pools
 /// @notice Provides a method for creating and initializing a pool, if necessary, for bundling with other methods that
 /// require the pool to exist.
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait IERC721Permit {
     /// @notice The permit typehash used in the permit signature
     /// @return The typehash for the permit

@@ -5,12 +5,12 @@ authors = ["Parity Technologies <cloudweisz@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-ink_primitives = { version = "3.2.0", default-features = false }
-ink_metadata = { version = "3.2.0", default-features = false, features = ["derive"], optional = true }
-ink_env = { version = "3.2.0", default-features = false }
-ink_storage = { version = "3.2.0", default-features = false }
-ink_lang = { version = "3.2.0", default-features = false }
-ink_prelude = { version = "3.2.0", default-features = false }
+ink_primitives = { version = "~3.3.0", default-features = false }
+ink_metadata = { version = "~3.3.0", default-features = false, features = ["derive"], optional = true }
+ink_env = { version = "~3.3.0", default-features = false }
+ink_storage = { version = "~3.3.0", default-features = false }
+ink_lang = { version = "~3.3.0", default-features = false }
+ink_prelude = { version = "~3.3.0", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
@@ -18,7 +18,7 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 # primitive-types = { git = "https://github.com/paritytech/parity-common", default-features = false}
 hex = { version = "0.4", default-features = false,features = ["alloc"]}
 primitives = {version = "3.0.0-rc9",path="../primitives/", default-features = false}
-brush = { tag = "v1.7.1", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false }
+openbrush = { version = "~2.1.0", default-features = false, features = ["psp22"] }
 base64 = {version="0.13.0", default-features = false,features = ["alloc"]}
 [dependencies.sp-core]
 default-features = false
@@ -46,5 +46,5 @@ std = [
     "sp-core/std",
     "primitives/std",
     "hex/std",
-    "brush/std",
+    "openbrush/std",
 ]

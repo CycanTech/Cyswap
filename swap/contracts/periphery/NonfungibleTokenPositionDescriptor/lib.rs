@@ -1,10 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(min_specialization)]
 #![allow(non_snake_case)]
-#[brush::contract]
+#[openbrush::contract]
 pub mod PositionDescriptor {
-    use brush::contracts::psp34::Id;
-    use brush::contracts::traits::psp22::extensions::metadata::PSP22MetadataRef;
+    use openbrush::contracts::psp34::Id;
+    use openbrush::contracts::traits::psp22::extensions::metadata::PSP22MetadataRef;
     use crabswap::traits::periphery::position_descriptor::*;
     use crabswap::traits::periphery::position_manager::PositionManagerRef;
     use ink_prelude::string::String;

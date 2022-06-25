@@ -1,13 +1,13 @@
 use primitives::Int256;
 use ink_prelude::vec::Vec;
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type SwapCallbackRef = dyn SwapCallback;
 
 // @title Callback for IUniswapV3PoolActions#swap
 // @notice Any contract that calls IUniswapV3PoolActions#swap must implement this interface
 // rename UniswapV3SwapCallback to SwapCallback
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait SwapCallback {
     // @notice Called to `msg.sender` after executing a swap via IUniswapV3Pool#swap.
     // @dev In the implementation you must pay the pool tokens owed for the swap.

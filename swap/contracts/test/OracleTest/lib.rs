@@ -2,7 +2,7 @@
 #![feature(min_specialization)]
 #![allow(non_snake_case)]
 
-#[brush::contract]
+#[openbrush::contract]
 pub mod OracleTest {
     use ink_env::DefaultEnvironment;
     use ink_storage::traits::StorageLayout;

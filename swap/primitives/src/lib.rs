@@ -3,7 +3,7 @@
 
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-use brush::traits::AccountId;
+use openbrush::traits::AccountId;
 #[cfg(feature = "std")]
 use ink_metadata::layout::{StructLayout, Layout, FieldLayout};
 use ink_storage::{

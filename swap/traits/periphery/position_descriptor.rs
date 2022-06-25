@@ -1,14 +1,14 @@
 use primitives::{Address, Uint256};
 use ink_prelude::string::String;
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type DescriptorRef = dyn Descriptor;
 
 
 /// @title Creates and initializes V3 Pools
 /// @notice Provides a method for creating and initializing a pool, if necessary, for bundling with other methods that
 /// require the pool to exist.
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait Descriptor{
     /// @notice Produces the URI describing a particular token ID for a position manager
     /// @dev Note this URI may be a data: URI with the JSON contents directly inlined

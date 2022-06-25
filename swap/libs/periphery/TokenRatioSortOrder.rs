@@ -1,4 +1,4 @@
-use brush::traits::AccountId;
+use openbrush::traits::AccountId;
 use primitives::Int256;
 
 pub const NUMERATOR_MOST: Int256 = 300;

@@ -8,7 +8,7 @@
 //     UniswapV3FactoryRef,
 // };
 
-#[brush::contract]
+#[openbrush::contract]
 pub mod crab_swap_factory {
     use ink_env::{hash::{Sha2x256, HashOutput}, DefaultEnvironment};
     use ink_lang::{ToAccountId, reflect::ContractEventBase};
@@ -22,7 +22,7 @@ pub mod crab_swap_factory {
     use ink_lang::codegen::Env;
     use ink_lang::codegen::EmitEvent;
     use crabswap::traits::core::factory::*;
-    use brush::contracts::{
+    use openbrush::contracts::{
         ownable::*,
         psp34::*,
     };

@@ -1,12 +1,12 @@
 use primitives::Address;
 
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type PoolOwnerActionsRef = dyn PoolOwnerActions;
 
 // @title Permissioned pool actions
 // @notice Contains pool methods that may only be called by the factory owner
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait PoolOwnerActions {
     /// @notice Set the denominator of the protocol's % share of the fees
     /// @param feeProtocol0 new protocol fee for token0 of the pool

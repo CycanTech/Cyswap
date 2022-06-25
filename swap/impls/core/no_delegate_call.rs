@@ -1,4 +1,4 @@
-use brush::{
+use openbrush::{
     declare_storage_trait,
 };
 use ink_env::{DefaultEnvironment};

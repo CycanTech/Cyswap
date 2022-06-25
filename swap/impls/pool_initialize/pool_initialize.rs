@@ -1,6 +1,6 @@
 pub use crate::traits::periphery::pool_initialize::*;
 
-use brush::{
+use openbrush::{
     traits::{
         AccountId,
     },

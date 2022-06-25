@@ -2,7 +2,7 @@
 #![feature(min_specialization)]
 #![allow(non_snake_case)]
 
-#[brush::contract]
+#[openbrush::contract]
 pub mod crab_swap_pool {
     use crabswap::traits::core::pool_action::*;
     use ink_env::DefaultEnvironment;
@@ -23,8 +23,8 @@ pub mod crab_swap_pool {
     use primitives::{Address, Int24, Int256, Uint160, Uint256, I256, U160, U256};
     use scale::{Decode, Encode};
     type Uint24 = u32;
-    use brush::contracts::psp22::extensions::metadata::*;
-    use brush::{modifiers, modifier_definition};
+    use openbrush::contracts::psp22::extensions::metadata::*;
+    use openbrush::{modifiers, modifier_definition};
     use crabswap::impls::core::no_delegate_call::{NoDelegateCallData, NoDelegateCallStorage};
     use crabswap::traits::core::no_delegate_call::{noDelegateCall, NoDelegateCall};
     use crabswap::traits::periphery::swap_callback::SwapCallbackRef;
@@ -37,7 +37,7 @@ pub mod crab_swap_pool {
     use libs::swap::FullMath;
     use crabswap::traits::core::pool_owner_action::PoolOwnerActions;
     use crabswap::traits::core::pool_owner_action::poolowneractions_external;
-    use brush::contracts::traits::ownable::OwnableRef;
+    use openbrush::contracts::traits::ownable::OwnableRef;
 
     // accumulated protocol fees in token0/token1 units
     #[derive(

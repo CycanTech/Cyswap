@@ -2,7 +2,7 @@
 #![feature(min_specialization)]
 #![allow(non_snake_case)]
 
-#[brush::contract]
+#[openbrush::contract]
 pub mod swapper_router {
     use crabswap::impls::periphery_immutable_state::{ImmutableStateData, ImmutableStateStorage};
     use crabswap::traits::periphery::periphery_immutable_state::*;
@@ -12,7 +12,7 @@ pub mod swapper_router {
     use primitives::{Address, Int256, Uint24, Uint256, ADDRESS0, I256, U160, U256};
     use scale::{Decode, Encode};
 
-    use brush::modifiers;
+    use openbrush::modifiers;
     use crabswap::traits::core::factory::FactoryRef;
     use crabswap::traits::core::pool_action::PoolActionRef;
     use crabswap::traits::periphery::position_manager::checkDeadline;

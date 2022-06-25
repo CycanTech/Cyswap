@@ -1,7 +1,7 @@
 use crate::impls::periphery_immutable_state::ImmutableStateStorage;
 use crate::traits::periphery::weth9::*;
-use brush::contracts::psp22::extensions::metadata::*;
-use brush::traits::Balance;
+use openbrush::contracts::psp22::extensions::metadata::*;
+use openbrush::traits::Balance;
 use ink_env::CallFlags;
 use ink_env::DefaultEnvironment;
 use ink_prelude::vec;

@@ -115,7 +115,7 @@ impl BytesLib for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use brush::traits::AccountId;
+    use openbrush::traits::AccountId;
 
     use crate::periphery::path::{decodeFirstPool};
 

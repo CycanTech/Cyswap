@@ -1,5 +1,5 @@
-use brush::contracts::psp22::{PSP22Storage, PSP22Internal, PSP22Error};
-// use brush::traits::Flush;
+use openbrush::contracts::psp22::{PSP22Storage, PSP22Internal, PSP22Error};
+// use openbrush::traits::Flush;
 use ink_env::{DefaultEnvironment};
 pub use crate::traits::periphery::weth9::*;
 use ink_prelude::string::String;
