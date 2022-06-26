@@ -38,5 +38,5 @@ pub struct PSP34BaseData {
     
 }
 
-declare_storage_trait!(PSP34BaseStorage, PSP34BaseData);
+declare_storage_trait!(PSP34BaseStorage);
 

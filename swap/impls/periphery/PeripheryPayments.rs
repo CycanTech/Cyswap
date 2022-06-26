@@ -1,3 +1,4 @@
+use crate::impls::periphery_immutable_state::ImmutableStateData;
 use crate::impls::periphery_immutable_state::ImmutableStateStorage;
 use crate::traits::periphery::weth9::*;
 use openbrush::contracts::psp22::extensions::metadata::*;
@@ -10,7 +11,7 @@ use primitives::{Address, U256};
 
 pub use crate::traits::periphery::PeripheryPayments::*;
 
-impl<T: ImmutableStateStorage> PeripheryPaymentsTrait for T {
+impl<T: ImmutableStateStorage<Data = ImmutableStateData>> PeripheryPaymentsTrait for T {
     /// @inheritdoc IPeripheryPayments
     default fn refundETH(&mut self) {
         // if (address(this).balance > 0) TransferHelper.safeTransferETH(msg.sender, address(this).balance);

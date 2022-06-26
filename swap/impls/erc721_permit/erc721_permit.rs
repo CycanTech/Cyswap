@@ -16,7 +16,7 @@ use openbrush::contracts::traits::psp34::PSP34;
 const PERMIT_TYPEHASH: &'static str =
     "49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad";
 
-impl<T: ERC721PermitStorage+PSP34> IERC721Permit for T {
+impl<T: ERC721PermitStorage<Data = ERC721PermitData>+PSP34> IERC721Permit for T {
     /// @notice The domain separator used in the permit signature
     /// @return The domain seperator used in encoding of permit signature
     default fn DOMAIN_SEPARATOR(&self) -> [u8; 32] {

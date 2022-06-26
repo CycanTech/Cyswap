@@ -19,9 +19,9 @@ pub struct ImmutableStateData {
     pub WETH9:AccountId,
 }
 
-declare_storage_trait!(ImmutableStateStorage, ImmutableStateData);
+declare_storage_trait!(ImmutableStateStorage);
 
-impl<T:ImmutableStateStorage> PeripheryImmutableState for T{
+impl<T:ImmutableStateStorage<Data = ImmutableStateData>> PeripheryImmutableState for T{
     /// @return Returns the address of the Uniswap V3 factory
     default fn factory(&self) -> Address{
         self.get().factory

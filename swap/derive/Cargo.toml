@@ -13,7 +13,7 @@ proc-macro2 = "1"
 #brush_derive = { tag = "v1.2.0", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false }
 
 # brush_derive = { path = "../../utils/brush_derive" }
-brush_derive = { tag = "v1.7.1", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false }
+openbrush = { version = "~2.1.0", default-features = false }
 
 [lib]
 name = "swap_project_derive"

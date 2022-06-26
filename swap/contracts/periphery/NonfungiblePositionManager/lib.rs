@@ -627,7 +627,7 @@ pub mod position_manager {
                 "ERC721: operator query for nonexistent token"
             );
             let owner: Address = self.owner_of(tokenId.clone()).unwrap();
-            spender == owner || self._allowance(&owner, &spender, &Some(tokenId.clone()))
+            spender == owner || self._allowance(&owner, &spender, &Some(&tokenId))
         }
 
         #[ink(message)]

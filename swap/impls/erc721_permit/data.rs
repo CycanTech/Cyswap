@@ -1,11 +1,9 @@
 use openbrush::{
     declare_storage_trait,
 };
-use ink_storage::{
-    traits::{
-        SpreadAllocate,
-        SpreadLayout,
-    },
+use ink_storage::traits::{
+    SpreadAllocate,
+    SpreadLayout,
 };
 
 #[cfg(feature = "erc721_permit")]
@@ -27,5 +25,5 @@ pub struct ERC721PermitData {
     
 }
 
-declare_storage_trait!(ERC721PermitStorage, ERC721PermitData);
+declare_storage_trait!(ERC721PermitStorage);
 

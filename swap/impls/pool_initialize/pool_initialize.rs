@@ -7,11 +7,11 @@ use openbrush::{
 };
 use ink_env::DefaultEnvironment;
 use primitives::{ ADDRESS0,  Address, U160};
-use crate::traits::core::factory::*;
+use crate::{traits::core::factory::*, impls::periphery_immutable_state::ImmutableStateData};
 use crate::traits::core::pool_action::*;
 use crate::impls::periphery_immutable_state::ImmutableStateStorage;
 
-impl<T:ImmutableStateStorage> Initializer for T{
+impl<T:ImmutableStateStorage<Data = ImmutableStateData>> Initializer for T{
     default fn createAndInitializePoolIfNecessary(
         &mut self,
         token0: AccountId,
