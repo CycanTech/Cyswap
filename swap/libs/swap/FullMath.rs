@@ -62,7 +62,7 @@ mod FullMathTest{
     fn reverts_if_output_overflows_uint256(){
         let q128 = U256::from(2).pow(U256::from(Q128));
         // await expect(fullMath.mulDiv(Q128, Q128, 0)).to.be.reverted
-        let mul_div_value = FullMath::mulDiv(q128, q128, U256::from(1));
+        FullMath::mulDiv(q128, q128, U256::from(1));
     }
 
     // reverts on overflow with all max inputs
@@ -80,5 +80,38 @@ mod FullMathTest{
         // expect(await fullMath.mulDiv(MaxUint256, MaxUint256, MaxUint256)).to.eq(MaxUint256)
         let MaxU128 = U256::from(u128::MAX);
         assert_eq!(FullMath::mulDiv(MaxU128, MaxU128, MaxU128),MaxU128);
+    }
+
+    // it('accurate without phantom overflow', async () => {
+    //     const result = Q128.div(3)
+    //     expect(
+    //       await fullMath.mulDiv(
+    //         Q128,
+    //         /*0.5=*/ BigNumber.from(50).mul(Q128).div(100),
+    //         /*1.5=*/ BigNumber.from(150).mul(Q128).div(100)
+    //       )
+    //     ).to.eq(result)
+    //   })
+
+    // accurate without phantom overflow
+    #[test]
+    fn accurate_without_phantom_overflow(){
+        // const result = Q128.div(3)
+        // expect(
+        //   await fullMath.mulDiv(
+        //     Q128,
+        //     /*0.5=*/ BigNumber.from(50).mul(Q128).div(100),
+        //     /*1.5=*/ BigNumber.from(150).mul(Q128).div(100)
+        //   )
+        // ).to.eq(result)
+        let q128 = U256::from(2).pow(U256::from(Q128));
+        let result = q128.checked_div(U256::from(3)).unwrap();
+        assert_eq!(
+               FullMath::mulDiv(
+                q128,
+                /*0.5=*/ U256::from(50).checked_mul(q128).unwrap().checked_div(U256::from(100)).unwrap(),
+                /*1.5=*/ U256::from(150).checked_mul(q128).unwrap().checked_div(U256::from(100)).unwrap(),
+              ),result
+            );
     }
 }
