@@ -318,3 +318,92 @@ pub fn getAmount1DeltaWithRound(
         )
     }
 }
+
+#[cfg(test)]
+mod SqrtPriceMathTest {
+
+    use core::ops::{Div, Mul};
+
+    use primitives::U256;
+
+    use crate::core::SqrtPriceMath;
+
+    fn expandTo18Decimals(n: &U256) -> U256 {
+        return n
+            .checked_mul(U256::from(10).checked_pow(U256::from(18)).unwrap())
+            .unwrap();
+    }
+
+    // returns the sqrt price as a 64x96
+    fn encodePriceSqrt(reserve1: U256, reserve0: U256)->U256 {
+        reserve1.div(reserve0).integer_sqrt().mul(U256::from(2).pow(U256::from(96)))
+  }
+
+    //#getNextSqrtPriceFromInput
+    #[test]
+    #[should_panic(expected = "sqrtPX96 should bt 0")]
+    fn testgetNextSqrtPriceFromInput() {
+        SqrtPriceMath::getNextSqrtPriceFromInput(
+            U256::zero(),
+            0,
+            expandTo18Decimals(&U256::from(1))
+                .checked_div(U256::from(10))
+                .unwrap(),
+            false,
+        );
+    }
+
+    //#fails if liquidity is zero
+    #[test]
+    #[should_panic(expected = "liquidity should bt 0")]
+    fn fails_if_liquidity_is_zero() {
+        // sqrtPriceMath.getNextSqrtPriceFromInput(1, 0, expandTo18Decimals(1).div(10), true)
+        SqrtPriceMath::getNextSqrtPriceFromInput(
+            U256::one(),
+            0,
+            expandTo18Decimals(&U256::one())
+                .checked_div(U256::from(10))
+                .unwrap(),
+            true,
+        );
+    }
+
+    //fails if input amount overflows the price
+    #[test]
+    #[should_panic]
+    fn fails_if_input_amount_overflows_the_price() {
+        // const price = BigNumber.from(2).pow(160).sub(1)
+        // const liquidity = 1024
+        // const amountIn = 1024
+        let price = U256::from(2)
+            .checked_pow(U256::from(160))
+            .unwrap()
+            .checked_sub(U256::one())
+            .unwrap();
+        let liquidity = 1024;
+        let amountIn = U256::from(1024);
+        // sqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, amountIn, false)
+        SqrtPriceMath::getNextSqrtPriceFromInput(price, liquidity, amountIn, false);
+    }
+
+    #[test]
+    fn testGetNextSqrtPriceFromInput() {
+        // any input amount cannot underflow the price
+        let price = U256::one();
+        let liquidity = 1;
+        let amountIn = U256::from(2).checked_pow(U256::from(255)).unwrap();
+        //   expect(await sqrtPriceMath.getNextSqrtPriceFromInput(price, liquidity, amountIn, true)).to.eq(1)
+        assert_eq!(
+            SqrtPriceMath::getNextSqrtPriceFromInput(price, liquidity, amountIn, true),
+            U256::from(1)
+        );
+
+        // returns input price if amount in is zero and zeroForOne = true
+        let price = encodePriceSqrt(U256::one(), U256::one());
+        // expect(await sqrtPriceMath.getNextSqrtPriceFromInput(price, expandTo18Decimals(1).div(10), 0, false)).to.eq(price)
+        assert_eq!(
+            SqrtPriceMath::getNextSqrtPriceFromInput(price, expandTo18Decimals(&U256::one()).div(10).as_u128(), U256::zero(), false),
+            price
+        );
+    }
+}
