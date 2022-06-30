@@ -322,7 +322,7 @@ pub fn getAmount1DeltaWithRound(
 #[cfg(test)]
 mod SqrtPriceMathTest {
 
-    use core::ops::{Div, Mul};
+    use core::ops::{Div, Mul, Shl, Sub};
 
     use primitives::U256;
 
@@ -335,9 +335,12 @@ mod SqrtPriceMathTest {
     }
 
     // returns the sqrt price as a 64x96
-    fn encodePriceSqrt(reserve1: U256, reserve0: U256)->U256 {
-        reserve1.div(reserve0).integer_sqrt().mul(U256::from(2).pow(U256::from(96)))
-  }
+    fn encodePriceSqrt(reserve1: U256, reserve0: U256) -> U256 {
+        reserve1
+            .div(reserve0)
+            .integer_sqrt()
+            .mul(U256::from(2).pow(U256::from(96)))
+    }
 
     //#getNextSqrtPriceFromInput
     #[test]
@@ -402,8 +405,35 @@ mod SqrtPriceMathTest {
         let price = encodePriceSqrt(U256::one(), U256::one());
         // expect(await sqrtPriceMath.getNextSqrtPriceFromInput(price, expandTo18Decimals(1).div(10), 0, false)).to.eq(price)
         assert_eq!(
-            SqrtPriceMath::getNextSqrtPriceFromInput(price, expandTo18Decimals(&U256::one()).div(10).as_u128(), U256::zero(), false),
+            SqrtPriceMath::getNextSqrtPriceFromInput(
+                price,
+                expandTo18Decimals(&U256::one()).div(10).as_u128(),
+                U256::zero(),
+                false
+            ),
             price
+        );
+
+        //returns input price if amount in is zero and zeroForOne = false
+        let price = encodePriceSqrt(U256::one(), U256::one());
+        assert_eq!(
+            SqrtPriceMath::getNextSqrtPriceFromInput(
+                price,
+                expandTo18Decimals(&U256::one()).div(10).as_u128(),
+                U256::zero(),
+                false
+            ),
+            price
+        );
+
+        //returns the minimum price for max inputs
+        let sqrtP = U256::from(2).pow(U256::from(160)).sub(1);
+        let liquidity = u128::MAX;
+        let maxAmountNoOverflow = U256::MAX.sub(U256::from(liquidity).shl(96).div(sqrtP));
+        print!("maxAmountNoOverflow is:{:?}",maxAmountNoOverflow);
+        assert_eq!(
+            SqrtPriceMath::getNextSqrtPriceFromInput(sqrtP, liquidity, maxAmountNoOverflow, true),
+            U256::from(1)
         );
     }
 }
