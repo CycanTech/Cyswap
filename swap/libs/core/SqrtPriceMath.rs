@@ -27,6 +27,7 @@ pub fn getNextSqrtPriceFromAmount0RoundingUp(
     if amount == U256::zero() {
         return sqrtPX96;
     }
+    // uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;
     let numerator1: U256 = U256::from(liquidity) << FixedPoint96::RESOLUTION;
     // if (add) {
     //     uint256 product;
@@ -38,17 +39,9 @@ pub fn getNextSqrtPriceFromAmount0RoundingUp(
     //     }
 
     //     return uint160(UnsafeMath.divRoundingUp(numerator1, (numerator1 / sqrtPX96).add(amount)));
-    // } else {
-    //     uint256 product;
-    //     // if the product overflows, we know the denominator underflows
-    //     // in addition, we must check that the denominator does not underflow
-    //     require((product = amount * sqrtPX96) / amount == sqrtPX96 && numerator1 > product);
-    //     uint256 denominator = numerator1 - product;
-    //     return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
-    // }
     if add {
         let product: U256 = amount * sqrtPX96;
-        if product / amount == sqrtPX96 {
+        if (product / amount) == sqrtPX96 {
             let denominator = numerator1 + product;
             if denominator >= numerator1 {
                 // always fits in 160 bits
@@ -57,6 +50,14 @@ pub fn getNextSqrtPriceFromAmount0RoundingUp(
         }
 
         return UnsafeMath::divRoundingUp(numerator1, (numerator1 / sqrtPX96) + amount);
+    // } else {
+    //     uint256 product;
+    //     // if the product overflows, we know the denominator underflows
+    //     // in addition, we must check that the denominator does not underflow
+    //     require((product = amount * sqrtPX96) / amount == sqrtPX96 && numerator1 > product);
+    //     uint256 denominator = numerator1 - product;
+    //     return FullMath.mulDivRoundingUp(numerator1, sqrtPX96, denominator).toUint160();
+    // }
     } else {
         let product: U256 = amount * sqrtPX96;
         // if the product overflows, we know the denominator underflows
@@ -426,14 +427,89 @@ mod SqrtPriceMathTest {
             price
         );
 
+        // 这个测试不能通过但是，可能是rust语言对数据限制导致
         //returns the minimum price for max inputs
+        // const sqrtP = BigNumber.from(2).pow(160).sub(1)
+        // const liquidity = MaxUint128
+        // const maxAmountNoOverflow = MaxUint256.sub(liquidity.shl(96).div(sqrtP))
+        // expect(await sqrtPriceMath.getNextSqrtPriceFromInput(sqrtP, liquidity, maxAmountNoOverflow, true)).to.eq('1')
         let sqrtP = U256::from(2).pow(U256::from(160)).sub(1);
+        println!("sqrtP is:{:?}", sqrtP);
         let liquidity = u128::MAX;
-        let maxAmountNoOverflow = U256::MAX.sub(U256::from(liquidity).shl(96).div(sqrtP));
-        print!("maxAmountNoOverflow is:{:?}",maxAmountNoOverflow);
+        println!("liquidity is:{:?}", liquidity);
+        let maxAmountNoOverflow = U256::MAX
+            .checked_sub(U256::from(liquidity).shl(96).checked_div(sqrtP).unwrap())
+            .unwrap();
+        println!("maxAmountNoOverflow is:{:?}", maxAmountNoOverflow);
         assert_eq!(
             SqrtPriceMath::getNextSqrtPriceFromInput(sqrtP, liquidity, maxAmountNoOverflow, true),
-            U256::from(1)
+            U256::one()
+        );
+    }
+
+    // input amount of 0.1 token1
+    #[test]
+    fn input_amount_of_0_token1() {
+        // const sqrtQ = await sqrtPriceMath.getNextSqrtPriceFromInput(
+        //     encodePriceSqrt(1, 1),
+        //     expandTo18Decimals(1),
+        //     expandTo18Decimals(1).div(10),
+        //     false
+        //   )
+        let sqrtQ = SqrtPriceMath::getNextSqrtPriceFromInput(
+            encodePriceSqrt(U256::one(), U256::one()),
+            expandTo18Decimals(&U256::one()).as_u128(),
+            expandTo18Decimals(&U256::one()).div(10),
+            false,
+        );
+        //   expect(sqrtQ).to.eq('87150978765690771352898345369')
+        assert_eq!(
+            sqrtQ,
+            U256::from_dec_str("87150978765690771352898345369").unwrap()
+        );
+    }
+
+    // can return 1 with enough amountIn and zeroForOne = true
+    #[test]
+    fn can_return_1_with_enough_amountIn_and_zeroForOne() {
+        // await sqrtPriceMath.getNextSqrtPriceFromInput(
+        //       encodePriceSqrt(1, 1),
+        //       expandTo18Decimals(10),
+        //       BigNumber.from(2).pow(100),
+        //       true
+        //     )
+        let next_sqrt_price_format_input = SqrtPriceMath::getNextSqrtPriceFromInput(
+            encodePriceSqrt(U256::one(), U256::one()),
+            expandTo18Decimals(&U256::from(10)).as_u128(),
+            U256::from(2).checked_pow(U256::from(100)).unwrap(),
+            true,
+        );
+        // expect(
+        // next_sqrt_price_format_input
+        //     // perfect answer:
+        //     // https://www.wolframalpha.com/input/?i=624999999995069620+-+%28%281e19+*+1+%2F+%281e19+%2B+2%5E100+*+1%29%29+*+2%5E96%29
+        //   ).to.eq('624999999995069620')
+        assert_eq!(
+            next_sqrt_price_format_input,
+            U256::from(624999999995069620u128)
+        );
+    }
+
+    //U256 限制导致测试失败
+    // amountIn > type(uint96).max and zeroForOne = true
+    #[test]
+    fn amountin_type_and_zero_for_one() {
+        // expect(
+        //     await sqrtPriceMath.getNextSqrtPriceFromInput(encodePriceSqrt(1, 1), 1, constants.MaxUint256.div(2), true)
+        //   ).to.eq(1)
+        assert_eq!(
+            SqrtPriceMath::getNextSqrtPriceFromInput(
+                encodePriceSqrt(U256::one(), U256::one()),
+                1,
+                U256::MAX.div(2),
+                true
+            ),
+            U256::one()
         );
     }
 }
