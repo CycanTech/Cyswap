@@ -2,16 +2,19 @@
 #![feature(min_specialization)]
 #![allow(non_snake_case)]
 
-#[brush::contract]
+#[openbrush::contract]
 pub mod OracleTest {
     use ink_env::DefaultEnvironment;
-    
+    use ink_storage::traits::StorageLayout;
     use ink_prelude::vec::Vec;
-    use ink_storage::traits::SpreadAllocate;
+    use ink_storage::traits::{SpreadAllocate};
     use ink_storage::traits::{PackedLayout, SpreadLayout};
     use libs::core::oracle::Observations;
     use primitives::{Int24, I56, U160};
     use scale::{Decode, Encode};
+    use libs::core::oracle::Observation;
+    use ink_prelude::string::String;
+    use ink_prelude::string::ToString;
 
     #[derive(
         Default, Debug, Decode, Encode, Copy, Clone, SpreadAllocate, SpreadLayout, PackedLayout,
@@ -50,22 +53,75 @@ pub mod OracleTest {
         pub observations: Observations,
     }
 
+    #[derive(
+        Default, Debug, Decode, Encode, Clone, SpreadAllocate, SpreadLayout, PackedLayout,
+    )]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo, StorageLayout))]
+    pub struct ObservationOutput {
+        // the block timestamp of the observation
+        pub blockTimestamp: u64,
+        // the tick accumulator, i.e. tick * time elapsed since the pool was first initialized
+        pub tickCumulative: i64,
+        // the seconds per liquidity, i.e. seconds elapsed / max(1, liquidity) since the pool was first initialized
+        pub secondsPerLiquidityCumulativeX128: String,
+        // whether or not the observation is initialized
+        pub initialized: bool,
+    }
+
+    impl From<Observation> for ObservationOutput{
+        fn from(obs:Observation)->ObservationOutput{
+            ObservationOutput{
+                blockTimestamp:obs.blockTimestamp,
+                tickCumulative:obs.tickCumulative,
+                secondsPerLiquidityCumulativeX128:obs.secondsPerLiquidityCumulativeX128.value.to_string(),
+                initialized:obs.initialized
+            }
+        }
+    }
+
     impl OracleTestContract {
         /// constructor with name and symbol
         #[ink(constructor)]
         pub fn new() -> Self {
             ink_lang::codegen::initialize_contract(|instance: &mut OracleTestContract| {
-                instance;
+                instance.time = 0;
+                instance.tick = 0;
+                instance.liquidity = 0;
+                instance.index = 0;
+                instance.cardinality = 0;
+                instance.cardinalityNext = 0;
+                instance.observations = Default::default();
+
             })
         }
 
         #[ink(message)]
+        pub fn observations(&self,index:u16)->ObservationOutput{
+            let result = self.observations.obs.get(index).unwrap_or(Default::default());
+            let output:ObservationOutput = result.into(); 
+            ink_env::debug_println!("output is:{:?}",output);
+            return output;
+        }
+        #[ink(message)]
+        pub fn cardinality(&self)->u16{
+            self.cardinality
+        }
+
+        #[ink(message)]
+        pub fn cardinalityNext(&self)->u16{
+            self.cardinalityNext
+        }
+        #[ink(message)]
         pub fn initialize(&mut self, params: InitializeParams) {
             // require(self.cardinality == 0, "already initialized");
             assert!(self.cardinality == 0, "already initialized");
+            // time = params.time;
             self.time = params.time;
+            // tick = params.tick;
             self.tick = params.tick;
+            // liquidity = params.liquidity;
             self.liquidity = params.liquidity;
+            // (cardinality, cardinalityNext) = observations.initialize(params.time);
             let (cardinality, cardinalityNext) = self.observations.initialize(params.time);
             self.cardinality = cardinality;
             self.cardinalityNext = cardinalityNext;
@@ -78,6 +134,11 @@ pub mod OracleTest {
         #[ink(message)]
         pub fn advanceTime(&mut self, by: u64) {
             self.time += by;
+        }
+
+        #[ink(message)]
+        pub fn index(&self) ->u16{
+            self.index
         }
 
         // // write an observation, then change tick and liquidity
@@ -160,8 +221,10 @@ pub mod OracleTest {
                 (&mut self.observations).grow(self.cardinalityNext, _cardinalityNext);
         }
 
-        pub fn observe(&mut self, secondsAgos: Vec<u64>) -> (Vec<I56>, Vec<U160>) {
-            return (&mut self.observations).observe(
+        #[ink(message)]
+        pub fn observe(&self, secondsAgos: Vec<u64>) -> (Vec<I56>, Vec<U160>) {
+            // return observations.observe(time, secondsAgos, tick, index, liquidity, cardinality);
+            return (&self.observations).observe(
                 self.time,
                 secondsAgos,
                 self.tick,
@@ -170,7 +233,7 @@ pub mod OracleTest {
                 self.cardinality,
             );
         }
-
+            
         // function getGasCostOfObserve(uint32[] calldata secondsAgos) external view returns (uint256) {
         //     (uint32 _time, int24 _tick, uint128 _liquidity, uint16 _index) = (time, tick, liquidity, index);
         //     uint256 gasBefore = gasleft();

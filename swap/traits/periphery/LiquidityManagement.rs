@@ -9,7 +9,7 @@ use ink_prelude::vec::Vec;
 use ink_storage::traits::StorageLayout;
 
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type LiquidityManagementTraitRef = dyn LiquidityManagementTrait;
 
 
@@ -30,7 +30,7 @@ pub struct AddLiquidityParams {
 /// @title Creates and initializes V3 Pools
 /// @notice Provides a method for creating and initializing a pool, if necessary, for bundling with other methods that
 /// require the pool to exist.
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait LiquidityManagementTrait{
     /// @notice Creates a new pool if it does not exist, then initializes if not initialized
     /// @dev This method can be bundled with others via IMulticall for the first action (e.g. mint) performed against a pool

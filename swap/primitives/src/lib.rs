@@ -3,7 +3,7 @@
 
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-use brush::traits::AccountId;
+use openbrush::traits::AccountId;
 #[cfg(feature = "std")]
 use ink_metadata::layout::{StructLayout, Layout, FieldLayout};
 use ink_storage::{
@@ -16,6 +16,7 @@ use scale::{Decode, Encode};
 #[cfg(feature = "std")]
 use scale_info::{TypeInfo, Type};
 pub use sp_core::U256;
+
 pub type Address = AccountId;
 pub type Uint24 = u32;
 pub type Uint16 = u16;
@@ -30,8 +31,6 @@ pub type Int256 = i128;
 pub type Uint128 = u128;
 pub type Uint96 = u128;
 pub type Uint80 = u128;
-
-
 
 pub const ADDRESS0:[u8;32] = [0u8;32];
 
@@ -65,7 +64,7 @@ impl AsRef<U256> for WrapperU256 {
 #[cfg(feature = "std")]
 impl TypeInfo for WrapperU256
 {
-    type Identity = [u64];
+    type Identity = [u64;4];
 
     fn type_info() -> Type {
         Self::Identity::type_info()
@@ -131,9 +130,9 @@ impl StorageLayout for WrapperU256 {
         Layout::Struct(StructLayout::new([
             FieldLayout::new(
                 "len",
-                <[u32; 4] as StorageLayout>::layout(key_ptr),
+                <[u64; 4] as StorageLayout>::layout(key_ptr),
             ),
-            FieldLayout::new("elems", <[u32; 6] as StorageLayout>::layout(key_ptr)),
+            FieldLayout::new("elems", <[u64; 4] as StorageLayout>::layout(key_ptr)),
         ]))
     }
 }

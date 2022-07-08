@@ -1,4 +1,4 @@
-use brush::{modifier_definition, contracts::traits::psp34::Id};
+use openbrush::{modifier_definition, contracts::traits::psp34::Id};
 use ink_env::DefaultEnvironment;
 use ink_prelude::string::String;
 use ink_storage::traits::{SpreadAllocate, SpreadLayout};
@@ -8,7 +8,7 @@ use primitives::{Address, Int24, Uint24, Uint256, Uint96, U256};
 use ink_storage::traits::StorageLayout;
 use scale::{Decode, Encode};
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type PositionManagerRef = dyn PositionManager;
 
 #[modifier_definition]
@@ -88,7 +88,7 @@ pub struct CollectParams {
 /// @title Non-fungible token for positions
 /// @notice Wraps CrabSwap V3 positions in a non-fungible token interface which allows for them to be transferred
 /// and authorized.
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait PositionManager {
     #[ink(message)]
     fn tokenURI(&self, tokenId: u128) -> String;

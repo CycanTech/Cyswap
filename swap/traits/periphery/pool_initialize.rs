@@ -1,18 +1,18 @@
-use brush::{
+use openbrush::{
     traits::{
         AccountId,
     },
 };
 use primitives::{ Address, U160};
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type InitializerRef = dyn Initializer;
 
 
 /// @title Creates and initializes V3 Pools
 /// @notice Provides a method for creating and initializing a pool, if necessary, for bundling with other methods that
 /// require the pool to exist.
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait Initializer{
     /// @notice Creates a new pool if it does not exist, then initializes if not initialized
     /// @dev This method can be bundled with others via IMulticall for the first action (e.g. mint) performed against a pool

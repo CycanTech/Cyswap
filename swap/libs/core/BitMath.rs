@@ -2,7 +2,7 @@
 
 use primitives::U256;
 
-/// @notice Returns the index of the most significant bit of the number,
+/// @notice Returns &the index of the most significant bit of the number,
 ///     where the least significant bit is at index 0 and the most significant bit is at index 255
 /// @dev The function satisfies the property:
 ///     x >= 2**mostSignificantBit(x) and x < 2**(mostSignificantBit(x)+1)
@@ -95,4 +95,75 @@ pub fn leastSignificantBit(mut x: U256) -> u8 {
         r -= 1
     };
     r
+}
+
+
+#[cfg(test)]
+mod test{
+    use primitives::U256;
+
+    use super::{mostSignificantBit, leastSignificantBit};
+
+    #[test]
+    #[should_panic(expected="x must bt 0!")]
+    fn testMostSignificantBitPanic(){
+        mostSignificantBit(U256::zero());
+    }
+
+
+    #[test]
+    fn testMostSignificantBit(){
+        // it('1', async () => {
+        //     expect(await bitMath.mostSignificantBit(1)).to.eq(0)
+        //   })
+        assert!(mostSignificantBit(U256::from(1))==0);
+
+        assert!(mostSignificantBit(U256::from(2))==1);
+
+        for i in 0..=255{
+            let i_cal = U256::from(2).pow(U256::from(i));
+            let sign = mostSignificantBit(i_cal);
+            assert!(sign == i);
+        }
+
+        //test uint256(-1)
+        let result = U256::from(2).pow(U256::from(255));
+        let result = result.saturating_sub(U256::one());
+        println!("result is:{:?}",mostSignificantBit(result));
+        assert!(mostSignificantBit(result)==255);
+    }
+
+    #[test]
+    #[should_panic(expected="x must bt 0")]
+    fn testLeastSignificantBitPanic(){
+        // await expect(bitMath.leastSignificantBit(0))
+        leastSignificantBit(U256::zero());
+    }
+
+    #[test]
+    fn testLeastSignificantBit(){
+
+        // expect(await bitMath.leastSignificantBit(1)).to.eq(0)
+        assert_eq!(leastSignificantBit(U256::one()),0);
+
+        assert_eq!(leastSignificantBit(U256::from(2)),1);
+
+
+        // it('all powers of 2', async () => {
+        //     const results = await Promise.all(
+        //       [...Array(255)].map((_, i) => bitMath.leastSignificantBit(BigNumber.from(2).pow(i)))
+        //     )
+        //     expect(results).to.deep.eq([...Array(255)].map((_, i) => i))
+        //   })
+        for i in 0..=255{
+            let i_cal = U256::from(2).pow(U256::from(i));
+            let sign = leastSignificantBit(i_cal);
+            assert_eq!(sign,i);
+        }
+
+        let result = U256::from(2).pow(U256::from(255));
+        let result = result.saturating_sub(U256::one());
+        assert_eq!(leastSignificantBit(result),0);
+    }
+
 }

@@ -2,13 +2,13 @@
 #![feature(min_specialization)]
 #![allow(non_snake_case)]
 
-#[brush::contract]
+#[openbrush::contract]
 pub mod position_manager {
-    use brush::contracts::psp34::PSP34Data;
+    use openbrush::contracts::psp34::PSP34Data;
     // use crabswap::impls::periphery::position_manager::*;
-    use brush::contracts::psp34::extensions::burnable::*;
-    use brush::contracts::psp34::extensions::mintable::*;
-    use brush::modifiers;
+    use openbrush::contracts::psp34::extensions::burnable::*;
+    use openbrush::contracts::psp34::extensions::mintable::*;
+    use openbrush::modifiers;
     use crabswap::impls::erc721_permit::*;
     use crabswap::impls::periphery::PeripheryPayments::*;
     use crabswap::impls::pool_initialize::*;
@@ -223,7 +223,7 @@ pub mod position_manager {
 
         #[ink(message)]
         fn uniswapV3MintCallback(&mut self, amount0Owed: U256, amount1Owed: U256, data: Vec<u8>) {
-            let manager_address: brush::traits::AccountId =
+            let manager_address: openbrush::traits::AccountId =
                 ink_env::account_id::<DefaultEnvironment>();
             let msg_sender = ink_env::caller::<DefaultEnvironment>();
             // MintCallbackData memory deceoded = abi.decode(data, (MintCallbackData));
@@ -627,7 +627,7 @@ pub mod position_manager {
                 "ERC721: operator query for nonexistent token"
             );
             let owner: Address = self.owner_of(tokenId.clone()).unwrap();
-            spender == owner || self._allowance(&owner, &spender, &Some(tokenId.clone()))
+            spender == owner || self._allowance(&owner, &spender, &Some(&tokenId))
         }
 
         #[ink(message)]

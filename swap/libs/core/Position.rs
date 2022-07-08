@@ -21,6 +21,7 @@ pub struct Info {
     pub liquidity:u128,
     // fee growth per unit of liquidity as of the last update to liquidity or fees owed
     pub feeGrowthInside0LastX128:Uint256,
+    
     pub feeGrowthInside1LastX128:Uint256,
     // the fees owed to the position owner in token0/token1
     pub tokensOwed0:u128,

@@ -1,4 +1,4 @@
-use brush::modifier_definition;
+use openbrush::modifier_definition;
 
 
 #[modifier_definition]
@@ -12,7 +12,7 @@ where
 }
 
 
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait NoDelegateCall{
     /// @dev Private method is used instead of inlining into modifier because modifiers are copied into each method,
     ///     and the use of immutable means the address bytes are copied in every place the modifier is used.

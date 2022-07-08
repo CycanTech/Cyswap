@@ -5,7 +5,7 @@ use ink_prelude::vec::Vec;
 use primitives::{Address, Uint24, U160, U256};
 use scale::{Decode, Encode};
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type SwapRouterRef = dyn SwapRouter;
 
 #[derive(Default, PartialEq, Eq, Encode, Decode)]
@@ -49,7 +49,7 @@ pub struct ExactOutputParams {
     pub amountInMaximum: U256,
 }
 
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait SwapRouter {
     /// @notice Swaps `amountIn` of one token for as much as possible of another token
     /// @param params The parameters necessary for the swap, encoded as `ExactInputSingleParams` in calldata

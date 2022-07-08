@@ -1,10 +1,10 @@
 use primitives::Address;
 
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type PeripheryImmutableStateRef = dyn PeripheryImmutableState;
 
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait PeripheryImmutableState{
     /// @return Returns the address of the Uniswap V3 factory
     #[ink(message)]

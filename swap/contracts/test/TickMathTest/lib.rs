@@ -3,7 +3,7 @@
 #![allow(non_snake_case)]
 
 /// This is a simple `PSP-22` which will be used as a stable coin and a collateral token in our lending contract
-#[brush::contract]
+#[openbrush::contract]
 pub mod tick_math_test {
     use ink_env::DefaultEnvironment;
     // use lending_project::traits::stable_coin::*;

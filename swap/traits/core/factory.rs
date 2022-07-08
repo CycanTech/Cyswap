@@ -1,4 +1,4 @@
-use brush::{
+use openbrush::{
     traits::{
         AccountId,
     },
@@ -6,12 +6,12 @@ use brush::{
 use primitives::Address;
 
 
-#[brush::wrapper]
+#[openbrush::wrapper]
 pub type FactoryRef = dyn Factory;
 
 
 
-#[brush::trait_definition]
+#[openbrush::trait_definition]
 pub trait Factory{
     #[ink(message)]
     fn get_pool(&self,fee:u32,token0:AccountId, token1:AccountId)->AccountId;

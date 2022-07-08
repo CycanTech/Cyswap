@@ -1,7 +1,7 @@
 pub use super::data::*;
 pub use crate::traits::periphery::erc721_permit::*;
 
-use brush::{contracts::traits::psp34::Id, traits::AccountId};
+use openbrush::{contracts::traits::psp34::Id, traits::AccountId};
 use ink_env::{
     hash::CryptoHash,
     hash::{Blake2x256, HashOutput, Sha2x256},
@@ -10,13 +10,13 @@ use ink_env::{
 use ink_prelude::string::String;
 use ink_prelude::vec;
 use scale::Encode;
-use brush::contracts::traits::psp34::PSP34;
+use openbrush::contracts::traits::psp34::PSP34;
 /// @inheritdoc IERC721Permit
 /// @dev Value is equal to keccak256("Permit(address spender,uint256 tokenId,uint256 nonce,uint256 deadline)");
 const PERMIT_TYPEHASH: &'static str =
     "49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad";
 
-impl<T: ERC721PermitStorage+PSP34> IERC721Permit for T {
+impl<T: ERC721PermitStorage<Data = ERC721PermitData>+PSP34> IERC721Permit for T {
     /// @notice The domain separator used in the permit signature
     /// @return The domain seperator used in encoding of permit signature
     default fn DOMAIN_SEPARATOR(&self) -> [u8; 32] {

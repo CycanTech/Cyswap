@@ -1,4 +1,4 @@
-use brush::{
+use openbrush::{
     declare_storage_trait,
     traits::{
         AccountId,
@@ -38,5 +38,5 @@ pub struct PSP34BaseData {
     
 }
 
-declare_storage_trait!(PSP34BaseStorage, PSP34BaseData);
+declare_storage_trait!(PSP34BaseStorage);
 

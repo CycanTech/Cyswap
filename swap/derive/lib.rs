@@ -3,7 +3,7 @@
 
 extern crate proc_macro;
 
-use brush_derive::declare_derive_storage_trait;
+use openbrush::declare_derive_storage_trait;
 
 #[cfg(feature = "pool_initial")]
 declare_derive_storage_trait!(derive_pool_initial_storage, PoolInitializeStorage, PoolInitializeStorageField);

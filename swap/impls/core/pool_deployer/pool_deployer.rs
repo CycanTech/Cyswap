@@ -1,6 +1,6 @@
 //由于部署不同,该mod废弃不用.
-use brush::declare_storage_trait;
-// use brush::traits::Flush;
+use openbrush::declare_storage_trait;
+// use openbrush::traits::Flush;
 use ink_env::{hash::{HashOutput, Sha2x256}};
 use primitives::{Address, Uint24, Int24};
 use crate::traits::core::pool_deployer::*;

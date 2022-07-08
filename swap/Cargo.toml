@@ -3,15 +3,18 @@ name = "crabswap"
 version = "3.0.0-rc9"
 authors = ["Parity Technologies <cloudweisz@gmail.com>"]
 edition = "2021"
+# categories = ["no-std", "embedded"]
+# include = ["Cargo.toml", "src/**/*.rs"]
 
 [dependencies]
-ink_primitives = { version = "3.2.0", default-features = false }
-ink_metadata = { version = "3.2.0", default-features = false, features = ["derive"], optional = true }
-ink_env = { version = "3.2.0", default-features = false }
-ink_storage = { version = "3.2.0", default-features = false }
-ink_lang = { version = "3.2.0", default-features = false }
-ink_prelude = { version = "3.2.0", default-features = false }
-brush = { tag = "v1.7.1", git = "https://github.com/Supercolony-net/openbrush-contracts", default-features = false,features = ["psp22"]}
+ink_primitives = { version = "~3.3.0", default-features = false }
+ink_metadata = { version = "~3.3.0", default-features = false, features = ["derive"], optional = true }
+ink_env = { version = "~3.3.0", default-features = false }
+ink_storage = { version = "~3.3.0", default-features = false }
+ink_lang = { version = "~3.3.0", default-features = false }
+ink_prelude = { version = "~3.3.0", default-features = false }
+# openbrush = { version = "~2.1.0", default-features = false,features = ["psp22"]}
+openbrush = { version = "~2.1.0", default-features = false,features = ["psp22"] }
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 swap_project_derive = { path = "derive" }
@@ -38,7 +41,7 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
-    "brush/std",
+    "openbrush/std",
     "primitives/std",
     "hex/std",
 ]
@@ -87,12 +90,13 @@ exclude = [
     "contracts/periphery/SwapRouter/",
     "contracts/test/TickMathTest/",
     "contracts/test/OracleTest/",
-    "contracts/test/PoolTest/",
+    # "contracts/test/PoolTest/",
 ]
-
 [profile.dev]
 codegen-units = 16
-overflow-checks = false
+# [profile.dev]
+# codegen-units = 16
+# overflow-checks = false
 
-[profile.release]
-overflow-checks = false
+# [profile.release]
+# overflow-checks = false

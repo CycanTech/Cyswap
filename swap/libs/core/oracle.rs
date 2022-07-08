@@ -9,6 +9,7 @@ use ink_storage::{
 use primitives::{Int24, Uint160,  U160, U256,  I56};
 use scale::{Decode, Encode};
 use ink_prelude::vec::Vec;
+use ink_prelude::string::ToString;
 
 /// @title Oracle
 /// @notice Provides price and liquidity data useful for a wide variety of system designs
@@ -32,7 +33,7 @@ pub struct Observation {
     pub initialized: bool,
 }
 
-#[derive(Debug, Default, SpreadAllocate, SpreadLayout)]
+#[derive(Debug, Default,SpreadAllocate, SpreadLayout)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo,StorageLayout))]
 pub struct Observations {
     pub obs: Mapping<u16, Observation>,
@@ -111,23 +112,55 @@ impl Observations {
         liquidity: u128,
         cardinality: u16,
     ) -> (i64, U160) {
+        // if (secondsAgo == 0) {
         if secondsAgo == 0 {
+            ink_env::debug_println!("secondsAgo is----------------:{:?}",secondsAgo);
+            //     Observation memory last = self[index];
             let mut last: Observation = self.obs.get(index).expect("error!");
-            // if (last.blockTimestamp != time) last = transform(last, time, tick, liquidity);
+            //     if (last.blockTimestamp != time) last = transform(last, time, tick, liquidity);
             if last.blockTimestamp != time {
                 last = transform(&last, time, tick, liquidity);
             }
+            //     return (last.tickCumulative, last.secondsPerLiquidityCumulativeX128);
+            // }
             return (
                 last.tickCumulative,
                 last.secondsPerLiquidityCumulativeX128.value,
             );
         }
 
+        ink_env::debug_println!("time is----------------:{:?},secondsAgo is-------------:{:?}",time,secondsAgo);
+        // uint32 target = time - secondsAgo;
         let target: u64 = time - secondsAgo;
         // (Observation memory beforeOrAt, Observation memory atOrAfter) =
         //     getSurroundingObservations(, time, target, tick, index, liquidity, cardinality);
         let (beforeOrAt, atOrAfter) =
             self.getSurroundingObservations(time, target, tick, index, liquidity, cardinality);
+
+        // if (target == beforeOrAt.blockTimestamp) {
+        //     // we're at the left boundary
+        //     return (beforeOrAt.tickCumulative, beforeOrAt.secondsPerLiquidityCumulativeX128);
+        // } else if (target == atOrAfter.blockTimestamp) {
+        //     // we're at the right boundary
+        //     return (atOrAfter.tickCumulative, atOrAfter.secondsPerLiquidityCumulativeX128);
+        // } else {
+        //     // we're in the middle
+        //     uint32 observationTimeDelta = atOrAfter.blockTimestamp - beforeOrAt.blockTimestamp;
+        //     uint32 targetDelta = target - beforeOrAt.blockTimestamp;
+        //     return (
+        //         beforeOrAt.tickCumulative +
+        //             ((atOrAfter.tickCumulative - beforeOrAt.tickCumulative) / observationTimeDelta) *
+        //             targetDelta,
+        //         beforeOrAt.secondsPerLiquidityCumulativeX128 +
+        //             uint160(
+        //                 (uint256(
+        //                     atOrAfter.secondsPerLiquidityCumulativeX128 - beforeOrAt.secondsPerLiquidityCumulativeX128
+        //                 ) * targetDelta) / observationTimeDelta
+        //             )
+        //     );
+        // }
+
+
         if target == beforeOrAt.blockTimestamp {
             // we're at the left boundary
             return (
@@ -309,22 +342,31 @@ impl Observations {
         cardinality: u16,
         cardinalityNext: u16,
     ) -> (u16, u16) {
+        // Observation memory last = self[index];
         let last: Observation = self.obs.get(index).expect("error!");
 
         // early return if we've already written an observation this block
+        // if (last.blockTimestamp == blockTimestamp) return (index, cardinality);
         if last.blockTimestamp == blockTimestamp {
             return (index, cardinality);
         }
 
         let cardinalityUpdated: u16;
         // if the conditions are right, we can bump the cardinality
+        // if (cardinalityNext > cardinality && index == (cardinality - 1)) {
+        //     cardinalityUpdated = cardinalityNext;
+        // } else {
+        //     cardinalityUpdated = cardinality;
+        // }
         if cardinalityNext > cardinality && index == (cardinality - 1) {
             cardinalityUpdated = cardinalityNext;
         } else {
             cardinalityUpdated = cardinality;
         }
 
+        // indexUpdated = (index + 1) % cardinalityUpdated;
         let indexUpdated = (index + 1) % cardinalityUpdated;
+        // self[indexUpdated] = transform(last, blockTimestamp, tick, liquidity);
         self.obs.insert(
             indexUpdated,
             &transform(&last, blockTimestamp, tick, liquidity),
@@ -338,16 +380,23 @@ impl Observations {
     /// @param next The proposed next cardinality which will be populated in the oracle array
     /// @return next The next cardinality which will be populated in the oracle array
     pub fn grow(& mut self, current: u16, next: u16) -> u16 {
+        // require(current > 0, 'I');
         assert!(current > 0, "I");
         // no-op if the passed next value isn't greater than the current next value
+        // if (next <= current) return current;
+        // for (uint16 i = current; i < next; i++) self[i].blockTimestamp = 1;
         if next <= current {
             return current;
         }
         // store in each slot to prevent fresh SSTOREs in swaps
         // this data will not be used because the initialized boolean is still false
+        // for (uint16 i = current; i < next; i++) self[i].blockTimestamp = 1;
         for i in current..next {
-            self.obs.get(&i).expect("current is None").blockTimestamp = 1;
+            let mut observation = Observation::default();
+            observation.blockTimestamp = 1;
+            self.obs.insert(i,&observation);
         }
+        // return next;
         return next;
     }
 
@@ -363,7 +412,7 @@ impl Observations {
     /// @return tickCumulatives The tick * time elapsed since the pool was first initialized, as of each `secondsAgo`
     /// @return secondsPerLiquidityCumulativeX128s The cumulative seconds / max(1, liquidity) since the pool was first initialized, as of each `secondsAgo`
     pub fn observe(
-        &mut self,
+        &self,
         time:u64,
         secondsAgos:Vec<u64>,
         tick:Int24,
@@ -371,10 +420,12 @@ impl Observations {
         liquidity:u128,
         cardinality:u16
     )->(Vec<I56>, Vec<U160>) {
+        // require(cardinality > 0, 'I');
         assert!(cardinality > 0, "I");
 
         // tickCumulatives = new int56[](secondsAgos.length);
         let mut tickCumulatives = <Vec::<I56>>::with_capacity(secondsAgos.len());
+        // secondsPerLiquidityCumulativeX128s = new uint160[](secondsAgos.length);
         let mut secondsPerLiquidityCumulativeX128s =Vec::<U160>::with_capacity(secondsAgos.len());
         // for (uint256 i = 0; i < secondsAgos.length; i++) {
         //     (tickCumulatives[i], secondsPerLiquidityCumulativeX128s[i]) = observeSingle(
@@ -426,8 +477,8 @@ fn transform(
     //             ((uint160(delta) << 128) / (liquidity > 0 ? liquidity : 1)),
     //         initialized: true
     //     });
-
-    if !liquidity > 0 {
+    // here have very error! for !liquidity > 0 先对liquid做了取反的运算。导致liquid取反为负数。
+    if !(liquidity > 0) {
         liquidity = 1;
     }
     let delta: i64 = delta.try_into().unwrap();

@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(non_snake_case)]
 
-use brush::traits::Hash;
+use openbrush::traits::Hash;
 use primitives::{U160, U256};
 
 use crate::swap::{FixedPoint96, FullMath};

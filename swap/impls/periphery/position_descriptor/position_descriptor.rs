@@ -1,7 +1,7 @@
 use ink_storage::traits::{SpreadAllocate, SpreadLayout};
 use primitives::{Address, Int24, Uint128, Uint256, Uint80, Uint96};
 use ink_prelude::string::String;
-use brush::{
+use openbrush::{
     declare_storage_trait,
 };
 use crate::traits::periphery::position_descriptor::*;
