@@ -129,7 +129,7 @@ pub fn computeSwapStep(
         //         ? amountOut
         //         : SqrtPriceMath.getAmount1Delta(sqrtRatioNextX96, sqrtRatioCurrentX96, liquidity, false);
         // } else {
-        
+
         // }
         amountIn = if max && exactIn {
             amountIn
@@ -207,6 +207,8 @@ pub fn computeSwapStep(
 mod test {
     use primitives::U256;
 
+    use crate::core::shared::utilities::encodePriceSqrt;
+
     use super::computeSwapStep;
 
     #[test]
@@ -223,5 +225,40 @@ mod test {
             "sqrtPriceX96, amountIn, amountOut, feeAmount is:{:?},{:?},{:?},{:?}",
             sqrtPriceX96, amountIn, amountOut, feeAmount
         );
+    }
+
+    #[test]
+    fn testComputeSwapStep() {
+        //exact amount in that gets capped at price target in one for zero
+        // const price = encodePriceSqrt(1, 1)
+        let price = encodePriceSqrt(1, 1);
+        // const priceTarget = encodePriceSqrt(101, 100)
+        // const liquidity = expandTo18Decimals(2)
+        // const amount = expandTo18Decimals(1)
+        // const fee = 600
+        // const zeroForOne = false
+
+        // const { amountIn, amountOut, sqrtQ, feeAmount } = await swapMath.computeSwapStep(
+        //     price,
+        //     priceTarget,
+        //     liquidity,
+        //     amount,
+        //     fee
+        // )
+
+        // expect(amountIn).to.eq('9975124224178055')
+        // expect(feeAmount).to.eq('5988667735148')
+        // expect(amountOut).to.eq('9925619580021728')
+        // expect(amountIn.add(feeAmount), 'entire amount is not used').to.lt(amount)
+
+        // const priceAfterWholeInputAmount = await sqrtPriceMath.getNextSqrtPriceFromInput(
+        //     price,
+        //     liquidity,
+        //     amount,
+        //     zeroForOne
+        // )
+
+        // expect(sqrtQ, 'price is capped at price target').to.eq(priceTarget)
+        // expect(sqrtQ, 'price is less than price after whole input amount').to.lt(priceAfterWholeInputAmount)
     }
 }
