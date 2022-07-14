@@ -6,17 +6,17 @@ use crate::swap::FullMath;
 
 use super::SqrtPriceMath;
 
-/// @notice Computes the result of swapping some amount in, or amount out, given the parameters of the swap
-/// @dev The fee, plus the amount in, will never exceed the amount remaining if the swap's `amountSpecified` is positive
-/// @param sqrtRatioCurrentX96 The current sqrt price of the pool
-/// @param sqrtRatioTargetX96 The price that cannot be exceeded, from which the direction of the swap is inferred
-/// @param liquidity The usable liquidity
-/// @param amountRemaining How much input or output amount is remaining to be swapped in/out
-/// @param feePips The fee taken from the input amount, expressed in hundredths of a bip
-/// @return sqrtRatioNextX96 The price after swapping the amount in/out, not to exceed the price target
-/// @return amountIn The amount to be swapped in, of either token0 or token1, based on the direction of the swap
-/// @return amountOut The amount to be received, of either token0 or token1, based on the direction of the swap
-/// @return feeAmount The amount of input that will be taken as a fee
+/// notice Computes the result of swapping some amount in, or amount out, given the parameters of the swap
+/// dev The fee, plus the amount in, will never exceed the amount remaining if the swap's `amountSpecified` is positive
+/// param sqrtRatioCurrentX96 The current sqrt price of the pool
+/// param sqrtRatioTargetX96 The price that cannot be exceeded, from which the direction of the swap is inferred
+/// param liquidity The usable liquidity
+/// param amountRemaining How much input or output amount is remaining to be swapped in/out
+/// param feePips The fee taken from the input amount, expressed in hundredths of a bip /n
+/// ``` return sqrtRatioNextX96 The price after swapping the amount in/out, not to exceed the price target \rn
+///  return amountIn The amount to be swapped in, of either token0 or token1, based on the direction of the swap，
+///  return amountOut The amount to be received, of either token0 or token1, based on the direction of the swap
+///  return feeAmount The amount of input that will be taken as a fee
 pub fn computeSwapStep(
     sqrtRatioCurrentX96: U160,
     sqrtRatioTargetX96: U160,
@@ -205,9 +205,10 @@ pub fn computeSwapStep(
 
 #[cfg(test)]
 mod test {
+    use base64::encode;
     use primitives::U256;
 
-    use crate::core::shared::utilities::encodePriceSqrt;
+    use crate::core::shared::utilities::{self, expandTo18Decimals};
 
     use super::computeSwapStep;
 
@@ -231,13 +232,17 @@ mod test {
     fn testComputeSwapStep() {
         //exact amount in that gets capped at price target in one for zero
         // const price = encodePriceSqrt(1, 1)
-        let price = encodePriceSqrt(1, 1);
+        let price = utilities::encodePriceSqrt(U256::one(), U256::one());
         // const priceTarget = encodePriceSqrt(101, 100)
+        let priceTarget = utilities::encodePriceSqrt(U256::from("101"), U256::from("100"));
         // const liquidity = expandTo18Decimals(2)
+        let liquidity = utilities::expandTo18Decimals(2);
         // const amount = expandTo18Decimals(1)
+        let amount = expandTo18Decimals(1);
         // const fee = 600
+        let fee = 600;
         // const zeroForOne = false
-
+        let zeroForOne = false;
         // const { amountIn, amountOut, sqrtQ, feeAmount } = await swapMath.computeSwapStep(
         //     price,
         //     priceTarget,
@@ -245,6 +250,13 @@ mod test {
         //     amount,
         //     fee
         // )
+        let (sqrtRatioNextX96, amountIn, amountOut, feeAmount) = computeSwapStep(
+            price,
+            priceTarget,
+            liquidity,
+            amount.try_into().expect("u128 to i128 error!"),
+            fee,
+        );
 
         // expect(amountIn).to.eq('9975124224178055')
         // expect(feeAmount).to.eq('5988667735148')
